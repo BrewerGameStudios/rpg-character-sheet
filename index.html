@@ -386,7 +386,7 @@
 
         .combat-section {
             display: grid;
-            grid-template-columns: repeat(6, 1fr); 
+            grid-template-columns: repeat(6, 1fr);
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -418,6 +418,7 @@
             gap: 15px;
             margin-bottom: 20px;
         }
+
         .combat-box {
             border: 2px solid #333;
             border-radius: 8px;
@@ -1639,6 +1640,33 @@
 
     <div id="containersPage" class="page">
         <div class="container">
+            <div class="attacks-section">
+                <h3>Currency</h3>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+                    <div class="field">
+                        <label>Copper (CP)</label>
+                        <input type="number" id="cp" value="0" style="width: 75%;">
+                    </div>
+                    <div class="field">
+                        <label>Silver (SP)</label>
+                        <input type="number" id="sp" value="0" style="width: 75%;">
+                    </div>
+                    <div class="field">
+                        <label>Electrum (EP)</label>
+                        <input type="number" id="ep" value="0" style="width: 75%;">
+                    </div>
+                    <div class="field">
+                        <label>Gold (GP)</label>
+                        <input type="number" id="gp" value="0" style="width: 75%;">
+                    </div>
+                    <div class="field">
+                        <label>Platinum (PP)</label>
+                        <input type="number" id="pp" value="0" style="width: 75%;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="text-transform: uppercase; font-size: 18px;">Inventory & Containers</h2>
                 <button class="btn" onclick="addNewContainer()">+ Add Container</button>
@@ -1817,11 +1845,11 @@
             const row = document.createElement("div");
             row.className = "attack-row";
             row.innerHTML = `
-                                                                                                                    <input type="text" placeholder="Weapon Name">
-                                                                                                                    <input type="text" placeholder="Atk Bonus">
-                                                                                                                    <input type="text" placeholder="Damage/Type">
-                                                                                                                    <button class="remove-attack" type="button" onclick="this.parentElement.remove()">✖</button>
-                                                                                                                `;
+                                                                                                                                    <input type="text" placeholder="Weapon Name">
+                                                                                                                                    <input type="text" placeholder="Atk Bonus">
+                                                                                                                                    <input type="text" placeholder="Damage/Type">
+                                                                                                                                    <button class="remove-attack" type="button" onclick="this.parentElement.remove()">✖</button>
+                                                                                                                                `;
             attacksList.appendChild(row);
         }
 
@@ -1831,10 +1859,10 @@
             const row = document.createElement('div');
             row.className = 'attunement-row';
             row.innerHTML = `
-                                                                                                            <input type="checkbox" onchange="updateAttunementCount()">
-                                                                                                            <input type="text" placeholder="Magic Item Name">
-                                                                                                            <button class="remove-attunement" type="button" onclick="this.parentElement.remove(); updateAttunementCount()">✖</button>
-                                                                                                        `;
+                                                                                                                            <input type="checkbox" onchange="updateAttunementCount()">
+                                                                                                                            <input type="text" placeholder="Magic Item Name">
+                                                                                                                            <button class="remove-attunement" type="button" onclick="this.parentElement.remove(); updateAttunementCount()">✖</button>
+                                                                                                                        `;
             list.appendChild(row);
             updateAttunementCount();
         }
@@ -1848,12 +1876,12 @@
             row.style.gridTemplateColumns = "1fr 40px"; // Simpler grid for Cantrips: Name + Delete
 
             row.innerHTML = `
-                                                                                                            <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
-                                                                                                            <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
-                                                                                                            <div class="spell-details">
-                                                                                                                <textarea placeholder="Cantrip details (range, damage, etc.)..." class="cantrip-description" style="width: 100%; min-height: 40px;"></textarea>
-                                                                                                            </div>
-                                                                                                        `;
+                                                                                                                            <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
+                                                                                                                            <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
+                                                                                                                            <div class="spell-details">
+                                                                                                                                <textarea placeholder="Cantrip details (range, damage, etc.)..." class="cantrip-description" style="width: 100%; min-height: 40px;"></textarea>
+                                                                                                                            </div>
+                                                                                                                        `;
             cantripsList.appendChild(row);
         }
 
@@ -1915,12 +1943,12 @@
             const initialTotal = (parseFloat(qty) || 0) * (parseFloat(weight) || 0);
 
             row.innerHTML = `
-                                                                                                        <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                                                                                        <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
-                                                                                                        <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                                                                                                        <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                                                                                        <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                                                                                                        <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                                                                        <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                                                                        <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
+                                                                                                                        <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                                                                                                                        <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                                                                        <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                                                                                                                        <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
 `;
             list.appendChild(row);
             updateTotalWeight();
@@ -1937,15 +1965,15 @@
             row.className = 'inventory-row';
             row.style.marginBottom = "15px";
             row.innerHTML = `
-                                                                                                        <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                                                                                        <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
-                                                                                                        <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                                                                                                        <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                                                                                        <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                                                                                                        <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                                                                                        <div class="spell-details" style="grid-column: span 6;">
-                                                                                                            <textarea class="eq-desc" placeholder="Potion description..." style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
-                                                                                                        </div>
+                                                                                                                        <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                                                                        <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
+                                                                                                                        <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                                                                                                                        <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                                                                        <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                                                                                                                        <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                                                                        <div class="spell-details" style="grid-column: span 6;">
+                                                                                                                            <textarea class="eq-desc" placeholder="Potion description..." style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
+                                                                                                                        </div>
 `;
             list.appendChild(row);
             updateTotalWeight();
@@ -1993,25 +2021,25 @@
             const row = document.createElement("div");
             row.className = "spell-row"; // Applies the grid layout
             row.innerHTML = `
-                                                                                                            <input type="checkbox" class="spell-prepared">
-                                                                                                            <input type="checkbox" class="spell-used">
-                                                                                                            <select class="spell-level-select">
-                                                                                                                <option value="0">Level 1</option>
-                                                                                                                <option value="1">Level 2</option>
-                                                                                                                <option value="2">Level 3</option>
-                                                                                                                <option value="3">Level 4</option>
-                                                                                                                <option value="4">Level 5</option>
-                                                                                                                <option value="5">Level 6</option>
-                                                                                                                <option value="6">Level 7</option>
-                                                                                                                <option value="7">Level 8</option>
-                                                                                                                <option value="8">Level 9</option>
-                                                                                                            </select>
-                                                                                                            <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
-                                                                                                            <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
-                                                                                                            <div class="spell-details">
-                                                                                                                <textarea placeholder="Spell details (range, duration, etc.)..." class="spell-description" style="width: 100%; min-height: 40px;"></textarea>
-                                                                                                            </div>
-                                                                                                        `;
+                                                                                                                            <input type="checkbox" class="spell-prepared">
+                                                                                                                            <input type="checkbox" class="spell-used">
+                                                                                                                            <select class="spell-level-select">
+                                                                                                                                <option value="0">Level 1</option>
+                                                                                                                                <option value="1">Level 2</option>
+                                                                                                                                <option value="2">Level 3</option>
+                                                                                                                                <option value="3">Level 4</option>
+                                                                                                                                <option value="4">Level 5</option>
+                                                                                                                                <option value="5">Level 6</option>
+                                                                                                                                <option value="6">Level 7</option>
+                                                                                                                                <option value="7">Level 8</option>
+                                                                                                                                <option value="8">Level 9</option>
+                                                                                                                            </select>
+                                                                                                                            <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
+                                                                                                                            <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
+                                                                                                                            <div class="spell-details">
+                                                                                                                                <textarea placeholder="Spell details (range, duration, etc.)..." class="spell-description" style="width: 100%; min-height: 40px;"></textarea>
+                                                                                                                            </div>
+                                                                                                                        `;
 
             spellsList.appendChild(row);
         }
@@ -2331,11 +2359,11 @@
             const row = document.createElement('div');
             row.className = 'equipment-row';
             row.innerHTML = `
-                                                                                                            <input type="text" placeholder="Item Name" class="eq-name">
-                                                                                                            <input type="text" placeholder="e.g. 5gp" class="eq-price">
-                                                                                                            <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
-                                                                                                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                                                                                        `;
+                                                                                                                            <input type="text" placeholder="Item Name" class="eq-name">
+                                                                                                                            <input type="text" placeholder="e.g. 5gp" class="eq-price">
+                                                                                                                            <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
+                                                                                                                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                                                                        `;
             list.appendChild(row);
         }
 
@@ -2481,35 +2509,35 @@
             div.id = containerId;
 
             div.innerHTML = `
-                <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                <div class="container-header-row">
-                    <div class="field">
-                        <label>Container Name</label>
-                        <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack">
-                    </div>
-                    <div class="field">
-                        <label>Container Weight</label>
-                        <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-                    </div>
-                    <div class="field">
-                        <label>Max Weight</label>
-                        <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
-                    </div>
-                </div>
+                                <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                <div class="container-header-row">
+                                    <div class="field">
+                                        <label>Container Name</label>
+                                        <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack">
+                                    </div>
+                                    <div class="field">
+                                        <label>Container Weight</label>
+                                        <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                                    </div>
+                                    <div class="field">
+                                        <label>Max Weight</label>
+                                        <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
+                                    </div>
+                                </div>
 
-                <div class="container-item-header">
-                    <div>Qty</div>
-                    <div>Item Name</div>
-                    <div>Description</div>
-                    <div>Value</div>
-                    <div>Weight</div>
-                    <div></div>
-                </div>
+                                <div class="container-item-header">
+                                    <div>Qty</div>
+                                    <div>Item Name</div>
+                                    <div>Description</div>
+                                    <div>Value</div>
+                                    <div>Weight</div>
+                                    <div></div>
+                                </div>
 
-                <div class="container-items-area"></div>
+                                <div class="container-items-area"></div>
 
-                <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
-            `;
+                                <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
+                            `;
 
             list.appendChild(div);
         }
@@ -2521,13 +2549,13 @@
             const row = document.createElement('div');
             row.className = 'container-item-row';
             row.innerHTML = `
-                <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
-                <input type="text" class="eq-name" placeholder="Item Name">
-                <input type="text" class="eq-desc" placeholder="Description">
-                <input type="text" class="eq-price" placeholder="Value">
-                <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
-                <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-            `;
+                                <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
+                                <input type="text" class="eq-name" placeholder="Item Name">
+                                <input type="text" class="eq-desc" placeholder="Description">
+                                <input type="text" class="eq-price" placeholder="Value">
+                                <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
+                                <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                            `;
             itemsArea.appendChild(row);
         }
 
@@ -2582,65 +2610,65 @@
             div.setAttribute('data-is-vehicle', isVehicle);
 
             div.innerHTML = `
-        <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
-                onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
+                        <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
+                                onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
 
-        <div class="mount-stats-grid">
-            <div class="field">
-                <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
-                <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
-            </div>
-            <div class="field">
-                <label>Type/Team</label>
-                <input type="text" value="${type}">
-            </div>
-            <div class="field">
-                <label>Total Load</label>
-                <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-            </div>
-            <div class="field">
-                <label>Capacity</label>
-                <input type="number" class="max-mount-cap" value="${maxWgt}"
-                       ${isVehicle ? 'readonly style="background:#eee"' : ''} oninput="syncVehicleCapacity()">
-            </div>
-            <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
-                <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
-                <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
-            </div>
-        </div>
+                        <div class="mount-stats-grid">
+                            <div class="field">
+                                <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
+                                <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
+                            </div>
+                            <div class="field">
+                                <label>Type/Team</label>
+                                <input type="text" value="${type}">
+                            </div>
+                            <div class="field">
+                                <label>Total Load</label>
+                                <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                            </div>
+                            <div class="field">
+                                <label>Capacity</label>
+                                <input type="number" class="max-mount-cap" value="${maxWgt}"
+                                       ${isVehicle ? 'readonly style="background:#eee"' : ''} oninput="syncVehicleCapacity()">
+                            </div>
+                            <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
+                                <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
+                                <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
+                            </div>
+                        </div>
 
-        <div class="mount-hp-ac-speed">
-            <div class="field">
-                <label>HP</label>
-                <input type="number" value="${hp}">
-            </div>
-            <div class="field">
-                <label>AC</label>
-                <input type="number" value="${ac}">
-            </div>
-            <div class="field">
-                <label>${isVehicle ? 'Collision' : 'Attack'}</label>
-                <input type="text" placeholder="e.g. 1d6">
-            </div>
-            <div class="field">
-                <label>Manual Addon Weight</label>
-                <input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')">
-            </div>
-        </div>
+                        <div class="mount-hp-ac-speed">
+                            <div class="field">
+                                <label>HP</label>
+                                <input type="number" value="${hp}">
+                            </div>
+                            <div class="field">
+                                <label>AC</label>
+                                <input type="number" value="${ac}">
+                            </div>
+                            <div class="field">
+                                <label>${isVehicle ? 'Collision' : 'Attack'}</label>
+                                <input type="text" placeholder="e.g. 1d6">
+                            </div>
+                            <div class="field">
+                                <label>Manual Addon Weight</label>
+                                <input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')">
+                            </div>
+                        </div>
 
-        <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
-            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
-            <div class="linked-containers-area"></div>
-            <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
-        </div>
+                        <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
+                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
+                            <div class="linked-containers-area"></div>
+                            <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
+                        </div>
 
-        ${isVehicle ? `
-        <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
-            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
-            <div class="hitched-animals-area"></div>
-            <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
-        </div>` : ''}
-    `;
+                        ${isVehicle ? `
+                        <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
+                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
+                            <div class="hitched-animals-area"></div>
+                            <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
+                        </div>` : ''}
+                    `;
             list.appendChild(div);
         }
 
@@ -2673,12 +2701,12 @@
             const options = available.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
 
             row.innerHTML = `
-                <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
-                    <option value="">-- Select Animal --</option>
-                    ${options}
-                </select>
-                <button class="remove-attack" onclick="removeAnimalHitch(this)">✖</button>
-            `;
+                                <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
+                                    <option value="">-- Select Animal --</option>
+                                    ${options}
+                                </select>
+                                <button class="remove-attack" onclick="removeAnimalHitch(this)">✖</button>
+                            `;
             animalArea.appendChild(row);
         }
 
@@ -2742,14 +2770,14 @@
             row.style.marginBottom = '5px';
 
             row.innerHTML = `
-                <select class="container-selector"
-                        onfocus="populateContainerDropdown(this)"
-                        onchange="updateMountLoad('${mountId}')">
-                    <option value="0">-- Select Container --</option>
-                </select>
-                <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
-                <button class="remove-attack" onclick="this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
-            `;
+                                <select class="container-selector"
+                                        onfocus="populateContainerDropdown(this)"
+                                        onchange="updateMountLoad('${mountId}')">
+                                    <option value="0">-- Select Container --</option>
+                                </select>
+                                <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
+                                <button class="remove-attack" onclick="this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
+                            `;
             containerArea.appendChild(row);
         }
 
@@ -2795,60 +2823,60 @@
             syncVehicleCapacity();
         }
 
-//        function addNewMount(name = '', type = '', hp = 0, ac = 10, maxWgt = 0, isVehicle = false) {
-//            const list = document.getElementById('dynamicMountList');
-//            const mountId = 'mount_' + Date.now();
+        //        function addNewMount(name = '', type = '', hp = 0, ac = 10, maxWgt = 0, isVehicle = false) {
+        //            const list = document.getElementById('dynamicMountList');
+        //            const mountId = 'mount_' + Date.now();
 
-//            const div = document.createElement('div');
-//            div.className = 'mount-card';
-//            div.id = mountId;
-//            // Store if this is a vehicle to help the math logic
-//            div.setAttribute('data-is-vehicle', isVehicle);
+        //            const div = document.createElement('div');
+        //            div.className = 'mount-card';
+        //            div.id = mountId;
+        //            // Store if this is a vehicle to help the math logic
+        //            div.setAttribute('data-is-vehicle', isVehicle);
 
-//            div.innerHTML = `
-//            <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;" onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
+        //            div.innerHTML = `
+        //            <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;" onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
 
-//            <div class="mount-stats-grid">
-//                <div class="field">
-//                    <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
-//                    <input type="text" class="mount-name" value="${name}" placeholder="e.g. Wagon 1" oninput="syncVehicleCapacity()">
-//                </div>
-//                <div class="field">
-//                    <label>Type/Team</label>
-//                    <input type="text" placeholder="e.g. Heavy Wagon" value="${type}">
-//                </div>
-//                <div class="field">
-//                    <label>Load</label>
-//                    <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-//                </div>
-//                <div class="field">
-//                    <label>Capacity</label>
-//                    <input type="number" class="max-mount-cap" value="${maxWgt}" ${isVehicle ? 'readonly style="background:#eee"' : ''} oninput="syncVehicleCapacity()">
-//                </div>
-//                <div class="field">
-//                    <label>${isVehicle ? 'Vehicle ID' : 'Hitch to ID'}</label>
-//                    <input type="text" class="hitch-link" placeholder="e.g. Wagon 1" oninput="syncVehicleCapacity()">
-//                </div>
-//            </div>
+        //            <div class="mount-stats-grid">
+        //                <div class="field">
+        //                    <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
+        //                    <input type="text" class="mount-name" value="${name}" placeholder="e.g. Wagon 1" oninput="syncVehicleCapacity()">
+        //                </div>
+        //                <div class="field">
+        //                    <label>Type/Team</label>
+        //                    <input type="text" placeholder="e.g. Heavy Wagon" value="${type}">
+        //                </div>
+        //                <div class="field">
+        //                    <label>Load</label>
+        //                    <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+        //                </div>
+        //                <div class="field">
+        //                    <label>Capacity</label>
+        //                    <input type="number" class="max-mount-cap" value="${maxWgt}" ${isVehicle ? 'readonly style="background:#eee"' : ''} oninput="syncVehicleCapacity()">
+        //                </div>
+        //                <div class="field">
+        //                    <label>${isVehicle ? 'Vehicle ID' : 'Hitch to ID'}</label>
+        //                    <input type="text" class="hitch-link" placeholder="e.g. Wagon 1" oninput="syncVehicleCapacity()">
+        //                </div>
+        //            </div>
 
-//            <div class="mount-hp-ac-speed">
-//                <div class="field">
-//                    <label>HP</label>
-//                    <input type="number" value="${hp}">
-//                </div>
-//                <div class="field">
-//                    <label>AC</label>
-//                    <input type="number" value="${ac}">
-//                </div>
-//                <div class="field">
-//                    <label>Attached Gear Weight (lbs)</label>
-//                    <input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')">
-//                </div>
-//            </div>
-//`;
+        //            <div class="mount-hp-ac-speed">
+        //                <div class="field">
+        //                    <label>HP</label>
+        //                    <input type="number" value="${hp}">
+        //                </div>
+        //                <div class="field">
+        //                    <label>AC</label>
+        //                    <input type="number" value="${ac}">
+        //                </div>
+        //                <div class="field">
+        //                    <label>Attached Gear Weight (lbs)</label>
+        //                    <input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')">
+        //                </div>
+        //            </div>
+        //`;
 
-//            list.appendChild(div);
-//        }
+        //            list.appendChild(div);
+        //        }
 
         function syncVehicleCapacity() {
             const allMountCards = document.querySelectorAll('.mount-card');
@@ -2916,45 +2944,45 @@
             const compListId = 'compList_' + Date.now();
 
             project.innerHTML = `
-        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
-            <input type="text" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
-            <select>
-                <option>Common</option><option>Uncommon</option><option>Rare</option>
-                <option>Very Rare</option><option>Legendary</option>
-            </select>
-            <input type="number" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-            <input type="text" placeholder="Required Tools/Proficiency">
-            <select class="rule-select" onchange="calculateCrafting(this)">
-                <option value="2024">2024 Rules (Cost/10 days)</option>
-                <option value="XGtE">XGtE (Workweeks)</option>
-                <option value="2014">2014 (5gp/day)</option>
-            </select>
-        </div>
+                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
+                            <input type="text" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
+                            <select>
+                                <option>Common</option><option>Uncommon</option><option>Rare</option>
+                                <option>Very Rare</option><option>Legendary</option>
+                            </select>
+                            <input type="number" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
+                        </div>
 
-        <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
-            <label style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
-            <div id="${compListId}" style="margin-top: 5px;"></div>
-            <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;" 
-                onclick="addComponentToProject('${compListId}')">+ Add Component</button>
-        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <input type="text" placeholder="Required Tools/Proficiency">
+                            <select class="rule-select" onchange="calculateCrafting(this)">
+                                <option value="2024">2024 Rules (Cost/10 days)</option>
+                                <option value="XGtE">XGtE (Workweeks)</option>
+                                <option value="2014">2014 (5gp/day)</option>
+                            </select>
+                        </div>
 
-        <div style="margin-top: 15px;">
-            <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
-            <div style="background: #ddd; height: 10px; border-radius: 5px;">
-                <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
-                <span>Invested: <input type="number" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
-                <span class="days-left">Remaining: ? Days</span>
-            </div>
-        </div>
+                        <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
+                            <label style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
+                            <div id="${compListId}" style="margin-top: 5px;"></div>
+                            <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;"
+                                onclick="addComponentToProject('${compListId}')">+ Add Component</button>
+                        </div>
 
-        <textarea placeholder="Complications & Notes..." style="margin-top: 10px; min-height: 60px;"></textarea>
-        <button class="remove-attack" onclick="this.parentElement.remove()">Cancel Project</button>
-    `;
+                        <div style="margin-top: 15px;">
+                            <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
+                            <div style="background: #ddd; height: 10px; border-radius: 5px;">
+                                <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
+                                <span>Invested: <input type="number" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
+                                <span class="days-left">Remaining: ? Days</span>
+                            </div>
+                        </div>
+
+                        <textarea placeholder="Complications & Notes..." style="margin-top: 10px; min-height: 60px;"></textarea>
+                        <button class="remove-attack" onclick="this.parentElement.remove()">Cancel Project</button>
+                    `;
             list.appendChild(project);
         }
 
@@ -2967,10 +2995,10 @@
             row.style.gap = '8px';
             row.style.marginBottom = '4px';
             row.innerHTML = `
-        <input type="checkbox" style="width: 14px; height: 14px;">
-        <input type="text" placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;">
-        <button class="remove-attack" style="padding: 2px 6px;" onclick="this.parentElement.remove()">✖</button>
-    `;
+                        <input type="checkbox" style="width: 14px; height: 14px;">
+                        <input type="text" placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;">
+                        <button class="remove-attack" style="padding: 2px 6px;" onclick="this.parentElement.remove()">✖</button>
+                    `;
             list.appendChild(row);
         }
 
