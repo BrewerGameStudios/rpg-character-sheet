@@ -2104,6 +2104,7 @@
                 attacks: [],
                 spells: [],
                 cantrips: [],
+                potions: [], // ADDED THIS
                 inventory: {},
                 dynamicContainers: [],
                 dynamicMounts: [],
@@ -2111,17 +2112,26 @@
                 portrait: document.getElementById('portraitImg').src
             };
 
-            // 1. Capture standard text, number, select, and checkbox fields
+            // 1. Capture standard fields
             document.querySelectorAll('input, textarea, select').forEach(el => {
                 if (el.id && !['characterList', 'characterName', 'importFile', 'portraitInput'].includes(el.id)) {
-                    // Skip elements handled by specific loops below to avoid duplicates
-                    if (el.closest('#attunementList') || el.closest('#attacksList') || el.closest('#spellsList') || el.closest('#cantripsList') || el.closest('#craftingList')) return;
-
+                    if (el.closest('#attunementList') || el.closest('#attacksList') || el.closest('#spellsList') || el.closest('#cantripsList') || el.closest('#craftingList') || el.closest('#list-potions')) return;
                     data[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
                 }
             });
 
-            // 2. Capture Lists (Attunement, Attacks, Spells, Cantrips)
+            // 2. Capture Potions (NEW FIX)
+            document.querySelectorAll('#list-potions .inventory-row').forEach(row => {
+                data.potions.push({
+                    qty: row.querySelector('.eq-qty').value,
+                    name: row.querySelector('.eq-name').value,
+                    price: row.querySelector('.eq-price').value,
+                    weight: row.querySelector('.eq-weight').value,
+                    desc: row.querySelector('.eq-desc').value
+                });
+            });
+
+            // 3. Capture Lists (Attunement, Attacks, Spells, Cantrips)
             document.querySelectorAll('#attunementList .attunement-row').forEach(row => {
                 const inputs = row.querySelectorAll('input');
                 data.attunement.push({ checked: inputs[0].checked, item: inputs[1].value });
@@ -2156,21 +2166,6 @@
                 }
             });
 
-            // 3. Capture Crafting Projects
-            document.querySelectorAll('#craftingList > .text-box').forEach(project => {
-                const inputs = project.querySelectorAll('input, select, textarea');
-                const ingredients = [];
-                project.querySelectorAll('[id^="compList_"] > div').forEach(row => {
-                    const rowInputs = row.querySelectorAll('input');
-                    ingredients.push({ acquired: rowInputs[0].checked, name: rowInputs[1].value });
-                });
-                data.craftingProjects.push({
-                    name: inputs[0].value, rarity: inputs[1].value, totalGp: inputs[2].value,
-                    tools: inputs[3].value, rules: inputs[4].value, invested: inputs[5].value,
-                    notes: inputs[6].value, components: ingredients
-                });
-            });
-
             // 4. Capture Storage Containers
             document.querySelectorAll('.container-card').forEach(card => {
                 const items = [];
@@ -2184,26 +2179,24 @@
                     });
                 });
                 data.dynamicContainers.push({
-                    savedId: card.id, // THE LINK
+                    savedId: card.id,
                     name: card.querySelector('.cont-name').value,
                     maxWgt: card.querySelector('.max-cont-wgt').value,
                     items: items
                 });
             });
 
-            // 5. Capture Mounts & Vehicles
+            // 5. Capture Mounts
             document.querySelectorAll('.mount-card').forEach(card => {
                 const linkedConts = [];
                 card.querySelectorAll('.container-selector').forEach(sel => linkedConts.push(sel.value));
-
                 const hitchedAnimals = [];
                 card.querySelectorAll('.animal-selector').forEach(sel => hitchedAnimals.push(sel.value));
-
                 const statsArea = card.querySelector('.mount-hp-ac-speed');
                 const statInputs = statsArea.querySelectorAll('input');
 
                 data.dynamicMounts.push({
-                    savedId: card.id, // THE LINK
+                    savedId: card.id,
                     name: card.querySelector('.mount-name').value,
                     isVehicle: card.getAttribute('data-is-vehicle') === 'true',
                     manualLoad: card.querySelector('.manual-mount-load').value,
@@ -2223,10 +2216,17 @@
         function setCharacterData(data) {
             if (!data) return;
 
+            // Unlock Top Bar
+            const nameInput = document.getElementById('characterName');
+            const saveControls = document.querySelector('.save-controls');
+            if (nameInput) { nameInput.disabled = false; nameInput.style.opacity = '1'; }
+            if (saveControls) { saveControls.querySelectorAll('input, button, select').forEach(el => el.disabled = false); }
+
             // 1. Clear existing dynamic content
             document.getElementById('attunementList').innerHTML = '';
             document.getElementById('attacksList').innerHTML = '';
-            document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
+            document.getElementById('list-potions').innerHTML = '<div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;"><div>Qty</div><div style="text-align: left;">Potion Name</div><div>Price</div><div>Unit Wt</div><div>Total Wt</div><div></div></div>';
+            document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
             document.getElementById('cantripsList').innerHTML = '<div style="display: grid; grid-template-columns: 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666;"><div>Cantrip Name</div><div></div></div>';
             document.getElementById('dynamicContainerList').innerHTML = '';
             document.getElementById('dynamicMountList').innerHTML = '';
@@ -2235,104 +2235,76 @@
             // 2. Restore Standard Fields
             Object.entries(data).forEach(([id, value]) => {
                 const el = document.getElementById(id);
-                if (!el || ['attunement', 'attacks', 'spells', 'cantrips', 'inventory', 'dynamicContainers', 'dynamicMounts', 'craftingProjects', 'portrait'].includes(id)) return;
+                if (!el || ['attunement', 'attacks', 'spells', 'cantrips', 'potions', 'dynamicContainers', 'dynamicMounts', 'craftingProjects', 'portrait'].includes(id)) return;
                 if (el.type === 'checkbox') el.checked = value; else el.value = value;
             });
 
             // 3. Restore Portrait
             if (data.portrait && data.portrait.startsWith('data:image')) {
-                const imgElement = document.getElementById('portraitImg');
-                imgElement.src = data.portrait;
-                imgElement.style.display = 'block';
+                const img = document.getElementById('portraitImg');
+                img.src = data.portrait; img.style.display = 'block';
                 document.getElementById('portraitPlaceholder').style.display = 'none';
-                document.getElementById('removePortraitBtn').style.display = 'block';
             }
 
-            // 4. Rebuild specialized lists (Attunement, Attacks, Spells)
+            // 4. Restore Potions (NEW FIX)
+            if (data.potions) {
+                data.potions.forEach(p => {
+                    addPotion(p.name, p.price, p.weight, p.qty, p.desc);
+                });
+            }
+
+            // 5. Restore Specialized Lists
             if (data.attunement) data.attunement.forEach(a => { addAttunement(); const last = document.getElementById('attunementList').lastElementChild; last.querySelector('input[type="checkbox"]').checked = a.checked; last.querySelector('input[type="text"]').value = a.item; });
             if (data.attacks) data.attacks.forEach(atk => { addAttack(); const inputs = document.getElementById('attacksList').lastElementChild.querySelectorAll('input'); inputs[0].value = atk.name; inputs[1].value = atk.bonus; inputs[2].value = atk.damage; });
             if (data.spells) data.spells.forEach(s => { addSpell(); const last = document.getElementById('spellsList').lastElementChild; last.querySelector('.spell-prepared').checked = s.prepared; last.querySelector('.spell-used').checked = s.used; last.querySelector('.spell-level-select').value = s.level; last.querySelector('.spell-name').value = s.name; last.querySelector('.spell-description').value = s.description; });
             if (data.cantrips) data.cantrips.forEach(c => { addCantrip(); const last = document.getElementById('cantripsList').lastElementChild; last.querySelector('.cantrip-name').value = c.name; last.querySelector('.cantrip-description').value = c.description; });
 
-            // 5. Restore Storage Containers
+            // 6. Restore Storage & Mounts (Identity Map Logic)
             const globalIdMap = {};
-            const containerList = document.getElementById('dynamicContainerList');
-            if (containerList && data.dynamicContainers) {
-                containerList.innerHTML = '';
+            if (data.dynamicContainers) {
                 data.dynamicContainers.forEach(cont => {
                     const newId = addNewContainer(cont.name, cont.maxWgt);
-                    if (cont.savedId) globalIdMap[cont.savedId] = newId; // Map Old ID -> New ID
-
+                    if (cont.savedId) globalIdMap[cont.savedId] = newId;
                     cont.items.forEach(i => {
                         addItemToContainer(newId);
                         const row = document.getElementById(newId).querySelector('.container-items-area').lastElementChild;
-                        row.querySelector('.eq-qty').value = i.qty;
-                        row.querySelector('.eq-name').value = i.name;
-                        row.querySelector('.eq-desc').value = i.desc;
-                        row.querySelector('.eq-price').value = i.price;
+                        row.querySelector('.eq-qty').value = i.qty; row.querySelector('.eq-name').value = i.name;
+                        row.querySelector('.eq-desc').value = i.desc; row.querySelector('.eq-price').value = i.price;
                         row.querySelector('.eq-weight').value = i.weight;
                     });
                 });
             }
 
-            // 6. Restore Mounts & Vehicles
-            const mountList = document.getElementById('dynamicMountList');
-            if (mountList && data.dynamicMounts) {
-                mountList.innerHTML = '';
-                // PASS 1: Build all Mounts/Vehicles first and map their IDs
+            if (data.dynamicMounts) {
                 data.dynamicMounts.forEach(m => {
                     if (m.isVehicle) addNewVehicle(m.name, '', m.hp, m.ac);
                     else addNewMount(m.name, '', m.hp, m.ac, m.maxWgt);
-
-                    const newCard = mountList.lastElementChild;
-                    if (m.savedId) globalIdMap[m.savedId] = newCard.id; // Map Old ID -> New ID
-
-                    const statsInputs = newCard.querySelector('.mount-hp-ac-speed').querySelectorAll('input');
-                    if (statsInputs[0]) statsInputs[0].value = m.hp || 0;
-                    if (statsInputs[1]) statsInputs[1].value = m.ac || 10;
-                    if (statsInputs[2]) statsInputs[2].value = m.attack || '';
-                    newCard.querySelector('.manual-mount-load').value = m.manualLoad || 0;
-                    newCard.querySelector('.max-mount-cap').value = m.maxWgt || 0;
-                    if (newCard.querySelector('.is-riding')) newCard.querySelector('.is-riding').checked = m.isRiding;
+                    const newCard = document.getElementById('dynamicMountList').lastElementChild;
+                    if (m.savedId) globalIdMap[m.savedId] = newCard.id;
+                    const stats = newCard.querySelector('.mount-hp-ac-speed').querySelectorAll('input');
+                    if (stats[0]) stats[0].value = m.hp; if (stats[1]) stats[1].value = m.ac; if (stats[2]) stats[2].value = m.attack;
+                    newCard.querySelector('.manual-mount-load').value = m.manualLoad;
+                    newCard.querySelector('.max-mount-cap').value = m.maxWgt;
                 });
 
-                // PASS 2: Now that EVERY card exists, perform the hitching
                 data.dynamicMounts.forEach(m => {
                     const currentCardId = globalIdMap[m.savedId];
                     const currentCard = document.getElementById(currentCardId);
-
-                    // Re-Hitch Containers
+                    if (!currentCard) return;
                     if (m.linkedContainers) {
-                        m.linkedContainers.forEach(oldContId => {
+                        m.linkedContainers.forEach(oldId => {
                             addLinkedContainer(currentCardId);
-                            const row = currentCard.querySelector('.linked-containers-area').lastElementChild;
-                            const sel = row.querySelector('.container-selector');
+                            const sel = currentCard.querySelector('.linked-containers-area').lastElementChild.querySelector('.container-selector');
                             populateContainerDropdown(sel);
-                            sel.value = globalIdMap[oldContId] || oldContId;
-                        });
-                    }
-
-                    // Re-Hitch Animal Team
-                    if (m.hitchedAnimals && m.isVehicle) {
-                        m.hitchedAnimals.forEach(oldAnimalId => {
-                            addAnimalToVehicle(currentCardId);
-                            const row = currentCard.querySelector('.hitched-animals-area').lastElementChild;
-                            const sel = row.querySelector('.animal-selector');
-                            sel.value = globalIdMap[oldAnimalId] || oldAnimalId;
+                            sel.value = globalIdMap[oldId] || oldId;
                         });
                     }
                 });
-                syncVehicleCapacity();
             }
 
-            // 7. Restore Workshop
-            if (data.craftingProjects) data.craftingProjects.forEach(proj => rebuildCraftingProject(proj));
-
-            // Update UI math
             updateModifiers();
             updateTotalWeight();
             syncVehicleCapacity();
-            updateAttunementCount();
         }
 
         function addEquipment() {
@@ -2413,42 +2385,52 @@
 
         function newCharacter() {
             if (confirm('Create a new character? Any unsaved changes will be lost.')) {
-                // 1. Clear all standard text and number inputs
-                document.querySelectorAll('input[type="text"], input[type="number"], textarea, select').forEach(el => {
-                    if (el.id !== 'characterList' && el.id !== 'characterName') {
-                        // Ability Score defaults
-                        if (['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(el.id)) {
-                            el.value = '10';
-                        } else if (el.id === 'level') {
-                            el.value = '1';
-                        } else if (el.id === 'profBonus') {
-                            el.value = '2';
-                        } else if (['ac', 'maxHp', 'currentHp'].includes(el.id)) {
-                            el.value = el.id === 'ac' ? '10' : '20';
-                        } else if (el.id === 'speed') {
-                            el.value = '30 ft';
-                        } else if (['xp', 'tempHp', 'initiative', 'spellAtk', 'cp', 'sp', 'ep', 'gp', 'pp'].includes(el.id)) {
-                            el.value = '0';
-                        } else if (el.id === 'spellDC') {
-                            el.value = '10';
-                        } else {
-                            el.value = '';
-                        }
-                    }
+                // 1. Physically unlock the top bar (Crucial for .exe)
+                const nameInput = document.getElementById('characterName');
+                if (nameInput) {
+                    nameInput.disabled = false;
+                    nameInput.style.opacity = '1';
+                    nameInput.value = '';
+                }
+                document.querySelectorAll('.save-controls button, .save-controls select').forEach(el => {
+                    el.disabled = false;
+                    el.style.opacity = '1';
                 });
 
-                // 2. Clear all checkboxes
-                document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
-
-                // 3. REMOVE DYNAMIC CARDS (The Fix)
+                // 2. REMOVE DYNAMIC CARDS (The Fix)
                 // This physically deletes the old containers and mounts from the screen
                 document.getElementById('dynamicContainerList').innerHTML = '';
                 document.getElementById('dynamicMountList').innerHTML = '';
                 document.getElementById('craftingList').innerHTML = '';
                 document.getElementById('attunementList').innerHTML = '';
                 document.getElementById('attacksList').innerHTML = '';
+
+                // POTION FIX: Added this line to clear the potions list
+                document.getElementById('list-potions').innerHTML = '<div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;"><div>Qty</div><div style="text-align: left;">Potion Name</div><div>Price</div><div>Unit Wt</div><div>Total Wt</div><div></div></div>';
+
                 document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
                 document.getElementById('cantripsList').innerHTML = '<div style="display: grid; grid-template-columns: 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666;"><div>Cantrip Name</div><div></div></div>';
+
+                // 3. Clear all standard text and number inputs
+                document.querySelectorAll('input, textarea, select').forEach(el => {
+                    if (el.id !== 'characterList' && el.id !== 'characterName') {
+                        if (el.type === 'checkbox') {
+                            el.checked = false;
+                        } else if (el.type === 'number') {
+                            // Ability Score defaults
+                            if (['str', 'dex', 'con', 'int', 'wis', 'cha'].includes(el.id)) el.value = '10';
+                            else if (el.id === 'level') el.value = '1';
+                            else if (el.id === 'profBonus') el.value = '2';
+                            else if (['ac', 'maxHp', 'currentHp'].includes(el.id)) el.value = el.id === 'ac' ? '10' : '20';
+                            else if (el.id === 'spellDC') el.value = '10';
+                            else el.value = '0';
+                        } else if (el.id === 'speed') {
+                            el.value = '30 ft';
+                        } else {
+                            el.value = '';
+                        }
+                    }
+                });
 
                 // 4. Remove Portrait
                 removePortrait();
@@ -2457,15 +2439,17 @@
                 addAttunement();
                 addAttack();
 
-                // 6. Reset Save Name
-                document.getElementById('characterName').value = '';
+                // 6. Reset Save Selection
                 document.getElementById('characterList').value = '';
                 currentCharacterKey = null;
 
-                // 7. Refresh UI math
+                // 7. Refresh UI math and reset box heights
                 updateModifiers();
                 updateAttunementCount();
                 updateTotalWeight();
+
+                // Ensure textareas visually shrink back to default size
+                document.querySelectorAll('textarea').forEach(tx => tx.style.height = 'inherit');
             }
         }
 
