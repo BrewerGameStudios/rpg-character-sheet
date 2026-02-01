@@ -824,6 +824,7 @@
             background: #f9f9f9;
             margin-bottom: 20px;
             position: relative;
+            overflow-x: auto;
         }
 
         body.dark-mode .container-card {
@@ -841,7 +842,8 @@
 
         .container-item-header {
             display: grid;
-            grid-template-columns: 60px 1.5fr 2fr 1fr 1fr 40px;
+            grid-template-columns: 50px minmax(80px, 1.5fr) minmax(100px, 2fr) minmax(50px, 1fr) minmax(50px, 1fr) 40px;
+            gap: 10px;
             gap: 10px;
             font-size: 11px;
             font-weight: bold;
@@ -853,7 +855,7 @@
 
         .container-item-row {
             display: grid;
-            grid-template-columns: 60px 1.5fr 2fr 1fr 1fr 40px;
+            grid-template-columns: 50px minmax(80px, 1.5fr) minmax(100px, 2fr) minmax(50px, 1fr) minmax(50px, 1fr) 40px;
             gap: 10px;
             margin-bottom: 8px;
             align-items: center;
@@ -887,6 +889,7 @@
             margin-bottom: 25px;
             position: relative;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow-x: auto;
         }
 
         body.dark-mode .mount-card {
@@ -896,7 +899,7 @@
 
         .mount-stats-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 12px;
             margin-bottom: 15px;
         }
@@ -2716,7 +2719,7 @@
             const row = document.createElement('div');
             row.className = 'linked-container-row';
             row.style.display = 'grid';
-            row.style.gridTemplateColumns = '1fr 80px 40px';
+            row.style.gridTemplateColumns = 'minmax(100px, 1fr) 70px 40px';
             row.style.gap = '10px';
             row.style.marginBottom = '5px';
 
