@@ -1079,8 +1079,9 @@
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
                         <div class="field">
                             <label>Spellcasting Ability</label>
-                            <select id="spellAbility">
+                            <select id="spellAbility" onchange="updateModifiers()">
                                 <option value="">None</option>
+                                <option value="con">Constitution</option>
                                 <option value="int">Intelligence</option>
                                 <option value="wis">Wisdom</option>
                                 <option value="cha">Charisma</option>
@@ -1857,6 +1858,7 @@
             }
 
             // 4. Update Spellcasting values if they exist
+            // This ensures that changing your CHA/WIS/INT score updates your spells immediately
             updateSpellcasting();
 
             // 5. Update Total Inventory Weights
@@ -1864,22 +1866,28 @@
         }
 
         function updateSpellcasting() {
-            const ability = document.getElementById('spellAbility').value;
+            const abilityKey = document.getElementById('spellAbility').value;
             const prof = parseInt(document.getElementById('profBonus').value) || 0;
             let mod = 0;
 
-            if (ability) {
-                const score = parseInt(document.getElementById(ability).value) || 10;
+            // 1. Pull the modifier based on the dropdown selection (e.g., 'con', 'cha')
+            if (abilityKey && abilityKey !== "") {
+                const score = parseInt(document.getElementById(abilityKey).value) || 10;
                 mod = Math.floor((score - 10) / 2);
             }
 
-            // Spell Save DC = 8 + Proficiency + Ability Modifier
+            // 2. 5e Formula: Spell Save DC = 8 + Proficiency + Ability Modifier
             const dc = 8 + prof + mod;
-            // Spell Attack Bonus = Proficiency + Ability Modifier
+
+            // 3. 5e Formula: Spell Attack Bonus = Proficiency + Ability Modifier
             const atk = prof + mod;
 
-            document.getElementById('spellDC').value = dc;
-            document.getElementById('spellAtk').value = format(atk);
+            // 4. Update the UI fields
+            const dcElement = document.getElementById('spellDC');
+            const atkElement = document.getElementById('spellAtk');
+
+            if (dcElement) dcElement.value = dc;
+            if (atkElement) atkElement.value = format(atk);
         }
 
         function addAttack() {
@@ -2104,7 +2112,7 @@
                 attacks: [],
                 spells: [],
                 cantrips: [],
-                potions: [], // ADDED THIS
+                potions: [], // FIX: Added Potions container
                 inventory: {},
                 dynamicContainers: [],
                 dynamicMounts: [],
@@ -2112,15 +2120,17 @@
                 portrait: document.getElementById('portraitImg').src
             };
 
-            // 1. Capture standard fields
+            // 1. Capture standard text, number, select, and checkbox fields
             document.querySelectorAll('input, textarea, select').forEach(el => {
                 if (el.id && !['characterList', 'characterName', 'importFile', 'portraitInput'].includes(el.id)) {
+                    // Skip elements handled by specific loops below to avoid duplicates
                     if (el.closest('#attunementList') || el.closest('#attacksList') || el.closest('#spellsList') || el.closest('#cantripsList') || el.closest('#craftingList') || el.closest('#list-potions')) return;
+
                     data[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
                 }
             });
 
-            // 2. Capture Potions (NEW FIX)
+            // 2. Capture Potions FIX
             document.querySelectorAll('#list-potions .inventory-row').forEach(row => {
                 data.potions.push({
                     qty: row.querySelector('.eq-qty').value,
@@ -2166,7 +2176,22 @@
                 }
             });
 
-            // 4. Capture Storage Containers
+            // 4. Capture Crafting Projects
+            document.querySelectorAll('#craftingList > .text-box').forEach(project => {
+                const inputs = project.querySelectorAll('input, select, textarea');
+                const ingredients = [];
+                project.querySelectorAll('[id^="compList_"] > div').forEach(row => {
+                    const rowInputs = row.querySelectorAll('input');
+                    ingredients.push({ acquired: rowInputs[0].checked, name: rowInputs[1].value });
+                });
+                data.craftingProjects.push({
+                    name: inputs[0].value, rarity: inputs[1].value, totalGp: inputs[2].value,
+                    tools: inputs[3].value, rules: inputs[4].value, invested: inputs[5].value,
+                    notes: inputs[6].value, components: ingredients
+                });
+            });
+
+            // 5. Capture Storage Containers
             document.querySelectorAll('.container-card').forEach(card => {
                 const items = [];
                 card.querySelectorAll('.container-item-row').forEach(row => {
@@ -2186,7 +2211,7 @@
                 });
             });
 
-            // 5. Capture Mounts
+            // 6. Capture Mounts & Vehicles
             document.querySelectorAll('.mount-card').forEach(card => {
                 const linkedConts = [];
                 card.querySelectorAll('.container-selector').forEach(sel => linkedConts.push(sel.value));
@@ -2216,11 +2241,20 @@
         function setCharacterData(data) {
             if (!data) return;
 
-            // Unlock Top Bar
+            // --- FIX: UNLOCK TOP BAR FOR .EXE ---
             const nameInput = document.getElementById('characterName');
             const saveControls = document.querySelector('.save-controls');
-            if (nameInput) { nameInput.disabled = false; nameInput.style.opacity = '1'; }
-            if (saveControls) { saveControls.querySelectorAll('input, button, select').forEach(el => el.disabled = false); }
+            if (nameInput) {
+                nameInput.disabled = false;
+                nameInput.style.opacity = '1';
+                nameInput.style.cursor = 'text';
+            }
+            if (saveControls) {
+                saveControls.querySelectorAll('input, button, select').forEach(el => {
+                    el.disabled = false;
+                    el.style.opacity = '1';
+                });
+            }
 
             // 1. Clear existing dynamic content
             document.getElementById('attunementList').innerHTML = '';
@@ -2241,25 +2275,27 @@
 
             // 3. Restore Portrait
             if (data.portrait && data.portrait.startsWith('data:image')) {
-                const img = document.getElementById('portraitImg');
-                img.src = data.portrait; img.style.display = 'block';
+                const imgElement = document.getElementById('portraitImg');
+                imgElement.src = data.portrait;
+                imgElement.style.display = 'block';
                 document.getElementById('portraitPlaceholder').style.display = 'none';
+                document.getElementById('removePortraitBtn').style.display = 'block';
             }
 
-            // 4. Restore Potions (NEW FIX)
+            // 4. Restore Potions FIX
             if (data.potions) {
                 data.potions.forEach(p => {
                     addPotion(p.name, p.price, p.weight, p.qty, p.desc);
                 });
             }
 
-            // 5. Restore Specialized Lists
+            // 5. Rebuild specialized lists
             if (data.attunement) data.attunement.forEach(a => { addAttunement(); const last = document.getElementById('attunementList').lastElementChild; last.querySelector('input[type="checkbox"]').checked = a.checked; last.querySelector('input[type="text"]').value = a.item; });
             if (data.attacks) data.attacks.forEach(atk => { addAttack(); const inputs = document.getElementById('attacksList').lastElementChild.querySelectorAll('input'); inputs[0].value = atk.name; inputs[1].value = atk.bonus; inputs[2].value = atk.damage; });
             if (data.spells) data.spells.forEach(s => { addSpell(); const last = document.getElementById('spellsList').lastElementChild; last.querySelector('.spell-prepared').checked = s.prepared; last.querySelector('.spell-used').checked = s.used; last.querySelector('.spell-level-select').value = s.level; last.querySelector('.spell-name').value = s.name; last.querySelector('.spell-description').value = s.description; });
             if (data.cantrips) data.cantrips.forEach(c => { addCantrip(); const last = document.getElementById('cantripsList').lastElementChild; last.querySelector('.cantrip-name').value = c.name; last.querySelector('.cantrip-description').value = c.description; });
 
-            // 6. Restore Storage & Mounts (Identity Map Logic)
+            // 6. Restore Storage Containers (Identity Mapping)
             const globalIdMap = {};
             if (data.dynamicContainers) {
                 data.dynamicContainers.forEach(cont => {
@@ -2268,23 +2304,29 @@
                     cont.items.forEach(i => {
                         addItemToContainer(newId);
                         const row = document.getElementById(newId).querySelector('.container-items-area').lastElementChild;
-                        row.querySelector('.eq-qty').value = i.qty; row.querySelector('.eq-name').value = i.name;
-                        row.querySelector('.eq-desc').value = i.desc; row.querySelector('.eq-price').value = i.price;
+                        row.querySelector('.eq-qty').value = i.qty;
+                        row.querySelector('.eq-name').value = i.name;
+                        row.querySelector('.eq-desc').value = i.desc;
+                        row.querySelector('.eq-price').value = i.price;
                         row.querySelector('.eq-weight').value = i.weight;
                     });
                 });
             }
 
+            // 7. Restore Mounts & Vehicles
             if (data.dynamicMounts) {
                 data.dynamicMounts.forEach(m => {
                     if (m.isVehicle) addNewVehicle(m.name, '', m.hp, m.ac);
                     else addNewMount(m.name, '', m.hp, m.ac, m.maxWgt);
                     const newCard = document.getElementById('dynamicMountList').lastElementChild;
                     if (m.savedId) globalIdMap[m.savedId] = newCard.id;
-                    const stats = newCard.querySelector('.mount-hp-ac-speed').querySelectorAll('input');
-                    if (stats[0]) stats[0].value = m.hp; if (stats[1]) stats[1].value = m.ac; if (stats[2]) stats[2].value = m.attack;
-                    newCard.querySelector('.manual-mount-load').value = m.manualLoad;
-                    newCard.querySelector('.max-mount-cap').value = m.maxWgt;
+                    const statsInputs = newCard.querySelector('.mount-hp-ac-speed').querySelectorAll('input');
+                    if (statsInputs[0]) statsInputs[0].value = m.hp || 0;
+                    if (statsInputs[1]) statsInputs[1].value = m.ac || 10;
+                    if (statsInputs[2]) statsInputs[2].value = m.attack || '';
+                    newCard.querySelector('.manual-mount-load').value = m.manualLoad || 0;
+                    newCard.querySelector('.max-mount-cap').value = m.maxWgt || 0;
+                    if (newCard.querySelector('.is-riding')) newCard.querySelector('.is-riding').checked = m.isRiding;
                 });
 
                 data.dynamicMounts.forEach(m => {
@@ -2292,19 +2334,29 @@
                     const currentCard = document.getElementById(currentCardId);
                     if (!currentCard) return;
                     if (m.linkedContainers) {
-                        m.linkedContainers.forEach(oldId => {
+                        m.linkedContainers.forEach(oldContId => {
                             addLinkedContainer(currentCardId);
                             const sel = currentCard.querySelector('.linked-containers-area').lastElementChild.querySelector('.container-selector');
                             populateContainerDropdown(sel);
-                            sel.value = globalIdMap[oldId] || oldId;
+                            sel.value = globalIdMap[oldContId] || oldContId;
+                        });
+                    }
+                    if (m.hitchedAnimals && m.isVehicle) {
+                        m.hitchedAnimals.forEach(oldAnimalId => {
+                            addAnimalToVehicle(currentCardId);
+                            const sel = currentCard.querySelector('.hitched-animals-area').lastElementChild.querySelector('.animal-selector');
+                            sel.value = globalIdMap[oldAnimalId] || oldAnimalId;
                         });
                     }
                 });
             }
 
+            if (data.craftingProjects) data.craftingProjects.forEach(proj => rebuildCraftingProject(proj));
+
             updateModifiers();
             updateTotalWeight();
             syncVehicleCapacity();
+            updateAttunementCount();
         }
 
         function addEquipment() {
@@ -3201,10 +3253,15 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
             // 3. Show the requested page
-            document.getElementById(pageId).classList.add('active');
+            const targetPage = document.getElementById(pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
 
             // 4. Set current nav item to active
-            element.classList.add('active');
+            if (element) {
+                element.classList.add('active');
+            }
 
             // 5. Scroll to top
             window.scrollTo(0, 0);
