@@ -1602,6 +1602,39 @@
         </div>
     </div>-->
 
+    <div id="helpModal" style="display:none; position:fixed; z-index:3000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.7); align-items:center; justify-content:center;">
+        <div class="text-box" style="max-width: 500px; width: 90%; background: white; padding: 25px; position: relative; border: 3px solid #667eea;">
+            <button onclick="toggleHelpModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
+
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet v2.0.2</h2>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <p style="font-style: italic; font-size: 17px; color: #555;">
+                    “Fate may provide the dice, but you provide the fire. Level up, stand tall, and remember: the most powerful feature on this sheet is your imagination.”
+                </p>
+                <hr style="width: 50px; border: 1px solid #667eea; margin: 10px auto;">
+                <small style="text-transform: uppercase; color: #888;">Jeff Brewer</small>
+            </div>
+
+            <p><strong>Developed by:</strong> Brewer Game Studios</p>
+            <p><strong>Release Date:</strong> February 2026</p>
+
+            <div style="margin-top: 20px; background: #f0f0f0; padding: 15px; border-radius: 5px;">
+                <h4 style="margin-bottom: 5px;">🐞 Bug Reports & Suggestions</h4>
+                <p style="font-size: 13px;">
+                    Found an issue? Please email us any bugs or suggestions at:<br>
+                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug Report: RPG Sheet v2.0.2" style="color: #667eea; font-weight: bold;">BrewerGameStudios@Gmail.com</a>
+                </p>
+            </div>
+
+            <div style="margin-top: 20px; font-size: 12px; color: #666;">
+                <p>Built with HTML5, JavaScript, and Electron. All character data is saved locally to your device.</p>
+            </div>
+
+            <button class="btn" style="width: 100%; margin-top: 20px;" onclick="toggleHelpModal()">Close</button>
+        </div>
+    </div>
+
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="showPage('mainPage', this)">Main</div>
         <div class="nav-item" onclick="showPage('infoPage', this)">Character Info</div>
@@ -1611,6 +1644,8 @@
         <div class="nav-item" onclick="showPage('mountsPage', this)">Mounts</div>
         <div class="nav-item" onclick="showPage('WorkshopPage', this)">Workshop</div>
         <!--<div class="nav-item" onclick="showPage('ResoursesPage', this)">Resourses</div>-->
+        <div class="nav-item active" onclick="showPage('mainPage', this)">Main</div>
+        <div class="nav-item" style="color: #ffeb3b;" onclick="toggleHelpModal()">Help & Credits</div>
     </nav>
 
     <script>
@@ -1726,11 +1761,11 @@
             const row = document.createElement("div");
             row.className = "attack-row";
             row.innerHTML = `
-                     <input type="text" placeholder="Weapon Name">
-                     <input type="text" placeholder="Atk Bonus">
-                     <input type="text" placeholder="Damage/Type">
-                     <button class="remove-attack" type="button" onclick="this.parentElement.remove()">✖</button>
-                     `;
+                         <input type="text" placeholder="Weapon Name">
+                         <input type="text" placeholder="Atk Bonus">
+                         <input type="text" placeholder="Damage/Type">
+                         <button class="remove-attack" type="button" onclick="this.parentElement.remove()">✖</button>
+                         `;
             attacksList.appendChild(row);
         }
 
@@ -1740,10 +1775,10 @@
             const row = document.createElement('div');
             row.className = 'attunement-row';
             row.innerHTML = `
-                     <input type="checkbox" onchange="updateAttunementCount()">
-                     <input type="text" placeholder="Magic Item Name">
-                     <button class="remove-attunement" type="button" onclick="this.parentElement.remove(); updateAttunementCount()">✖</button>
-                     `;
+                         <input type="checkbox" onchange="updateAttunementCount()">
+                         <input type="text" placeholder="Magic Item Name">
+                         <button class="remove-attunement" type="button" onclick="this.parentElement.remove(); updateAttunementCount()">✖</button>
+                         `;
             list.appendChild(row);
             updateAttunementCount();
         }
@@ -1757,15 +1792,15 @@
             row.style.gridTemplateColumns = "1fr 40px"; // Simpler grid for Cantrips: Name + Delete
 
             row.innerHTML = `
-                      <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
-                      <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
-                      <div class="spell-details">
-                      <textarea placeholder="Cantrip details..."
-              class="cantrip-description"
-              oninput="autoSizeTextarea(this)"
-              style="width: 100%; min-height: 40px;"></textarea>
-                      </div>
-                      `;
+                          <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
+                          <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
+                          <div class="spell-details">
+                          <textarea placeholder="Cantrip details..."
+                  class="cantrip-description"
+                  oninput="autoSizeTextarea(this)"
+                  style="width: 100%; min-height: 40px;"></textarea>
+                          </div>
+                          `;
             cantripsList.appendChild(row);
         }
 
@@ -1834,13 +1869,13 @@
             const initialTotal = (parseFloat(qty) || 0) * (parseFloat(weight) || 0);
 
             row.innerHTML = `
-                        <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                        <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
-                        <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                        <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                        <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                        <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                        `;
+                            <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                            <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
+                            <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                            <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                            <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                            `;
             list.appendChild(row);
             updateTotalWeight();
         }
@@ -1856,19 +1891,19 @@
             row.className = 'inventory-row';
             row.style.marginBottom = "15px";
             row.innerHTML = `
-                        <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                        <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
-                        <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                        <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                        <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                        <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                        <div class="spell-details" style="grid-column: span 6;">
-                        <textarea class="eq-desc"
-              placeholder="Potion description..."
-              oninput="autoSizeTextarea(this)"
-              style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
-                        </div>
-                        `;
+                            <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                            <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
+                            <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                            <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                            <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                            <div class="spell-details" style="grid-column: span 6;">
+                            <textarea class="eq-desc"
+                  placeholder="Potion description..."
+                  oninput="autoSizeTextarea(this)"
+                  style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
+                            </div>
+                            `;
             list.appendChild(row);
             updateTotalWeight();
         }
@@ -1915,28 +1950,28 @@
             const row = document.createElement("div");
             row.className = "spell-row"; // Applies the grid layout
             row.innerHTML = `
-                        <input type="checkbox" class="spell-prepared">
-                        <input type="checkbox" class="spell-used">
-                        <select class="spell-level-select">
-                        <option value="0">Level 1</option>
-                        <option value="1">Level 2</option>
-                        <option value="2">Level 3</option>
-                        <option value="3">Level 4</option>
-                        <option value="4">Level 5</option>
-                        <option value="5">Level 6</option>
-                        <option value="6">Level 7</option>
-                        <option value="7">Level 8</option>
-                        <option value="8">Level 9</option>
-                        </select>
-                        <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
-                        <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
-                        <div class="spell-details">
-                        <textarea placeholder="Spell details..."
-              class="spell-description"
-              oninput="autoSizeTextarea(this)"
-              style="width: 100%; min-height: 40px;"></textarea>
-                        </div>
-                        `;
+                            <input type="checkbox" class="spell-prepared">
+                            <input type="checkbox" class="spell-used">
+                            <select class="spell-level-select">
+                            <option value="0">Level 1</option>
+                            <option value="1">Level 2</option>
+                            <option value="2">Level 3</option>
+                            <option value="3">Level 4</option>
+                            <option value="4">Level 5</option>
+                            <option value="5">Level 6</option>
+                            <option value="6">Level 7</option>
+                            <option value="7">Level 8</option>
+                            <option value="8">Level 9</option>
+                            </select>
+                            <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
+                            <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
+                            <div class="spell-details">
+                            <textarea placeholder="Spell details..."
+                  class="spell-description"
+                  oninput="autoSizeTextarea(this)"
+                  style="width: 100%; min-height: 40px;"></textarea>
+                            </div>
+                            `;
 
             spellsList.appendChild(row);
         }
@@ -2211,11 +2246,11 @@
             const row = document.createElement('div');
             row.className = 'equipment-row';
             row.innerHTML = `
-                        <input type="text" placeholder="Item Name" class="eq-name">
-                        <input type="text" placeholder="e.g. 5gp" class="eq-price">
-                        <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
-                        <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                        `;
+                            <input type="text" placeholder="Item Name" class="eq-name">
+                            <input type="text" placeholder="e.g. 5gp" class="eq-price">
+                            <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
+                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                            `;
             list.appendChild(row);
         }
 
@@ -2408,33 +2443,33 @@
             div.id = containerId;
 
             div.innerHTML = `
-                        <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
-                        onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                        <div class="container-header-row">
-                        <div class="field">
-                        <label>Container Name</label>
-                        <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack" oninput="updateTotalWeight()">
-                        </div>
-                        <div class="field">
-                        <label>Weight</label>
-                        <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-                        </div>
-                        <div class="field">
-                        <label>Max Weight</label>
-                        <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
-                        </div>
-                        </div>
-                        <div class="container-item-header">
-                        <div>Qty</div>
-                        <div>Item Name</div>
-                        <div>Description</div>
-                        <div>Value</div>
-                        <div>Weight</div>
-                        <div></div>
-                        </div>
-                        <div class="container-items-area"></div>
-                        <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
-                        `;
+                            <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
+                            onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                            <div class="container-header-row">
+                            <div class="field">
+                            <label>Container Name</label>
+                            <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack" oninput="updateTotalWeight()">
+                            </div>
+                            <div class="field">
+                            <label>Weight</label>
+                            <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                            </div>
+                            <div class="field">
+                            <label>Max Weight</label>
+                            <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
+                            </div>
+                            </div>
+                            <div class="container-item-header">
+                            <div>Qty</div>
+                            <div>Item Name</div>
+                            <div>Description</div>
+                            <div>Value</div>
+                            <div>Weight</div>
+                            <div></div>
+                            </div>
+                            <div class="container-items-area"></div>
+                            <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
+                            `;
 
             list.appendChild(div);
             return containerId; // Return the ID so the import loop can find it
@@ -2447,13 +2482,13 @@
             const row = document.createElement('div');
             row.className = 'container-item-row';
             row.innerHTML = `
-            <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
-            <input type="text" class="eq-name" placeholder="Item Name">
-            <input type="text" class="eq-desc" placeholder="Description">
-            <input type="text" class="eq-price" placeholder="Value">
-            <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
-            <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-        `;
+                <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
+                <input type="text" class="eq-name" placeholder="Item Name">
+                <input type="text" class="eq-desc" placeholder="Description">
+                <input type="text" class="eq-price" placeholder="Value">
+                <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
+                <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+            `;
             itemsArea.appendChild(row);
         }
 
@@ -2477,49 +2512,49 @@
             div.setAttribute('data-is-vehicle', isVehicle);
 
             div.innerHTML = `
-                                    <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
-                                            onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
-                                    <div class="mount-stats-grid">
-                                        <div class="field">
-                                            <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
-                                            <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
+                                        <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
+                                                onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
+                                        <div class="mount-stats-grid">
+                                            <div class="field">
+                                                <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
+                                                <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
+                                            </div>
+                                            <div class="field">
+                                                <label>Type/Team</label>
+                                                <input type="text" value="${type}">
+                                            </div>
+                                            <div class="field">
+                                                <label>Total Load</label>
+                                                <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                                            </div>
+                                            <div class="field">
+                                                <label>Capacity</label>
+                                                <input type="number" class="max-mount-cap" value="${maxWgt}"
+                                                       ${isVehicle ? 'readonly style="background:#fff; color:#007bff; font-weight:bold; border-color:#007bff;"' : ''} oninput="syncVehicleCapacity()">
+                                            </div>
+                                            <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
+                                                <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
+                                                <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
+                                            </div>
                                         </div>
-                                        <div class="field">
-                                            <label>Type/Team</label>
-                                            <input type="text" value="${type}">
+                                        <div class="mount-hp-ac-speed">
+                                            <div class="field"><label>HP</label><input type="number" value="${hp}"></div>
+                                            <div class="field"><label>AC</label><input type="number" value="${ac}"></div>
+                                            <div class="field"><label>${isVehicle ? 'Collision' : 'Attack'}</label><input type="text" placeholder="e.g. 1d6"></div>
+                                            <div class="field"><label>Manual Addon Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')"></div>
                                         </div>
-                                        <div class="field">
-                                            <label>Total Load</label>
-                                            <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                                        <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
+                                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
+                                            <div class="linked-containers-area"></div>
+                                            <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
                                         </div>
-                                        <div class="field">
-                                            <label>Capacity</label>
-                                            <input type="number" class="max-mount-cap" value="${maxWgt}"
-                                                   ${isVehicle ? 'readonly style="background:#fff; color:#007bff; font-weight:bold; border-color:#007bff;"' : ''} oninput="syncVehicleCapacity()">
-                                        </div>
-                                        <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
-                                            <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
-                                            <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
-                                        </div>
-                                    </div>
-                                    <div class="mount-hp-ac-speed">
-                                        <div class="field"><label>HP</label><input type="number" value="${hp}"></div>
-                                        <div class="field"><label>AC</label><input type="number" value="${ac}"></div>
-                                        <div class="field"><label>${isVehicle ? 'Collision' : 'Attack'}</label><input type="text" placeholder="e.g. 1d6"></div>
-                                        <div class="field"><label>Manual Addon Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')"></div>
-                                    </div>
-                                    <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
-                                        <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
-                                        <div class="linked-containers-area"></div>
-                                        <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
-                                    </div>
-                                    ${isVehicle ? `
-                                    <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
-                                        <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
-                                        <div class="hitched-animals-area"></div>
-                                        <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
-                                    </div>` : ''}
-                                `;
+                                        ${isVehicle ? `
+                                        <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
+                                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
+                                            <div class="hitched-animals-area"></div>
+                                            <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
+                                        </div>` : ''}
+                                    `;
             list.appendChild(div);
         }
 
@@ -2552,12 +2587,12 @@
             const options = available.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
 
             row.innerHTML = `
-                    <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
-                    <option value="">-- Select Animal --</option>
-                    ${options}
-                    </select>
-                    <button class="remove-attack" onclick="removeAnimalHitch(this)">✖</button>
-                    `;
+                        <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
+                        <option value="">-- Select Animal --</option>
+                        ${options}
+                        </select>
+                        <button class="remove-attack" onclick="removeAnimalHitch(this)">✖</button>
+                        `;
 
             animalArea.appendChild(row);
         }
@@ -2608,14 +2643,14 @@
             row.style.marginBottom = '5px';
 
             row.innerHTML = `
-                                                                                                <select class="container-selector"
-                                                                                                        onfocus="populateContainerDropdown(this)"
-                                                                                                        onchange="updateMountLoad('${mountId}')">
-                                                                                                    <option value="0">-- Select Container --</option>
-                                                                                                </select>
-                                                                                                <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
-                                                                                                <button class="remove-attack" onclick="this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
-                                                                                            `;
+                                                                                                    <select class="container-selector"
+                                                                                                            onfocus="populateContainerDropdown(this)"
+                                                                                                            onchange="updateMountLoad('${mountId}')">
+                                                                                                        <option value="0">-- Select Container --</option>
+                                                                                                    </select>
+                                                                                                    <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
+                                                                                                    <button class="remove-attack" onclick="this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
+                                                                                                `;
             containerArea.appendChild(row);
         }
 
@@ -2730,47 +2765,47 @@
             const compListId = 'compList_' + Date.now();
 
             project.innerHTML = `
-                                                                                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
-                                                                                            <input type="text" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
-                                                                                            <select>
-                                                                                                <option>Common</option><option>Uncommon</option><option>Rare</option>
-                                                                                                <option>Very Rare</option><option>Legendary</option>
-                                                                                            </select>
-                                                                                            <input type="number" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
-                                                                                        </div>
-
-                                                                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                                                                                            <input type="text" placeholder="Required Tools/Proficiency">
-                                                                                            <select class="rule-select" onchange="calculateCrafting(this)">
-                                                                                                <option value="2024">2024 Rules (Cost/10 days)</option>
-                                                                                                <option value="XGtE">XGtE (Workweeks)</option>
-                                                                                                <option value="2014">2014 (5gp/day)</option>
-                                                                                            </select>
-                                                                                        </div>
-
-                                                                                        <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
-                                                                                            <label style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
-                                                                                            <div id="${compListId}" style="margin-top: 5px;"></div>
-                                                                                            <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;"
-                                                                                                onclick="addComponentToProject('${compListId}')">+ Add Component</button>
-                                                                                        </div>
-
-                                                                                        <div style="margin-top: 15px;">
-                                                                                            <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
-                                                                                            <div style="background: #ddd; height: 10px; border-radius: 5px;">
-                                                                                                <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
+                                                                                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
+                                                                                                <input type="text" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
+                                                                                                <select>
+                                                                                                    <option>Common</option><option>Uncommon</option><option>Rare</option>
+                                                                                                    <option>Very Rare</option><option>Legendary</option>
+                                                                                                </select>
+                                                                                                <input type="number" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
                                                                                             </div>
-                                                                                            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
-                                                                                                <span>Invested: <input type="number" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
-                                                                                                <span class="days-left">Remaining: ? Days</span>
-                                                                                            </div>
-                                                                                        </div>
 
-                                                                                        <textarea placeholder="Complications & Notes..."
-              oninput="autoSizeTextarea(this)"
-              style="margin-top: 10px; min-height: 60px;"></textarea>
-                                                                                        <button class="remove-attack" onclick="this.parentElement.remove()">Cancel Project</button>
-                                                                                    `;
+                                                                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                                                                                                <input type="text" placeholder="Required Tools/Proficiency">
+                                                                                                <select class="rule-select" onchange="calculateCrafting(this)">
+                                                                                                    <option value="2024">2024 Rules (Cost/10 days)</option>
+                                                                                                    <option value="XGtE">XGtE (Workweeks)</option>
+                                                                                                    <option value="2014">2014 (5gp/day)</option>
+                                                                                                </select>
+                                                                                            </div>
+
+                                                                                            <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
+                                                                                                <label style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
+                                                                                                <div id="${compListId}" style="margin-top: 5px;"></div>
+                                                                                                <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;"
+                                                                                                    onclick="addComponentToProject('${compListId}')">+ Add Component</button>
+                                                                                            </div>
+
+                                                                                            <div style="margin-top: 15px;">
+                                                                                                <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
+                                                                                                <div style="background: #ddd; height: 10px; border-radius: 5px;">
+                                                                                                    <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
+                                                                                                </div>
+                                                                                                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
+                                                                                                    <span>Invested: <input type="number" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
+                                                                                                    <span class="days-left">Remaining: ? Days</span>
+                                                                                                </div>
+                                                                                            </div>
+
+                                                                                            <textarea placeholder="Complications & Notes..."
+                  oninput="autoSizeTextarea(this)"
+                  style="margin-top: 10px; min-height: 60px;"></textarea>
+                                                                                            <button class="remove-attack" onclick="this.parentElement.remove()">Cancel Project</button>
+                                                                                        `;
             list.appendChild(project);
         }
 
@@ -2783,10 +2818,10 @@
             row.style.gap = '8px';
             row.style.marginBottom = '4px';
             row.innerHTML = `
-                                                                                        <input type="checkbox" style="width: 14px; height: 14px;">
-                                                                                        <input type="text" placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;">
-                                                                                        <button class="remove-attack" style="padding: 2px 6px;" onclick="this.parentElement.remove()">✖</button>
-                                                                                    `;
+                                                                                            <input type="checkbox" style="width: 14px; height: 14px;">
+                                                                                            <input type="text" placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;">
+                                                                                            <button class="remove-attack" style="padding: 2px 6px;" onclick="this.parentElement.remove()">✖</button>
+                                                                                        `;
             list.appendChild(row);
         }
 
@@ -2909,6 +2944,15 @@
 
             // 4. Update the visual progress bar
             calculateCrafting(inputs[2]);
+        }
+
+        function toggleHelpModal() {
+            const modal = document.getElementById('helpModal');
+            if (modal.style.display === 'none' || modal.style.display === '') {
+                modal.style.display = 'flex';
+            } else {
+                modal.style.display = 'none';
+            }
         }
 
         function updateCharacterList() {
