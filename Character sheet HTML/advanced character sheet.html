@@ -856,6 +856,9 @@
         .container-item-row {
             display: grid;
             grid-template-columns: 50px minmax(80px, 1.5fr) minmax(100px, 2fr) minmax(50px, 1fr) minmax(50px, 1fr) 40px;
+            gap: 10px;
+            margin-bottom: 8px;
+            align-items: center;
         }
 
         .weight-warning {
@@ -909,13 +912,6 @@
             padding: 10px;
             border-radius: 5px;
             margin-bottom: 15px;
-        }
-
-        textarea {
-            overflow: hidden; /* Hides the scrollbar as it grows */
-            resize: none; /* Optional: hides the manual resize handle */
-            min-height: 40px;
-            line-height: 1.4;
         }
 
         /* Color indicators for weight status */
@@ -1625,11 +1621,6 @@
 
         let currentCharacterKey = null;
 
-        function autoSizeTextarea(el) {
-            el.style.height = 'auto'; // Reset height to recalculate
-            el.style.height = (el.scrollHeight) + 'px'; // Set to match content
-        }
-
         function abilityMod(score) {
             return Math.floor((score - 10) / 2);
         }
@@ -1760,10 +1751,7 @@
                       <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
                       <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
                       <div class="spell-details">
-                      <textarea placeholder="Cantrip details..."
-              class="cantrip-description"
-              oninput="autoSizeTextarea(this)"
-              style="width: 100%; min-height: 40px;"></textarea>
+                      <textarea placeholder="Cantrip details (range, damage, etc.)..." class="cantrip-description" style="width: 100%; min-height: 40px;"></textarea>
                       </div>
                       `;
             cantripsList.appendChild(row);
@@ -1863,10 +1851,7 @@
                         <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
                         <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
                         <div class="spell-details" style="grid-column: span 6;">
-                        <textarea class="eq-desc"
-              placeholder="Potion description..."
-              oninput="autoSizeTextarea(this)"
-              style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
+                        <textarea class="eq-desc" placeholder="Potion description..." style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
                         </div>
                         `;
             list.appendChild(row);
@@ -1931,10 +1916,7 @@
                         <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
                         <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
                         <div class="spell-details">
-                        <textarea placeholder="Spell details..."
-              class="spell-description"
-              oninput="autoSizeTextarea(this)"
-              style="width: 100%; min-height: 40px;"></textarea>
+                        <textarea placeholder="Spell details (range, duration, etc.)..." class="spell-description" style="width: 100%; min-height: 40px;"></textarea>
                         </div>
                         `;
 
@@ -2201,9 +2183,6 @@
             // This triggers the 'input' event on every number box,
             // which forced updateModifiers() and updateSpellcasting() to run.
             document.querySelectorAll('input[type="number"]').forEach(input => input.dispatchEvent(new Event('input')));
-            setTimeout(() => {
-                document.querySelectorAll('textarea').forEach(tx => autoSizeTextarea(tx));
-            }, 50);
         }
 
         function addEquipment() {
@@ -2443,17 +2422,40 @@
         function addItemToContainer(containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
+
             const itemsArea = container.querySelector('.container-items-area');
+
             const row = document.createElement('div');
             row.className = 'container-item-row';
             row.innerHTML = `
-            <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
-            <input type="text" class="eq-name" placeholder="Item Name">
-            <input type="text" class="eq-desc" placeholder="Description">
-            <input type="text" class="eq-price" placeholder="Value">
-            <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
-            <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-        `;
+                        <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
+                        <input type="text" class="eq-name" placeholder="Item Name">
+                        <input type="text" class="eq-desc" placeholder="Description">
+                        <input type="text" class="eq-price" placeholder="Value">
+                        <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
+                        <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                        `;
+            itemsArea.appendChild(row);
+        }
+
+        // Updated weight function to handle individual containers + Global Total
+        function addItemToContainer(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const itemsArea = container.querySelector('.container-items-area');
+
+            const row = document.createElement('div');
+            row.className = 'container-item-row';
+            row.innerHTML = `
+                        <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
+                        <input type="text" class="eq-name" placeholder="Item Name">
+                        <input type="text" class="eq-desc" placeholder="Description">
+                        <input type="text" class="eq-price" placeholder="Value">
+                        <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
+                        <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                        `;
+
             itemsArea.appendChild(row);
         }
 
@@ -2766,9 +2768,7 @@
                                                                                             </div>
                                                                                         </div>
 
-                                                                                        <textarea placeholder="Complications & Notes..."
-              oninput="autoSizeTextarea(this)"
-              style="margin-top: 10px; min-height: 60px;"></textarea>
+                                                                                        <textarea placeholder="Complications & Notes..." style="margin-top: 10px; min-height: 60px;"></textarea>
                                                                                         <button class="remove-attack" onclick="this.parentElement.remove()">Cancel Project</button>
                                                                                     `;
             list.appendChild(project);
@@ -3078,9 +3078,6 @@
             const targetPage = document.getElementById(pageId);
             if (targetPage) {
                 targetPage.classList.add('active');
-
-                // This forces all textareas on the newly visible page to expand correctly
-                targetPage.querySelectorAll('textarea').forEach(tx => autoSizeTextarea(tx));
             }
 
             // 4. Set current nav item to active
@@ -3132,11 +3129,6 @@
             // Listen for ANY input or change to trigger an auto-save
             ['input', 'change'].forEach(eventType => {
                 document.addEventListener(eventType, (e) => {
-
-                    if (e.target.tagName === 'TEXTAREA') {
-                        autoSizeTextarea(e.target);
-                    }
-
                     if (e.target.closest('input, select, textarea')) {
                         clearTimeout(window.saveTimeout);
                         window.saveTimeout = setTimeout(autoSave, 1000);
