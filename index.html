@@ -1694,8 +1694,13 @@
         }
 
         function updateModifiers() {
-            // 1. Get the current Proficiency Bonus
-            const prof = parseInt(document.getElementById('profBonus').value) || 0;
+            // 1. Get current Level and automate Proficiency Bonus
+            const lvl = parseInt(document.getElementById('level').value) || 1;
+            const calculatedProf = Math.floor((lvl - 1) / 4) + 2;
+            document.getElementById('profBonus').value = calculatedProf;
+
+            // 1.2 Now get that bonus for the rest of the math
+            const prof = calculatedProf;
 
             // 2. Loop through each Ability Score (STR, DEX, etc.)
             for (const [ability, data] of Object.entries(abilities)) {
