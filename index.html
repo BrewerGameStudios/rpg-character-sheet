@@ -111,6 +111,32 @@
                 background: #fb8c00;
             }
 
+        /* Ensure conditions are readable in Dark Mode */
+        body.dark-mode #statusGrid div {
+            background: #2a2a3e !important;
+            border-color: #555 !important;
+        }
+
+        body.dark-mode #statusGrid label {
+            color: #e0e0e0 !important;
+        }
+
+        /* Maintain the "Warning" look even in Dark Mode */
+        body.dark-mode #statusGrid div:has(input:checked) {
+            background: #fbc02d !important; /* Brighter gold for dark mode */
+            border-color: #fff !important;
+        }
+
+            body.dark-mode #statusGrid div:has(input:checked) label {
+                color: #000 !important; /* Black text on gold background is best */
+            }
+
+        body.dark-mode .tracker-name {
+            background: rgba(30, 30, 46, 0.8) !important;
+            color: #e0e0e0 !important;
+            border-color: #666 !important;
+        }
+
         .spell-level-header {
             cursor: pointer;
             user-select: none;
@@ -952,6 +978,37 @@
             padding-bottom: 70px !important; /* Prevents bar from covering content */
         }
 
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 0 5px #667eea;
+            }
+
+            50% {
+                box-shadow: 0 0 15px #8b9bea;
+            }
+
+            100% {
+                box-shadow: 0 0 5px #667eea;
+            }
+        }
+
+        @keyframes criticalFlash {
+            0% {
+                border-color: #444;
+                box-shadow: none;
+            }
+
+            50% {
+                border-color: #f44336;
+                box-shadow: 0 0 12px #f44336;
+            }
+
+            100% {
+                border-color: #444;
+                box-shadow: none;
+            }
+        }
+
         @media print {
             .bottom-nav {
                 display: none !important;
@@ -999,12 +1056,15 @@
                 </div>
                 <div class="field">
                     <label>Experience Points</label>
-                    <div style="display: flex; align-items: center; gap: 5px;">
-                        <input type="number" id="xp" value="0">
-                        <span style="color: #666;">/</span>
-                        <input type="number" id="xpMax" value="300" placeholder="Goal">
+                    <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
+                        <input type="number" id="xp" value="0" oninput="updateXPBar()">
+                        <span style="color: #666; font-weight: bold;">/</span>
+                        <input type="number" id="xpMax" value="300" placeholder="Goal" oninput="updateXPBar()">
                     </div>
                 </div>
+            </div>
+            <div id="xpBarContainer" style="width: 100%; height: 20px; background: rgba(0,0,0,0.2); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                <div id="xpBarFill" style="width: 0%; height: 100%; background: #667eea; transition: width 0.4s ease, box-shadow 0.3s ease;"></div>
             </div>
 
             <h2 style="margin: 20px 0 10px 0; font-size: 14px; text-transform: uppercase; border-bottom: 2px solid #333;">Ability Scores</h2>
@@ -1111,19 +1171,23 @@
                 <div class="combat-box" style="grid-column: span 5;">
                     <label>Hit Points</label>
                     <div class="hp-section">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                             <div>
                                 <label style="font-size: 9px;">Max HP</label>
-                                <input type="number" id="maxHp" value="20">
+                                <input type="number" id="maxHp" value="20" oninput="updateHealthBar()">
                             </div>
                             <div>
                                 <label style="font-size: 9px;">Current HP</label>
-                                <input type="number" id="currentHp" value="20">
+                                <input type="number" id="currentHp" value="20" oninput="updateHealthBar()">
                             </div>
                             <div>
                                 <label style="font-size: 9px;">Temp HP</label>
                                 <input type="number" id="tempHp" value="0">
                             </div>
+                        </div>
+
+                        <div id="hpBarContainer" style="width: 100%; height: 14px; background: #333; border-radius: 7px; overflow: hidden; border: 2px solid #444; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
+                            <div id="hpBarFill" style="width: 100%; height: 100%; background: #4caf50; transition: width 0.3s ease, background-color 0.3s ease;"></div>
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <div>
@@ -1154,6 +1218,18 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="attacks-section">
+                <h3>Status Effects / Conditions</h3>
+
+                <div id="statusGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; margin-bottom: 20px;">
+                </div>
+
+                <div id="trackerContainer">
+                </div>
+
+                <button class="btn" onclick="addNewTracker()" style="background: #4a4ba2; margin-top: 10px; width: 100%;">+ Add Custom Tracker</button>
             </div>
 
             <div class="saves-section">
@@ -1682,6 +1758,8 @@
             if (xpTable[lvl]) {
                 xpMaxBox.value = xpTable[lvl];
             }
+
+            updateXPBar();
         }
 
         function autoSizeTextarea(el) {
@@ -1790,11 +1868,11 @@
             const row = document.createElement("div");
             row.className = "attack-row";
             row.innerHTML = `
-                                 <input type="text" placeholder="Weapon Name">
-                                 <input type="text" placeholder="Atk Bonus">
-                                 <input type="text" placeholder="Damage/Type">
-                                 <button class="remove-attack" type="button" onclick="this.parentElement.remove()">✖</button>
-                                 `;
+                                         <input type="text" placeholder="Weapon Name">
+                                         <input type="text" placeholder="Atk Bonus">
+                                         <input type="text" placeholder="Damage/Type">
+                                         <button class="remove-attack" type="button" onclick="this.parentElement.remove()">✖</button>
+                                         `;
             attacksList.appendChild(row);
         }
 
@@ -1804,10 +1882,10 @@
             const row = document.createElement('div');
             row.className = 'attunement-row';
             row.innerHTML = `
-                                 <input type="checkbox" onchange="updateAttunementCount()">
-                                 <input type="text" placeholder="Magic Item Name">
-                                 <button class="remove-attunement" type="button" onclick="this.parentElement.remove(); updateAttunementCount()">✖</button>
-                                 `;
+                                         <input type="checkbox" onchange="updateAttunementCount()">
+                                         <input type="text" placeholder="Magic Item Name">
+                                         <button class="remove-attunement" type="button" onclick="this.parentElement.remove(); updateAttunementCount()">✖</button>
+                                         `;
             list.appendChild(row);
             updateAttunementCount();
         }
@@ -1821,15 +1899,15 @@
             row.style.gridTemplateColumns = "1fr 40px"; // Simpler grid for Cantrips: Name + Delete
 
             row.innerHTML = `
-                                  <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
-                                  <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
-                                  <div class="spell-details">
-                                  <textarea placeholder="Cantrip details..."
-                          class="cantrip-description"
-                          oninput="autoSizeTextarea(this)"
-                          style="width: 100%; min-height: 40px;"></textarea>
-                                  </div>
-                                  `;
+                                          <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
+                                          <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
+                                          <div class="spell-details">
+                                          <textarea placeholder="Cantrip details..."
+                                  class="cantrip-description"
+                                  oninput="autoSizeTextarea(this)"
+                                  style="width: 100%; min-height: 40px;"></textarea>
+                                          </div>
+                                          `;
             cantripsList.appendChild(row);
         }
 
@@ -1898,13 +1976,13 @@
             const initialTotal = (parseFloat(qty) || 0) * (parseFloat(weight) || 0);
 
             row.innerHTML = `
-                                    <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                    <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
-                                    <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                                    <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                    <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                                    <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                    `;
+                                            <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                            <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
+                                            <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                                            <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                            <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                            `;
             list.appendChild(row);
             updateTotalWeight();
         }
@@ -1920,19 +1998,19 @@
             row.className = 'inventory-row';
             row.style.marginBottom = "15px";
             row.innerHTML = `
-                                    <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                    <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
-                                    <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                                    <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                    <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                                    <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                    <div class="spell-details" style="grid-column: span 6;">
-                                    <textarea class="eq-desc"
-                          placeholder="Potion description..."
-                          oninput="autoSizeTextarea(this)"
-                          style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
-                                    </div>
-                                    `;
+                                            <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                            <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
+                                            <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                                            <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                            <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                            <div class="spell-details" style="grid-column: span 6;">
+                                            <textarea class="eq-desc"
+                                  placeholder="Potion description..."
+                                  oninput="autoSizeTextarea(this)"
+                                  style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
+                                            </div>
+                                            `;
             list.appendChild(row);
             updateTotalWeight();
         }
@@ -1979,28 +2057,28 @@
             const row = document.createElement("div");
             row.className = "spell-row"; // Applies the grid layout
             row.innerHTML = `
-                                    <input type="checkbox" class="spell-prepared">
-                                    <input type="checkbox" class="spell-used">
-                                    <select class="spell-level-select">
-                                    <option value="0">Level 1</option>
-                                    <option value="1">Level 2</option>
-                                    <option value="2">Level 3</option>
-                                    <option value="3">Level 4</option>
-                                    <option value="4">Level 5</option>
-                                    <option value="5">Level 6</option>
-                                    <option value="6">Level 7</option>
-                                    <option value="7">Level 8</option>
-                                    <option value="8">Level 9</option>
-                                    </select>
-                                    <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
-                                    <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
-                                    <div class="spell-details">
-                                    <textarea placeholder="Spell details..."
-                          class="spell-description"
-                          oninput="autoSizeTextarea(this)"
-                          style="width: 100%; min-height: 40px;"></textarea>
-                                    </div>
-                                    `;
+                                            <input type="checkbox" class="spell-prepared">
+                                            <input type="checkbox" class="spell-used">
+                                            <select class="spell-level-select">
+                                            <option value="0">Level 1</option>
+                                            <option value="1">Level 2</option>
+                                            <option value="2">Level 3</option>
+                                            <option value="3">Level 4</option>
+                                            <option value="4">Level 5</option>
+                                            <option value="5">Level 6</option>
+                                            <option value="6">Level 7</option>
+                                            <option value="7">Level 8</option>
+                                            <option value="8">Level 9</option>
+                                            </select>
+                                            <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
+                                            <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
+                                            <div class="spell-details">
+                                            <textarea placeholder="Spell details..."
+                                  class="spell-description"
+                                  oninput="autoSizeTextarea(this)"
+                                  style="width: 100%; min-height: 40px;"></textarea>
+                                            </div>
+                                            `;
 
             spellsList.appendChild(row);
         }
@@ -2138,6 +2216,28 @@
                 });
             });
 
+            // 7. Capture checkboxes for status effects
+            data.statusEffects = {};
+            conditions.forEach(c => {
+                const el = document.getElementById(`cond_${c.toLowerCase()}`);
+                if (el) data.statusEffects[c] = el.checked;
+            });
+
+            data.gauge = {
+                label: document.getElementById('gaugeLabel').value,
+                current: document.getElementById('gaugeCurrent').value,
+                max: document.getElementById('gaugeMax').value
+            };
+
+            data.dynamicTrackers = [];
+            document.querySelectorAll('#trackerContainer .tracker-row').forEach(row => {
+                data.dynamicTrackers.push({
+                    name: row.querySelector('.tracker-name').value,
+                    current: row.querySelector('.tracker-current').value,
+                    max: row.querySelector('.tracker-max').value
+                });
+            });
+
             return data;
         }
 
@@ -2254,12 +2354,30 @@
                 });
             }
 
+            // 8. Restore staus effects
+            if (data.gauge) {
+                document.getElementById('gaugeLabel').value = data.gauge.label;
+                document.getElementById('gaugeCurrent').value = data.gauge.current;
+                document.getElementById('gaugeMax').value = data.gauge.max;
+                updateGauge(); // Run the math to set the color/width
+            }
+
+            // Clear the area first
+            document.getElementById('trackerContainer').innerHTML = '';
+            if (data.dynamicTrackers) {
+                data.dynamicTrackers.forEach(t => {
+                    addNewTracker(t.name, t.current, t.max);
+                });
+            }
+
             if (data.craftingProjects) data.craftingProjects.forEach(proj => rebuildCraftingProject(proj));
 
             updateModifiers();
             updateTotalWeight();
             syncVehicleCapacity();
             updateAttunementCount();
+            updateXPBar();
+            updateHealthBar();
 
             // --- THE FINAL "POKE" ---
             // This triggers the 'input' event on every number box,
@@ -2278,16 +2396,93 @@
             }, 50);
         }
 
+        //        function generateStatusEffects() {
+        //            const grid = document.getElementById('statusGrid');
+        //            if (!grid) return;
+        //            grid.innerHTML = '';
+
+        //            conditions.forEach(condition => {
+        //                const div = document.createElement('div');
+        //                div.style.cssText = "display: flex; align-items: center; gap: 8px; padding: 6px; border: 2px solid #888; border-radius: 4px; background: #fdfdfd; transition: all 0.2s;";
+
+        //                const id = `cond_${condition.toLowerCase()}`;
+
+        //                div.innerHTML = `
+        //    <input type="checkbox" id="${id}" onchange="updateStatusStyle(this)" style="width: 18px; height: 18px; cursor: pointer;">
+        //    <label for="${id}" style="font-size: 12px; cursor: pointer; flex: 1; color: #000; font-weight: bold;">${condition}</label>
+        //`;
+        //                grid.appendChild(div);
+        //            });
+        //        }
+
+        function addNewTracker(name = "", current = 0, max = 6) {
+            const container = document.getElementById('trackerContainer');
+            const trackerId = 'track_' + Date.now() + Math.floor(Math.random() * 1000);
+
+            const div = document.createElement('div');
+            div.className = 'tracker-row';
+            div.id = trackerId;
+            // Note: Removed position: relative to keep layout simple
+            div.style.cssText = "margin-top: 15px; padding: 15px; background: rgba(102, 126, 234, 0.05); border-radius: 8px; border: 2px solid #555;";
+
+            div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;">
+                <input type="text" class="tracker-name"
+                       value="${name === "What Status or Condition do you have?" ? "" : name}"
+                       placeholder="What Status or Condition do you have?"
+                       style="font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 5px 8px; border: 1px solid #888; border-radius: 4px; background: rgba(255,255,255,0.1); flex: 1; color: #e0e0e0;">
+
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <input type="number" class="tracker-current" value="${current}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
+                    <span style="font-weight: bold; color: white;">/</span>
+                    <input type="number" class="tracker-max" value="${max}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
+                </div>
+
+                <button class="remove-attack"
+                        style="padding: 5px 10px; font-size: 14px; cursor: pointer; background: #d32f2f; color: white; border: none; border-radius: 4px;"
+                        onclick="this.parentElement.parentElement.remove()">✖</button>
+            </div>
+
+            <div style="width: 100%; height: 16px; background: #333; border-radius: 8px; overflow: hidden; border: 1px solid #444; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
+                <div class="tracker-fill" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s ease, background-color 0.5s ease;"></div>
+            </div>
+        `;
+
+            container.appendChild(div);
+            updateTrackerVisuals(trackerId);
+        }
+
+        function updateTrackerVisuals(id) {
+            const row = document.getElementById(id);
+            if (!row) return;
+
+            const current = parseFloat(row.querySelector('.tracker-current').value) || 0;
+            const max = parseFloat(row.querySelector('.tracker-max').value) || 1;
+            const fill = row.querySelector('.tracker-fill');
+
+            let percent = Math.min(Math.max((current / max) * 100, 0), 100);
+            fill.style.width = percent + "%";
+
+            // Color shifting: Green -> Yellow -> Red
+            if (percent < 50) {
+                fill.style.backgroundColor = "#4caf50";
+            } else if (percent < 85) {
+                fill.style.backgroundColor = "#ffeb3b";
+            } else {
+                fill.style.backgroundColor = "#f44336";
+            }
+        }
+
         function addEquipment() {
             const list = document.getElementById('equipmentList');
             const row = document.createElement('div');
             row.className = 'equipment-row';
             row.innerHTML = `
-                                    <input type="text" placeholder="Item Name" class="eq-name">
-                                    <input type="text" placeholder="e.g. 5gp" class="eq-price">
-                                    <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
-                                    <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                    `;
+                                            <input type="text" placeholder="Item Name" class="eq-name">
+                                            <input type="text" placeholder="e.g. 5gp" class="eq-price">
+                                            <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
+                                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                            `;
             list.appendChild(row);
         }
 
@@ -2400,12 +2595,10 @@
                 document.getElementById('craftingList').innerHTML = '';
                 document.getElementById('attunementList').innerHTML = '';
                 document.getElementById('attacksList').innerHTML = '';
-
-                // POTION FIX: Added this line to clear the potions list
                 document.getElementById('list-potions').innerHTML = '<div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;"><div>Qty</div><div style="text-align: left;">Potion Name</div><div>Price</div><div>Unit Wt</div><div>Total Wt</div><div></div></div>';
-
                 document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
                 document.getElementById('cantripsList').innerHTML = '<div style="display: grid; grid-template-columns: 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666;"><div>Cantrip Name</div><div></div></div>';
+                document.getElementById('trackerContainer').innerHTML = '';
 
                 // 3. Clear all standard text and number inputs
                 document.querySelectorAll('input, textarea, select').forEach(el => {
@@ -2480,33 +2673,33 @@
             div.id = containerId;
 
             div.innerHTML = `
-                                    <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
-                                    onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                    <div class="container-header-row">
-                                    <div class="field">
-                                    <label>Container Name</label>
-                                    <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack" oninput="updateTotalWeight()">
-                                    </div>
-                                    <div class="field">
-                                    <label>Weight</label>
-                                    <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-                                    </div>
-                                    <div class="field">
-                                    <label>Max Weight</label>
-                                    <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
-                                    </div>
-                                    </div>
-                                    <div class="container-item-header">
-                                    <div>Qty</div>
-                                    <div>Item Name</div>
-                                    <div>Description</div>
-                                    <div>Value</div>
-                                    <div>Weight</div>
-                                    <div></div>
-                                    </div>
-                                    <div class="container-items-area"></div>
-                                    <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
-                                    `;
+                                            <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
+                                            onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                            <div class="container-header-row">
+                                            <div class="field">
+                                            <label>Container Name</label>
+                                            <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack" oninput="updateTotalWeight()">
+                                            </div>
+                                            <div class="field">
+                                            <label>Weight</label>
+                                            <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                                            </div>
+                                            <div class="field">
+                                            <label>Max Weight</label>
+                                            <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
+                                            </div>
+                                            </div>
+                                            <div class="container-item-header">
+                                            <div>Qty</div>
+                                            <div>Item Name</div>
+                                            <div>Description</div>
+                                            <div>Value</div>
+                                            <div>Weight</div>
+                                            <div></div>
+                                            </div>
+                                            <div class="container-items-area"></div>
+                                            <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
+                                            `;
 
             list.appendChild(div);
             return containerId; // Return the ID so the import loop can find it
@@ -2519,13 +2712,13 @@
             const row = document.createElement('div');
             row.className = 'container-item-row';
             row.innerHTML = `
-                        <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
-                        <input type="text" class="eq-name" placeholder="Item Name">
-                        <input type="text" class="eq-desc" placeholder="Description">
-                        <input type="text" class="eq-price" placeholder="Value">
-                        <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
-                        <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                    `;
+                                <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
+                                <input type="text" class="eq-name" placeholder="Item Name">
+                                <input type="text" class="eq-desc" placeholder="Description">
+                                <input type="text" class="eq-price" placeholder="Value">
+                                <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
+                                <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                            `;
             itemsArea.appendChild(row);
         }
 
@@ -2549,49 +2742,49 @@
             div.setAttribute('data-is-vehicle', isVehicle);
 
             div.innerHTML = `
-                                                <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
-                                                        onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
-                                                <div class="mount-stats-grid">
-                                                    <div class="field">
-                                                        <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
-                                                        <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
-                                                    </div>
-                                                    <div class="field">
-                                                        <label>Type/Team</label>
-                                                        <input type="text" value="${type}">
-                                                    </div>
-                                                    <div class="field">
-                                                        <label>Total Load</label>
-                                                        <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-                                                    </div>
-                                                    <div class="field">
-                                                        <label>Capacity</label>
-                                                        <input type="number" class="max-mount-cap" value="${maxWgt}"
-                                                               ${isVehicle ? 'readonly style="background:#fff; color:#007bff; font-weight:bold; border-color:#007bff;"' : ''} oninput="syncVehicleCapacity()">
-                                                    </div>
-                                                    <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
-                                                        <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
-                                                        <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
-                                                    </div>
-                                                </div>
-                                                <div class="mount-hp-ac-speed">
-                                                    <div class="field"><label>HP</label><input type="number" value="${hp}"></div>
-                                                    <div class="field"><label>AC</label><input type="number" value="${ac}"></div>
-                                                    <div class="field"><label>${isVehicle ? 'Collision' : 'Attack'}</label><input type="text" placeholder="e.g. 1d6"></div>
-                                                    <div class="field"><label>Manual Addon Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')"></div>
-                                                </div>
-                                                <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
-                                                    <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
-                                                    <div class="linked-containers-area"></div>
-                                                    <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
-                                                </div>
-                                                ${isVehicle ? `
-                                                <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
-                                                    <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
-                                                    <div class="hitched-animals-area"></div>
-                                                    <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
-                                                </div>` : ''}
-                                            `;
+                                                        <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
+                                                                onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
+                                                        <div class="mount-stats-grid">
+                                                            <div class="field">
+                                                                <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
+                                                                <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>Type/Team</label>
+                                                                <input type="text" value="${type}">
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>Total Load</label>
+                                                                <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>Capacity</label>
+                                                                <input type="number" class="max-mount-cap" value="${maxWgt}"
+                                                                       ${isVehicle ? 'readonly style="background:#fff; color:#007bff; font-weight:bold; border-color:#007bff;"' : ''} oninput="syncVehicleCapacity()">
+                                                            </div>
+                                                            <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
+                                                                <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
+                                                                <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
+                                                            </div>
+                                                        </div>
+                                                        <div class="mount-hp-ac-speed">
+                                                            <div class="field"><label>HP</label><input type="number" value="${hp}"></div>
+                                                            <div class="field"><label>AC</label><input type="number" value="${ac}"></div>
+                                                            <div class="field"><label>${isVehicle ? 'Collision' : 'Attack'}</label><input type="text" placeholder="e.g. 1d6"></div>
+                                                            <div class="field"><label>Manual Addon Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')"></div>
+                                                        </div>
+                                                        <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
+                                                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
+                                                            <div class="linked-containers-area"></div>
+                                                            <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
+                                                        </div>
+                                                        ${isVehicle ? `
+                                                        <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
+                                                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
+                                                            <div class="hitched-animals-area"></div>
+                                                            <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
+                                                        </div>` : ''}
+                                                    `;
             list.appendChild(div);
         }
 
@@ -2624,12 +2817,12 @@
             const options = available.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
 
             row.innerHTML = `
-                                <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
-                                <option value="">-- Select Animal --</option>
-                                ${options}
-                                </select>
-                                <button class="remove-attack" onclick="removeAnimalHitch(this)">✖</button>
-                                `;
+                                        <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
+                                        <option value="">-- Select Animal --</option>
+                                        ${options}
+                                        </select>
+                                        <button class="remove-attack" onclick="removeAnimalHitch(this)">✖</button>
+                                        `;
 
             animalArea.appendChild(row);
         }
@@ -2680,14 +2873,14 @@
             row.style.marginBottom = '5px';
 
             row.innerHTML = `
-                                                                                                            <select class="container-selector"
-                                                                                                                    onfocus="populateContainerDropdown(this)"
-                                                                                                                    onchange="updateMountLoad('${mountId}')">
-                                                                                                                <option value="0">-- Select Container --</option>
-                                                                                                            </select>
-                                                                                                            <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
-                                                                                                            <button class="remove-attack" onclick="this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
-                                                                                                        `;
+                                                                                                                    <select class="container-selector"
+                                                                                                                            onfocus="populateContainerDropdown(this)"
+                                                                                                                            onchange="updateMountLoad('${mountId}')">
+                                                                                                                        <option value="0">-- Select Container --</option>
+                                                                                                                    </select>
+                                                                                                                    <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
+                                                                                                                    <button class="remove-attack" onclick="this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
+                                                                                                                `;
             containerArea.appendChild(row);
         }
 
@@ -2802,47 +2995,47 @@
             const compListId = 'compList_' + Date.now();
 
             project.innerHTML = `
-                                                                                                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
-                                                                                                        <input type="text" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
-                                                                                                        <select>
-                                                                                                            <option>Common</option><option>Uncommon</option><option>Rare</option>
-                                                                                                            <option>Very Rare</option><option>Legendary</option>
-                                                                                                        </select>
-                                                                                                        <input type="number" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
-                                                                                                    </div>
+                                                                                                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
+                                                                                                                <input type="text" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
+                                                                                                                <select>
+                                                                                                                    <option>Common</option><option>Uncommon</option><option>Rare</option>
+                                                                                                                    <option>Very Rare</option><option>Legendary</option>
+                                                                                                                </select>
+                                                                                                                <input type="number" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
+                                                                                                            </div>
 
-                                                                                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                                                                                                        <input type="text" placeholder="Required Tools/Proficiency">
-                                                                                                        <select class="rule-select" onchange="calculateCrafting(this)">
-                                                                                                            <option value="2024">2024 Rules (Cost/10 days)</option>
-                                                                                                            <option value="XGtE">XGtE (Workweeks)</option>
-                                                                                                            <option value="2014">2014 (5gp/day)</option>
-                                                                                                        </select>
-                                                                                                    </div>
+                                                                                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                                                                                                                <input type="text" placeholder="Required Tools/Proficiency">
+                                                                                                                <select class="rule-select" onchange="calculateCrafting(this)">
+                                                                                                                    <option value="2024">2024 Rules (Cost/10 days)</option>
+                                                                                                                    <option value="XGtE">XGtE (Workweeks)</option>
+                                                                                                                    <option value="2014">2014 (5gp/day)</option>
+                                                                                                                </select>
+                                                                                                            </div>
 
-                                                                                                    <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
-                                                                                                        <label style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
-                                                                                                        <div id="${compListId}" style="margin-top: 5px;"></div>
-                                                                                                        <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;"
-                                                                                                            onclick="addComponentToProject('${compListId}')">+ Add Component</button>
-                                                                                                    </div>
+                                                                                                            <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
+                                                                                                                <label style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
+                                                                                                                <div id="${compListId}" style="margin-top: 5px;"></div>
+                                                                                                                <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;"
+                                                                                                                    onclick="addComponentToProject('${compListId}')">+ Add Component</button>
+                                                                                                            </div>
 
-                                                                                                    <div style="margin-top: 15px;">
-                                                                                                        <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
-                                                                                                        <div style="background: #ddd; height: 10px; border-radius: 5px;">
-                                                                                                            <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
-                                                                                                        </div>
-                                                                                                        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
-                                                                                                            <span>Invested: <input type="number" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
-                                                                                                            <span class="days-left">Remaining: ? Days</span>
-                                                                                                        </div>
-                                                                                                    </div>
+                                                                                                            <div style="margin-top: 15px;">
+                                                                                                                <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
+                                                                                                                <div style="background: #ddd; height: 10px; border-radius: 5px;">
+                                                                                                                    <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
+                                                                                                                </div>
+                                                                                                                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
+                                                                                                                    <span>Invested: <input type="number" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
+                                                                                                                    <span class="days-left">Remaining: ? Days</span>
+                                                                                                                </div>
+                                                                                                            </div>
 
-                                                                                                    <textarea placeholder="Complications & Notes..."
-                          oninput="autoSizeTextarea(this)"
-                          style="margin-top: 10px; min-height: 60px;"></textarea>
-                                                                                                    <button class="remove-attack" onclick="this.parentElement.remove()">Cancel Project</button>
-                                                                                                `;
+                                                                                                            <textarea placeholder="Complications & Notes..."
+                                  oninput="autoSizeTextarea(this)"
+                                  style="margin-top: 10px; min-height: 60px;"></textarea>
+                                                                                                            <button class="remove-attack" onclick="this.parentElement.remove()">Cancel Project</button>
+                                                                                                        `;
             list.appendChild(project);
         }
 
@@ -2855,10 +3048,10 @@
             row.style.gap = '8px';
             row.style.marginBottom = '4px';
             row.innerHTML = `
-                                                                                                    <input type="checkbox" style="width: 14px; height: 14px;">
-                                                                                                    <input type="text" placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;">
-                                                                                                    <button class="remove-attack" style="padding: 2px 6px;" onclick="this.parentElement.remove()">✖</button>
-                                                                                                `;
+                                                                                                            <input type="checkbox" style="width: 14px; height: 14px;">
+                                                                                                            <input type="text" placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;">
+                                                                                                            <button class="remove-attack" style="padding: 2px 6px;" onclick="this.parentElement.remove()">✖</button>
+                                                                                                        `;
             list.appendChild(row);
         }
 
@@ -2989,6 +3182,126 @@
                 modal.style.display = 'flex';
             } else {
                 modal.style.display = 'none';
+            }
+        }
+
+        const conditions = [
+            "Blinded", "Charmed", "Corrupted", "Deafened", "Exhaustion", "Frightened",
+            "Grappled", "Incapacitated", "Invisible", "Paralyzed",
+            "Petrified", "Poisoned", "Prone", "Restrained", "Stunned", "Unconscious"
+        ];
+
+        function generateStatusEffects() {
+            const grid = document.getElementById('statusGrid');
+            if (!grid) return;
+            grid.innerHTML = ''; // Clear it
+
+            conditions.forEach(condition => {
+                const div = document.createElement('div');
+                div.style.cssText = "display: flex; align-items: center; gap: 8px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; background: #fff; transition: background 0.2s;";
+
+                // Use the condition name as the ID
+                const id = `cond_${condition.toLowerCase()}`;
+
+                div.innerHTML = `
+                <input type="checkbox" id="${id}" onchange="updateStatusStyle(this)" style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="${id}" style="font-size: 12px; cursor: pointer; flex: 1;">${condition}</label>
+            `;
+                grid.appendChild(div);
+            });
+        }
+
+        function updateGauge() {
+            const current = parseFloat(document.getElementById('gaugeCurrent').value) || 0;
+            const max = parseFloat(document.getElementById('gaugeMax').value) || 1;
+            const fill = document.getElementById('gaugeFill');
+
+            // Calculate percentage
+            let percent = (current / max) * 100;
+            if (percent > 100) percent = 100;
+            if (percent < 0) percent = 0;
+
+            // Update Width
+            fill.style.width = percent + "%";
+
+            // Color Logic (Green -> Yellow -> Red)
+            if (percent < 50) {
+                fill.style.backgroundColor = "#4caf50"; // Green
+            } else if (percent < 85) {
+                fill.style.backgroundColor = "#ffeb3b"; // Yellow
+            } else {
+                fill.style.backgroundColor = "#f44336"; // Red
+            }
+        }
+
+        function updateStatusStyle(checkbox) {
+            const parent = checkbox.parentElement;
+            if (checkbox.checked) {
+                // CHANGED: Darker gold border and more visible background
+                parent.style.background = "#fff59d"; // Bright yellow/gold
+                parent.style.borderColor = "#f9a825"; // Saturated amber border
+                parent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+            } else {
+                // Reset to the new darker default
+                parent.style.background = "#fdfdfd";
+                parent.style.borderColor = "#888";
+                parent.style.boxShadow = "none";
+            }
+        }
+
+        function updateXPBar() {
+            const currentXp = parseFloat(document.getElementById('xp').value) || 0;
+            const maxXp = parseFloat(document.getElementById('xpMax').value) || 1;
+            const barFill = document.getElementById('xpBarFill');
+            const container = document.getElementById('xpBarContainer');
+
+            let percent = (currentXp / maxXp) * 100;
+            percent = Math.min(Math.max(percent, 0), 100);
+
+            barFill.style.width = percent + "%";
+
+            // Glow Effect Logic
+            if (percent >= 100) {
+                barFill.style.background = "#8b9bea"; // Brighter blue
+                container.style.boxShadow = "0 0 10px #667eea";
+                container.style.borderColor = "#8b9bea";
+                // Optional: Add a CSS class for a continuous pulse animation
+                container.style.animation = "pulseGlow 1.5s infinite";
+            } else {
+                barFill.style.background = "#667eea"; // Standard blue
+                container.style.boxShadow = "none";
+                container.style.borderColor = "rgba(255,255,255,0.1)";
+                container.style.animation = "none";
+            }
+        }
+
+        function updateHealthBar() {
+            const current = parseFloat(document.getElementById('currentHp').value) || 0;
+            const max = parseFloat(document.getElementById('maxHp').value) || 1;
+            const fill = document.getElementById('hpBarFill');
+            const container = document.getElementById('hpBarContainer');
+
+            let percent = (current / max) * 100;
+            percent = Math.min(Math.max(percent, 0), 100);
+
+            fill.style.width = percent + "%";
+
+            // Color Logic
+            if (percent > 50) {
+                fill.style.backgroundColor = "#4caf50"; // Healthy Green
+            } else if (percent > 25) {
+                fill.style.backgroundColor = "#ffeb3b"; // Wounded Yellow
+            } else {
+                fill.style.backgroundColor = "#f44336"; // Critical Red
+            }
+
+            // Critical Flashing (25% or lower)
+            if (percent <= 25 && current > 0) {
+                container.style.animation = "criticalFlash 0.8s infinite";
+                fill.style.boxShadow = "0 0 10px #f44336";
+            } else {
+                container.style.animation = "none";
+                fill.style.boxShadow = "none";
             }
         }
 
@@ -3177,6 +3490,8 @@
             loadDarkModePreference();
             loadSharedCharacter();
             updateCharacterList();
+            generateStatusEffects();
+            updateGauge();
 
             // 2. Setup GLOBAL calculation listener
             document.body.addEventListener('input', (e) => {
@@ -3185,6 +3500,19 @@
                 // Update modifiers and spellcasting
                 if (target.type === "number" || target.type === "checkbox" || target.id === "spellAbility") {
                     updateModifiers();
+
+                    if (target.id === "xp" || target.id === "xpMax") {
+                        updateXPBar();
+                    }
+
+                    if (target.id === "currentHp" || target.id === "maxHp") {
+                        updateHealthBar();
+                    }
+
+                    if (target.classList.contains('tracker-current') || target.classList.contains('tracker-max')) {
+                        const trackerId = target.closest('.tracker-row').id;
+                        updateTrackerVisuals(trackerId);
+                    }
                 }
 
                 // Specifically handle vehicle capacity math
