@@ -1,28 +1,115 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brewer Game Studios</title>
-<style>
-body { background: #121212; color: #e0e0e0; font-family: sans-serif; text-align: center; padding: 50px; }
-.box { border: 2px solid #c5a059; padding: 40px; max-width: 500px; margin: auto; border-radius: 10px; }
-h1 { color: #c5a059; margin-top: 0; }
-p { line-height: 1.6; }
-.btn { display: inline-block; background: #c5a059; color: #121212; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px; margin-top: 20px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brewer Game Studios | RPG Character Sheet</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .studio-name {
+            font-size: 1.2em;
+            color: #8b9bea;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        .feature-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .feature-item strong {
+            display: block;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: background 0.3s ease;
+        }
+        .btn:hover {
+            background: #5568d3;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
-<div class="box">
-<h1>Brewer Game Studios</h1>
-<p>Official home of the Interactive RPG Character Sheet.</p>
-<p>We build tools designed for homebrew freedom and mobile-first gameplay. Our engine is currently in active development to support your next tabletop adventure.</p>
-<a href="mailto:contact@yourdomain.com" class="btn">Contact Support</a>
-<div style="margin-top:40px; font-size: 12px; opacity: 0.5;">
-&copy; 2026 Brewer Game Studios. All rights reserved.
-</div>
-</div>
+    <div class="container">
+        <h1>Interactive RPG Character Sheet</h1>
+        <div class="studio-name">Developed by Brewer Game Studios</div>
+        
+        <p>A high-performance digital companion for tabletop gaming, designed for modern adventurers who need power and flexibility.</p>
+
+        <div class="features">
+            <div class="feature-item">
+                <strong>Dynamic Health Bar</strong>
+                Visual HP tracking with critical health alerts.
+            </div>
+            <div class="feature-item">
+                <strong>XP Progression</strong>
+                Integrated experience tracking with level-up signals.
+            </div>
+            <div class="feature-item">
+                <strong>Custom Trackers</strong>
+                Create unique bars for Rage, Exhaustion, or Ammo.
+            </div>
+            <div class="feature-item">
+                <strong>Inventory Engine</strong>
+                Global weight calculation and container management.
+            </div>
+        </div>
+
+        <p><em>Coming soon to Windows (Electron) and Mobile (PWA).</em></p>
+        
+        <a href="mailto:BrewerGameStudios@Gmail.com" class="btn">Contact Support</a>
+
+        <div class="footer">
+            &copy; 2026 Brewer Game Studios. All rights reserved.
+        </div>
+    </div>
 
 <div style="max-width: 600px; margin: 40px auto; text-align: left; font-size: 14px; color: #bbb; border-top: 1px solid #444; padding-top: 20px;">
 
