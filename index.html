@@ -1157,11 +1157,11 @@
                         </div>
                         <div class="field">
                             <label>Spell Save DC</label>
-                            <input type="number" id="spellDC" value="10">
+                            <input type="number" id="spellDC" value="10" readonly>
                         </div>
                         <div class="field">
                             <label>Spell Attack Bonus</label>
-                            <input type="text" id="spellAtk" value="0" readonly style="background-color: #f0f0f0; color: #000; font-weight: bold;">
+                            <input type="text" id="spellAtk" value="+0" readonly style="background-color: rgba(0,0,0,0.1); font-weight: bold;">
                         </div>
                     </div>
                 </div>
@@ -1236,32 +1236,32 @@
                 <h3>Saving Throws</h3>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                     <div class="skill-item">
-                        <input type="checkbox" id="savStr">
+                        <input type="checkbox" id="savStr" onchange="updateModifiers()">
                         <label for="savStr">Strength</label>
                         <span class="skill-bonus" id="savStrBonus">+0</span>
                     </div>
                     <div class="skill-item">
-                        <input type="checkbox" id="savDex">
+                        <input type="checkbox" id="savDex" onchange="updateModifiers()">
                         <label for="savDex">Dexterity</label>
                         <span class="skill-bonus" id="savDexBonus">+0</span>
                     </div>
                     <div class="skill-item">
-                        <input type="checkbox" id="savCon">
+                        <input type="checkbox" id="savCon" onchange="updateModifiers()">
                         <label for="savCon">Constitution</label>
                         <span class="skill-bonus" id="savConBonus">+0</span>
                     </div>
                     <div class="skill-item">
-                        <input type="checkbox" id="savInt">
+                        <input type="checkbox" id="savInt" onchange="updateModifiers()">
                         <label for="savInt">Intelligence</label>
                         <span class="skill-bonus" id="savIntBonus">+0</span>
                     </div>
                     <div class="skill-item">
-                        <input type="checkbox" id="savWis">
+                        <input type="checkbox" id="savWis" onchange="updateModifiers()">
                         <label for="savWis">Wisdom</label>
                         <span class="skill-bonus" id="savWisBonus">+0</span>
                     </div>
                     <div class="skill-item">
-                        <input type="checkbox" id="savCha">
+                        <input type="checkbox" id="savCha" onchange="updateModifiers()">
                         <label for="savCha">Charisma</label>
                         <span class="skill-bonus" id="savChaBonus">+0</span>
                     </div>
