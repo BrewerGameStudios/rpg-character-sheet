@@ -1734,6 +1734,7 @@
     </nav>
 
     <script>
+        let activeCharacterName = null; // Tracks the currently loaded character
         const abilities = {
             str: { mod: "strMod", saves: ["savStr"], skills: ["athletics"] },
             dex: { mod: "dexMod", saves: ["savDex"], skills: ["acrobatics", "sleightOfHand", "stealth"] },
@@ -1924,7 +1925,7 @@
         function updateTotalWeight() {
             let globalTotal = 0;
 
-            // 1. Calculate each individual container weight
+            // 1. Calculate Container Weights
             document.querySelectorAll('.container-card').forEach(card => {
                 let containerSum = 0;
                 const maxWgt = parseFloat(card.querySelector('.max-cont-wgt').value) || 0;
@@ -1938,32 +1939,84 @@
 
                 if (display) {
                     display.textContent = containerSum.toFixed(2);
-                    const percent = maxWgt > 0 ? (containerSum / maxWgt) : 0;
-
-                    // Reset classes
-                    display.classList.remove('weight-warning');
-                    display.style.color = '#2e7d32'; // Default Green (Good)
-
-                    if (maxWgt > 0) {
-                        if (percent > 1.0) {
-                            display.style.color = '#d32f2f'; // Red (Overloaded)
-                            display.classList.add('weight-warning');
-                        } else if (percent >= 0.9) {
-                            display.style.color = '#f57c00'; // Orange/Yellow (90-100%)
-                        }
-                    }
+                    // Color logic for over-encumbrance
+                    display.style.color = (maxWgt > 0 && containerSum > maxWgt) ? '#d32f2f' : '#2e7d32';
                 }
                 globalTotal += containerSum;
             });
 
-            // 2. Update the master inventory display on the storage page
-            const totalDisplay = document.getElementById('totalWeight');
-            if (totalDisplay) totalDisplay.textContent = globalTotal.toFixed(2);
-
-            // 3. Tell every mount to re-scan their hitched containers
-            document.querySelectorAll('.mount-card').forEach(mount => {
-                updateMountLoad(mount.id);
+            // 2. Update BOTH master displays
+            const displays = ["totalWeight", "totalWeightBottom"]; // Use your actual IDs here
+            displays.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = globalTotal.toFixed(2);
             });
+
+            // 3. Update Mounts
+            document.querySelectorAll('.mount-card').forEach(mount => updateMountLoad(mount.id));
+        }
+
+        function updateMountLoad(mountId) {
+            const card = document.getElementById(mountId);
+            if (!card) return;
+
+            // 1. Get Manual Weight
+            const manualInput = card.querySelector('.manual-mount-load');
+            let totalCalculatedLoad = manualInput ? parseFloat(manualInput.value) || 0 : 0;
+
+            // 2. Add Rider Weight safely if checked
+            const ridingCheckbox = card.querySelector('.is-riding');
+            if (ridingCheckbox && ridingCheckbox.checked) {
+                const charWeightInput = document.getElementById('weight');
+                // Clean the input to remove "lbs" or other text before parsing
+                const cleanWeight = charWeightInput ? charWeightInput.value.replace(/[^0-9.]/g, '') : "0";
+                totalCalculatedLoad += parseFloat(cleanWeight) || 0;
+            }
+
+            // 3. Sync Hitched Containers
+            card.querySelectorAll('.linked-container-row').forEach(row => {
+                const selector = row.querySelector('.container-selector');
+                const weightDisplay = row.querySelector('.selected-weight');
+
+                if (selector && selector.value !== "0") {
+                    const targetContainer = document.getElementById(selector.value);
+                    if (targetContainer) {
+                        const currentWgtText = targetContainer.querySelector('.current-cont-wgt').textContent;
+                        const currentWgt = parseFloat(currentWgtText) || 0;
+                        weightDisplay.textContent = currentWgt.toFixed(2);
+                        totalCalculatedLoad += currentWgt;
+                    }
+                } else if (weightDisplay) {
+                    weightDisplay.textContent = "0.00";
+                }
+            });
+
+            // 4. Update display and apply color logic
+            const display = card.querySelector('.current-mount-load');
+            if (display) {
+                display.textContent = totalCalculatedLoad.toFixed(2);
+
+                const capacityInput = card.querySelector('.max-mount-cap');
+                const capacity = capacityInput ? parseFloat(capacityInput.value) || 0 : 0;
+
+                // Color Logic
+                if (capacity > 0) {
+                    const percent = totalCalculatedLoad / capacity;
+
+                    if (percent > 1.0) {
+                        display.style.color = '#d32f2f'; // Red (Over Capacity)
+                        display.style.fontWeight = 'bold';
+                    } else if (percent >= 0.9) {
+                        display.style.color = '#f57c00'; // Orange (Near Capacity)
+                        display.style.fontWeight = 'bold';
+                    } else {
+                        display.style.color = '#2e7d32'; // Green (Safe)
+                        display.style.fontWeight = 'normal';
+                    }
+                } else {
+                    display.style.color = 'inherit'; // Reset if no capacity defined
+                }
+            }
         }
 
         function addItem(category, name = '', price = '', weight = 0, qty = 1) {
@@ -2883,58 +2936,7 @@
                                                                                                                     <button class="remove-attack" onclick="this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
                                                                                                                 `;
             containerArea.appendChild(row);
-        }
-
-        function updateMountLoad(mountId) {
-            const card = document.getElementById(mountId);
-            if (!card) return;
-
-            // 1. Get Manual Weight
-            const manualInput = card.querySelector('.manual-mount-load');
-            let totalCalculatedLoad = manualInput ? parseFloat(manualInput.value) || 0 : 0;
-
-            // 2. Add Rider Weight if checked
-            const ridingCheckbox = card.querySelector('.is-riding');
-            if (ridingCheckbox && ridingCheckbox.checked) {
-                const charWeightInput = document.getElementById('weight');
-                const charWeight = charWeightInput ? parseFloat(charWeightInput.value) || 0 : 0;
-                totalCalculatedLoad += charWeight;
-            }
-
-            // 3. Sync Hitched Containers (Safety Check Added)
-            card.querySelectorAll('.linked-container-row').forEach(row => {
-                const selector = row.querySelector('.container-selector');
-                const weightDisplay = row.querySelector('.selected-weight');
-
-                if (selector && selector.value !== "0") {
-                    // Look up the actual container by its ID
-                    const targetContainer = document.getElementById(selector.value);
-                    if (targetContainer) {
-                        const currentWgtText = targetContainer.querySelector('.current-cont-wgt').textContent;
-                        const currentWgt = parseFloat(currentWgtText) || 0;
-
-                        weightDisplay.textContent = currentWgt.toFixed(2);
-                        totalCalculatedLoad += currentWgt;
-                    }
-                } else {
-                    weightDisplay.textContent = "0.00";
-                }
-            });
-
-            // 4. Update display and colors (Green/Orange/Red)
-            const display = card.querySelector('.current-mount-load');
-            if (display) {
-                display.textContent = totalCalculatedLoad.toFixed(2);
-                const capacity = parseFloat(card.querySelector('.max-mount-cap').value) || 0;
-                const percent = capacity > 0 ? (totalCalculatedLoad / capacity) : 0;
-
-                display.style.color = '#2e7d32'; // Default Green
-                if (capacity > 0) {
-                    if (percent > 1.0) display.style.color = '#d32f2f'; // Red
-                    else if (percent >= 0.9) display.style.color = '#f57c00'; // Orange
-                }
-            }
-        }
+        }        
 
         function syncVehicleCapacity() {
             // ADD THIS SAFETY CHECK: If the list is empty, stop the function immediately
@@ -3594,6 +3596,15 @@
                 }
             }
         });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(() => console.log('Offline ready.'))
+                    .catch(err => console.log('SW error:', err));
+            });
+        }
+
     </script>
 </body>
 </html>
