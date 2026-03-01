@@ -1,0 +1,55 @@
+{
+	"name": "rpg-character-sheet",
+	"version": "2.0.2",
+	"description": "Fantasy RPG Character Sheet - Desktop Application",
+	"main": "main.js",
+	"scripts": {
+		"start": "electron .",
+		"build-win": "electron-builder --win --x64"
+	},
+	"build": {
+		"appId": "com.rpgcharactersheet.app",
+		"productName": "RPG Character Sheet",
+		"win": {
+			"target": [
+				{
+					"target": "nsis",
+					"arch": [
+						"x64"
+					]
+				}
+			],
+			"icon": "icon.ico"
+		},
+		"nsis": {
+			"oneClick": false,
+			"allowToChangeInstallationDirectory": true,
+			"createDesktopShortcut": true,
+			"createStartMenuShortcut": true
+		},
+		"files": [
+			"index.html",
+			"main.js",
+			"manifest.json",
+			"service-worker.js",
+			"icon.ico"
+		]
+	},
+	"keywords": [
+		"rpg",
+		"character-sheet",
+		"dnd",
+		"tabletop",
+		"5e"
+	],
+	"author": "Brewer Game Studios 2026",
+	"license": "MIT",
+	"devDependencies": {
+		"electron": "^28.3.3",
+		"electron-builder": "^24.9.1",
+		"javascript-obfuscator": "^5.3.0"
+	},
+	"dependencies": {
+		"node-machine-id": "^1.1.12"
+	}
+}
