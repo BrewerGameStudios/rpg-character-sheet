@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RPG Character Sheet">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkZhbnRhc3kgUlBHIENoYXJhY3RlciBTaGVldCIsCiAgInNob3J0X25hbWUiOiAiUlBHIFNoZWV0IiwKICAiZGVzY3JpcHRpb24iOiAiSW50ZXJhY3RpdmUgY2hhcmFjdGVyIHNoZWV0IGZvciB0YWJsZXRvcCBSUEdzIiwKICAic3RhcnRfdXJsIjogIi4vIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjNjY3ZWVhIiwKICAidGhlbWVfY29sb3IiOiAiIzY2N2VlYSIsCiAgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyB2aWV3Qm94PScwIDAgMTkyIDE5MiclM0UlM0NyZWN0IHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyBmaWxsPSclMjM2NjdlZWEnLyUzRSUzQ3RleHQgeD0nNTAlMjUnIHk9JzUwJTI1JyBmb250LXNpemU9JzgwJyBmb250LWZhbWlseT0nQXJpYWwnIGZpbGw9J3doaXRlJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBkb21pbmFudC1iYXNlbGluZT0nbWlkZGxlJyUzRSVGMCU5RiU5MyU5QyUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsCiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyB2aWV3Qm94PScwIDAgNTEyIDUxMiclM0UlM0NyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyBmaWxsPSclMjM2NjdlZWEnLyUzRSUzQ3RleHQgeD0nNTAlMjUnIHk9JzUwJTI1JyBmb250LXNpemU9JzI0MCcgZm9udC1mYW1pbHk9J0FyaWFsJyBmaWxsPSd3aGl0ZScgdGV4dC1hbmNob3I9J21pZGRsZScgZG9taW5hbnQtYmFzZWxpbmU9J21pZGRsZSclM0UlRjAlOUYlOTMlOUMlM0MvdGV4dCUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">
     <title>Fantasy RPG Character Sheet</title>
     <style>
         * {
@@ -17,71 +17,80 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-color-1: #667eea;
+            --bg-color-2: #764ba2;
+            --dark-overlay: rgba(0, 0, 0, 0); /* Invisible by default */
+        }
+
+        body.dark-mode {
+            --dark-overlay: rgba(0, 0, 0, 0.5); /* Darkens the custom colors */
+            background-color: #1a1a1a; /* Fallback */
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* Layer 1: Dark overlay | Layer 2: Custom Gradient */
+            background: linear-gradient(var(--dark-overlay), var(--dark-overlay)), linear-gradient(135deg, var(--bg-color-1) 0%, var(--bg-color-2) 100%);
+            background-attachment: fixed; /* Keeps gradient smooth while scrolling */
             padding: 20px;
             min-height: 100vh;
             transition: background 0.3s ease;
         }
 
-            body.dark-mode {
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            body.dark-mode .container {
+                background: #2a2a3e;
+                color: #e0e0e0;
             }
 
-                body.dark-mode .container {
-                    background: #2a2a3e;
-                    color: #e0e0e0;
-                }
+            body.dark-mode .stat-box,
+            body.dark-mode .combat-box,
+            body.dark-mode .skill-list,
+            body.dark-mode .saves-section,
+            body.dark-mode .text-box,
+            body.dark-mode .attacks-section,
+            body.dark-mode .attunement-section {
+                background: #1e1e2e;
+                border-color: #4a4a5e;
+            }
 
-                body.dark-mode .stat-box,
-                body.dark-mode .combat-box,
-                body.dark-mode .skill-list,
-                body.dark-mode .saves-section,
-                body.dark-mode .text-box,
-                body.dark-mode .attacks-section,
-                body.dark-mode .attunement-section {
-                    background: #1e1e2e;
-                    border-color: #4a4a5e;
-                }
-
-                    body.dark-mode .stat-box h3,
-                    body.dark-mode .combat-box label,
-                    body.dark-mode .skill-list h3,
-                    body.dark-mode .saves-section h3,
-                    body.dark-mode .text-box h3,
-                    body.dark-mode .attacks-section h3,
-                    body.dark-mode .attunement-section h3 {
-                        color: #e0e0e0;
-                        border-color: #4a4a5e;
-                    }
-
-                body.dark-mode input,
-                body.dark-mode textarea,
-                body.dark-mode select {
-                    background: #16162e;
+                body.dark-mode .stat-box h3,
+                body.dark-mode .combat-box label,
+                body.dark-mode .skill-list h3,
+                body.dark-mode .saves-section h3,
+                body.dark-mode .text-box h3,
+                body.dark-mode .attacks-section h3,
+                body.dark-mode .attunement-section h3 {
                     color: #e0e0e0;
                     border-color: #4a4a5e;
                 }
 
-                    body.dark-mode input:focus,
-                    body.dark-mode textarea:focus,
-                    body.dark-mode select:focus {
-                        border-color: #667eea;
-                    }
+            body.dark-mode input,
+            body.dark-mode textarea,
+            body.dark-mode select {
+                background: #16162e;
+                color: #e0e0e0;
+                border-color: #4a4a5e;
+            }
 
-                body.dark-mode .field label,
-                body.dark-mode .stat-name {
-                    color: #b0b0c0;
+                body.dark-mode input:focus,
+                body.dark-mode textarea:focus,
+                body.dark-mode select:focus {
+                    border-color: #667eea;
                 }
 
-                body.dark-mode .modifier {
-                    color: #8b9bea;
-                }
+            body.dark-mode .field label,
+            body.dark-mode .stat-name {
+                color: #b0b0c0;
+            }
 
-                body.dark-mode .skill-bonus {
-                    color: #8b9bea;
-                }
+            body.dark-mode .modifier {
+                color: #8b9bea;
+            }
+
+            body.dark-mode .skill-bonus {
+                color: #8b9bea;
+            }
 
         .dark-mode-toggle {
             position: fixed;
@@ -111,30 +120,88 @@
                 background: #fb8c00;
             }
 
-        /* Ensure conditions are readable in Dark Mode */
-        body.dark-mode #statusGrid div {
-            background: #2a2a3e !important;
-            border-color: #555 !important;
+        /* --- Boxed Status Checkboxes --- */
+        #statusGrid div {
+            border: 1px solid #ccc;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            color: #333; /* Dark text for light mode boxes */
         }
 
-        body.dark-mode #statusGrid label {
-            color: #e0e0e0 !important;
-        }
-
-        /* Maintain the "Warning" look even in Dark Mode */
-        body.dark-mode #statusGrid div:has(input:checked) {
-            background: #fbc02d !important; /* Brighter gold for dark mode */
-            border-color: #fff !important;
-        }
-
-            body.dark-mode #statusGrid div:has(input:checked) label {
-                color: #000 !important; /* Black text on gold background is best */
+            /* Gold background when checked */
+            #statusGrid div:has(input:checked) {
+                background: #ffd700 !important;
+                border-color: #d4af37 !important;
+                box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+                color: #000 !important;
             }
 
-        body.dark-mode .tracker-name {
-            background: rgba(30, 30, 46, 0.8) !important;
-            color: #e0e0e0 !important;
-            border-color: #666 !important;
+        .status-info-text {
+            width: 100%;
+            min-height: 20px;
+            margin-top: 12px;
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+            font-family: inherit;
+            font-style: italic;
+            resize: none;
+            overflow: hidden; /* Hide scrollbars */
+            border-radius: 6px;
+            /* Light Mode */
+            background: rgba(0, 0, 0, 0.04);
+            color: #d32f2f !important;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode .status-info-text {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffeb3b !important;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-info-text:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Framed Status Trackers */
+        .status-tracker-frame {
+            border: 2px solid #555;
+            background: rgba(102, 126, 234, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            color: #333; /* Text inside the frame */
+        }
+
+        body.dark-mode .status-tracker-frame {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: #444;
+            color: #eee;
+        }
+
+        /* Make Exhaustion text red/bold in descriptions */
+        .exhaustion-stack {
+            color: #d32f2f; /* Strong Red */
+            /*font-weight: bold;*/
+            display: block;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode .exhaustion-stack {
+            color: #ffeb3b !important; /* Lighter Red for dark background */
+            border-bottom-color: rgba(255,255,255,0.1);
         }
 
         .spell-level-header {
@@ -175,6 +242,42 @@
         body.dark-mode .spell-level-header {
             border-bottom-color: #4a4a5e;
         }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+            .status-grid label {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.9em;
+                cursor: pointer;
+                transition: transform 0.1s;
+            }
+
+                .status-grid label:hover {
+                    transform: translateX(5px);
+                }
+
+                /* Styling for the tooltips when hovering over effects */
+                .status-grid label[title]:hover::after {
+                    content: attr(title);
+                    position: absolute;
+                    background: #333;
+                    color: #fff;
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    z-index: 100;
+                    width: 200px;
+                    margin-top: 40px;
+                }
 
         .save-controls {
             max-width: 1200px;
@@ -1022,20 +1125,59 @@
     </style>
 </head>
 <body>
+    <div id="license-lock" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; color: white; text-align: center;">
+        <div style="background: #222; padding: 2rem; border-radius: 10px; border: 1px solid #444; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 400px; width: 90%; position: relative;">
+
+            <button onclick="document.getElementById('license-lock').style.display='none'"
+                    id="close-lock-btn"
+                    style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #888; cursor: pointer; font-size: 20px;">
+                ✖
+            </button>
+
+            <h2 style="color: #667eea; margin-bottom: 10px;">Brewer Game Studios</h2>
+            <p id="lock-message" style="margin-bottom: 10px; line-height: 1.4;">
+                Please enter your email to activate full features (Save/Export) and remove the 30-day trial limit.
+            </p>
+            <div id="trial-counter" style="margin: 10px 0; font-weight: bold; color: #ffa726; font-size: 14px;"></div>
+
+            <input type="email" id="license-email" placeholder="email@example.com" style="padding: 10px; width: 80%; border-radius: 5px; border: none; margin: 15px 0;">
+            <button id="activate-btn" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Activate Sheet</button>
+
+            <p style="margin-top: 15px; font-size: 14px;">
+                Don't have a license? <br><br>
+                <a href="https://buy.stripe.com/3cI5kv7jC24y8HVcOtdQQ00" target="_blank"
+                   style="background: #2e7d32; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                    Get License Key Here
+                </a>
+            </p>
+            <div id="lock-status" style="margin-top: 10px; font-weight: bold; color: #f44336;"></div>
+        </div>
+    </div>
+
     <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
+
+    <div class="setting-item">
+        <label>Theme Gradient:</label>
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <input type="color" id="bgColor1" value="#667eea" title="Start Color">
+            <input type="color" id="bgColor2" value="#764ba2" title="End Color">
+        </div>
+    </div>
 
     <div class="save-controls">
         <select id="characterList" onchange="loadSelectedCharacter()">
             <option value="">-- Select Character --</option>
         </select>
         <input type="text" id="characterName" placeholder="Enter Character Save Name...">
-        <button onclick="saveCharacter()">Save</button>
-        <button onclick="saveAsNewCharacter()">Save As New</button>
+        <button onclick="if(!restrictedFeature('Saving')) return; saveCharacter()">Save</button>
+        <button onclick="if(!restrictedFeature('Save As New')) return; saveAsNewCharacter()">Save As New</button>
         <button onclick="newCharacter()">New Character</button>
         <button class="delete-btn" onclick="deleteCharacter()">Delete</button>
-        <button onclick="exportCharacter()">Export File</button>
-        <button onclick="document.getElementById('importFile').click()">Import File</button>
-        <button onclick="window.print()" style="background: #4caf50;">🖨️ Print</button>
+        <button onclick="if(!restrictedFeature('Exporting')) return; exportCharacter()">Export File</button>
+        <button onclick="if(!restrictedFeature('Importing')) return; document.getElementById('importFile').click()">Import File</button>
+        <button onclick="if(!restrictedFeature('Printing')) return; window.print()" style="background: #4caf50;">🖨️ Print</button>
+        <button id="unlock-btn" onclick="document.getElementById('license-lock').style.display = 'flex'" style="background: #ffa726;">Unlock Full Version</button>
+        <button id="logout-btn" onclick="logoutLicense()" style="background: #607d8b; display: none;">Log Out</button>
         <input type="file" id="importFile" accept=".char" style="display: none;" onchange="importCharacter(event)">
     </div>
 
@@ -1220,14 +1362,26 @@
                 </div>
             </div>
 
-            <div class="attacks-section">
+            <div class="attacks-section card">
                 <h3>Status Effects / Conditions</h3>
-
-                <div id="statusGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; margin-bottom: 20px;">
+                <div id="statusGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; margin-bottom: 20px;">
                 </div>
 
-                <div id="trackerContainer">
+                <div class="status-tracker-frame" style="border-style: dashed;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 10px;">
+                        <input type="text" id="gaugeLabel" placeholder="Custom Gauge (e.g. Sanity)" style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <input type="number" id="gaugeCurrent" value="0" oninput="updateGauge()" style="width: 45px; text-align: center;">
+                            <span>/</span>
+                            <input type="number" id="gaugeMax" value="10" oninput="updateGauge()" style="width: 45px; text-align: center;">
+                        </div>
+                    </div>
+                    <div style="width: 100%; height: 16px; background: #333; border-radius: 8px; overflow: hidden; border: 1px solid #444;">
+                        <div id="gaugeFill" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s ease;"></div>
+                    </div>
                 </div>
+
+                <div id="trackerContainer"></div>
 
                 <button class="btn" onclick="addNewTracker()" style="background: #4a4ba2; margin-top: 10px; width: 100%;">+ Add Custom Tracker</button>
             </div>
@@ -1395,6 +1549,9 @@
                     </div>
                 </div>
                 <button class="btn" onclick="addPotion()">+ Add Potion</button>
+            </div>
+            <div style="text-align: center; margin-top: 30px; opacity: 0.5; font-size: 10px;">
+                Brewer Game Studios | RPG Character Sheet v2.1.3 | Hardware ID: <span id="display-id"></span>
             </div>
         </div>
     </div>
@@ -1686,7 +1843,7 @@
         <div class="text-box" style="max-width: 500px; width: 90%; max-height: 90vh; background: white; padding: 25px; position: relative; border: 3px solid #667eea; overflow-y: auto;">
             <button onclick="toggleHelpModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
 
-            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet v2.0.2</h2> <!--update version info-->
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet v2.1.3</h2> <!--update version info-->
 
             <div style="text-align: center; margin: 20px 0;">
                 <p style="font-style: italic; font-size: 17px; color: #555;">
@@ -1702,7 +1859,7 @@
                 <h4 style="margin-bottom: 5px; color: #333;">🐞 Bug Reports & Suggestions</h4>
                 <p style="font-size: 13px; color: #333; line-height: 1.4;">
                     Found an issue? Click the link below to open a bug report or send a Suggestion in your email client:<br>
-                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug%20Report%3A%20RPG%20Character%20Sheet%20v2.0.2&body=---%20BUG%20REPORT%20---%0ADescription%20of%20Issue%3A%0A%0ASteps%20to%20Reproduce%3A%0A%0AExpected%20Result%3A%0A%0AActual%20Result%3A%0A%0A---%20Questions%20or%20Comments%20---%0A%0A---%20System%20Info%20---%0APlatform%3A%20Windows%20or%20Android?%0AVersion%3A%202.0.2"
+                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug%20Report%3A%20RPG%20Character%20Sheet%20v2.1.2&body=---%20BUG%20REPORT%20---%0ADescription%20of%20Issue%3A%0A%0ASteps%20to%20Reproduce%3A%0A%0AExpected%20Result%3A%0A%0AActual%20Result%3A%0A%0A---%20Questions%20or%20Comments%20---%0A%0A---%20System%20Info%20---%0APlatform%3A%20Windows%20or%20Android?%0AVersion%3A%202.1.2"
                        style="color: #667eea; font-weight: bold; text-decoration: none;">
                         Email Us
                     </a>
@@ -1721,6 +1878,31 @@
         </div>
     </div>
 
+    <div id="howtoModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center;">
+        <div style="background-color:white; padding:20px; border-radius:10px; max-width:1000px; width:90%; box-shadow: 0 4px 15px rgba(0,0,0,0.3); color: #333;">
+            <h2 style="margin-bottom:15px; color:#667eea;">How to Use the Sheet</h2>
+            <ul style="margin-bottom:20px; padding-left:20px; line-height:1.6;">
+                <li><strong>Editing:</strong> Click on any field to enter character details.</li>
+                <li><strong>Trial Access:</strong> During your first 30 days, you can use <strong>Save As New</strong> to create character slots. All other features require a license.</li>
+                <li><strong>Flexibility:</strong> Although the sheet is strongly written around the 5e rule set, every field is customizable to fit those custom games.</li>
+                <li><strong>Auto-Save:</strong> Your changes are saved locally to your browser.</li>
+                <li><strong>Dark Mode:</strong> Use the toggle to switch between themes.</li>
+                <li><strong>Install (Android):</strong> Tap the <strong>three dots (⋮)</strong> in Chrome and select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
+                <li><strong>Install (iOS/iPhone):</strong> Open in <strong>Safari (you must use Safari)</strong>, tap the <strong>Share icon</strong> (square with arrow), scroll down and tap <strong>"Add to Home Screen"</strong> for best view use in horizontal mode as iOS isnt optimized yet.</li>
+                <li><strong>Exporting:</strong> Click <strong>Export Character</strong> to create a backup file. These files are ultra-lightweight, making them easy to share with your DM or party via <strong>email, text, Discord, or any chat app that allows file sharing.</strong></li>
+
+                <li><strong>Importing:</strong> Use <strong>Import Character</strong> to load a file sent to you by another player or to restore a character from a backup file on a new device.</li>
+            </ul>
+
+            <div style="margin-bottom:20px; display:flex; align-items:center;">
+                <input type="checkbox" id="dontShowAgain" style="margin-right:10px; cursor:pointer;">
+                <label for="dontShowAgain" style="cursor:pointer; font-size:0.9em;">Don't show this message again</label>
+            </div>
+
+            <button id="closeHowto" style="background:#667eea; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; width:100%; font-weight:bold;">Got it!</button>
+        </div>
+    </div>
+
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="showPage('mainPage', this)">Main</div>
         <div class="nav-item" onclick="showPage('infoPage', this)">Character Info</div>
@@ -1735,6 +1917,39 @@
 
     <script>
         let activeCharacterName = null; // Tracks the currently loaded character
+
+        const STATUS_DESCRIPTIONS = {
+            "Exhaustion": {
+                1: "Level 1: Disadvantage on ability checks",
+                2: "Level 2: Speed halved",
+                3: "Level 3: Disadvantage on attack rolls and saving throws",
+                4: "Level 4: Hit point maximum halved",
+                5: "Level 5: Speed reduced to 0",
+                6: "Level 6: Death"
+            },
+            "Corruption": {
+                "0-2": "Touched: Minor cosmetic changes only.",
+                "3-4": "Marked: Minor Mutation. Disadvantage on Deception.",
+                "5-6": "Changed: Major Mutation. Disadvantage on all Charisma checks.",
+                "7-8": "Consumed: Severe transformations. Faction Priority Target.",
+                "9-15": "Shardbound: Transformation into NPC begins. Final session."
+            },
+            "Blinded": "Can't see. Fails sight checks. Disadvantage on attacks. Attacks against you have advantage.",
+            "Charmed": "Can't attack charmer. Charmer has advantage on social checks.",
+            "Deafened": "Can't hear. Automatically fails hearing checks.",
+            "Frightened": "Disadvantage on checks/attacks while source is in sight. Can't move closer.",
+            "Grappled": "Speed 0. Ends if grappler is incapacitated.",
+            "Incapacitated": "Can't take actions or reactions.",
+            "Invisible": "Impossible to see. Advantage on your attacks, disadvantage on attacks against you.",
+            "Paralyzed": "Incapacitated. Can't move/speak. Auto-fail Str/Dex saves. Attacks against you have advantage/critical hit.",
+            "Petrified": "Stone form. Incapacitated. Resistance to all damage. Immune to poison.",
+            "Poisoned": "Disadvantage on attack rolls and ability checks.",
+            "Prone": "Must crawl or stand up. Disadvantage on attacks. Advantage for attackers within 5ft.",
+            "Restrained": "Speed 0. Disadvantage on attacks and Dex saves. Advantage for attackers.",
+            "Stunned": "Incapacitated. Can't move. Auto-fail Str/Dex saves. Advantage for attackers.",
+            "Unconscious": "Incapacitated. Drop items. Prone. Auto-fail Str/Dex saves. Critical hits within 5ft."
+        };
+
         const abilities = {
             str: { mod: "strMod", saves: ["savStr"], skills: ["athletics"] },
             dex: { mod: "dexMod", saves: ["savDex"], skills: ["acrobatics", "sleightOfHand", "stealth"] },
@@ -1752,6 +1967,134 @@
             11: 100000, 12: 120000, 13: 140000, 14: 165000, 15: 195000,
             16: 225000, 17: 265000, 18: 305000, 19: 355000, 20: 355000
         };
+
+        const conditions = [
+            "Blinded", "Charmed", "Corrupted", "Deafened", "Exhaustion", "Frightened",
+            "Grappled", "Incapacitated", "Invisible", "Paralyzed",
+            "Petrified", "Poisoned", "Prone", "Restrained", "Stunned", "Unconscious"
+        ];
+
+        // --- BROWSER-SAFE HARDWARE ID GENERATION ---
+        let myUniqueId = localStorage.getItem('rpg_browser_id');
+        if (!myUniqueId) {
+            myUniqueId = 'device-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('rpg_browser_id', myUniqueId);
+        }
+
+        const TRIAL_PERIOD_DAYS = 30;
+
+        /**
+           * Master License Gatekeeper
+           * Handles: 90-day security heartbeat, 30-day trial logic, and UI button visibility.
+           */
+        async function checkLicenseStatus() {
+            const isActivated = localStorage.getItem('isActivated') === 'true';
+            const lastCheck = localStorage.getItem('lastServerCheck');
+            const now = Date.now();
+            const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+
+            const lockOverlay = document.getElementById('license-lock');
+            const lockMsg = document.getElementById('lock-message');
+            const closeBtn = document.getElementById('close-lock-btn');
+            const counterDiv = document.getElementById('trial-counter'); // Ensure this ID matches your HTML
+
+            // --- 1. SECURITY HEARTBEAT CHECK ---
+            if (lastCheck && (now - parseInt(lastCheck) > NINETY_DAYS_MS)) {
+                localStorage.removeItem('isActivated');
+                localStorage.removeItem('licenseEmail');
+                if (lockOverlay) {
+                    lockOverlay.style.display = 'flex';
+                    if (closeBtn) closeBtn.style.display = 'none';
+                    lockMsg.innerHTML = `<strong style="color:#f44336;">Session Expired:</strong> This device has been disconnected due to 90 days of inactivity. <br><br>Please reconnect to the internet to re-verify your license.`;
+                }
+                return;
+            }
+
+            // --- 2. TRIAL LOGIC ---
+            let installDate = localStorage.getItem('installDate');
+            if (!installDate) {
+                installDate = now;
+                localStorage.setItem('installDate', now);
+                localStorage.setItem('lastServerCheck', now);
+            }
+
+            const msPassed = now - parseInt(installDate);
+            const daysPassed = Math.floor(msPassed / (1000 * 60 * 60 * 24));
+
+            // Calculate days remaining for the UI
+            const daysLeft = Math.max(0, TRIAL_PERIOD_DAYS - daysPassed);
+
+            // Update the visual counter
+            if (counterDiv) {
+                if (isActivated) {
+                    counterDiv.innerText = "Status: Full Version Activated";
+                    counterDiv.style.color = "#4caf50"; // Green
+                } else {
+                    counterDiv.innerText = `Trial Status: ${daysLeft} Days Remaining`;
+                    counterDiv.style.color = daysLeft <= 5 ? "#f44336" : "#ffa726"; // Red when low
+                }
+            }
+
+            if (lockOverlay) {
+                if (daysPassed > TRIAL_PERIOD_DAYS && !isActivated) {
+                    lockOverlay.style.display = 'flex';
+                    if (closeBtn) closeBtn.style.display = 'none';
+                    lockMsg.innerText = "Your 30-day trial has ended. Please activate to continue.";
+                } else if (isActivated) {
+                    lockOverlay.style.display = 'none';
+                }
+            }
+
+            // --- 3. UI SYNC ---
+            const unlockBtn = document.getElementById('unlock-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            if (isActivated) {
+                if (unlockBtn) unlockBtn.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'block';
+            } else {
+                if (unlockBtn) unlockBtn.style.display = 'block';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+            }
+
+            return { isActivated, daysPassed };
+        }
+
+        // The "Gatekeeper": This function triggers the BLUR POPUP
+        // and stops premium actions if the user isn't activated.
+        function restrictedFeature(featureName) {
+            const email = localStorage.getItem('licenseEmail');
+
+            // 1. If they are licensed, EVERYTHING is always unlocked.
+            if (email) return true;
+
+            // 2. Manage the 30-day Trial Timer
+            let installDate = localStorage.getItem('app_install_date');
+            if (!installDate) {
+                installDate = Date.now();
+                localStorage.setItem('app_install_date', installDate);
+            }
+
+            const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+            const currentTime = Date.now();
+            const isTrialExpired = (currentTime - installDate) > thirtyDaysInMs;
+
+            // 3. HARD LOCK AFTER 30 DAYS
+            if (isTrialExpired) {
+                alert("Your 30-day trial has expired. All features are now locked. Please activate a license to continue.");
+                document.getElementById('license-lock').style.display = 'flex';
+                return false;
+            }
+
+            // 4. DURING THE 30 DAYS - ONLY "Save As New" WORKS
+            if (featureName === 'Save As New') {
+                return true;
+            } else {
+                // Block everything else immediately
+                alert(`${featureName} is locked during the trial. Only 'Save As New' is available. Activate the full version to unlock all features.`);
+                document.getElementById('license-lock').style.display = 'flex';
+                return false;
+            }
+        }
 
         function updateXPMax() {
             const lvl = parseInt(document.getElementById('level').value);
@@ -1870,11 +2213,11 @@
             const row = document.createElement("div");
             row.className = "attack-row";
             row.innerHTML = `
-                                         <input type="text" placeholder="Weapon Name">
-                                         <input type="text" placeholder="Atk Bonus">
-                                         <input type="text" placeholder="Damage/Type">
-                                         <button class="remove-attack" type="button" onclick="this.parentElement.remove()">✖</button>
-                                         `;
+                                                                 <input type="text" placeholder="Weapon Name">
+                                                                 <input type="text" placeholder="Atk Bonus">
+                                                                 <input type="text" placeholder="Damage/Type">
+                                                                 <button class="remove-attack" type="button" onclick="this.parentElement.remove()">✖</button>
+                                                                 `;
             attacksList.appendChild(row);
         }
 
@@ -1884,10 +2227,10 @@
             const row = document.createElement('div');
             row.className = 'attunement-row';
             row.innerHTML = `
-                                         <input type="checkbox" onchange="updateAttunementCount()">
-                                         <input type="text" placeholder="Magic Item Name">
-                                         <button class="remove-attunement" type="button" onclick="this.parentElement.remove(); updateAttunementCount()">✖</button>
-                                         `;
+                                                                 <input type="checkbox" onchange="updateAttunementCount()">
+                                                                 <input type="text" placeholder="Magic Item Name">
+                                                                 <button class="remove-attunement" type="button" onclick="this.parentElement.remove(); updateAttunementCount()">✖</button>
+                                                                 `;
             list.appendChild(row);
             updateAttunementCount();
         }
@@ -1901,15 +2244,15 @@
             row.style.gridTemplateColumns = "1fr 40px"; // Simpler grid for Cantrips: Name + Delete
 
             row.innerHTML = `
-                                          <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
-                                          <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
-                                          <div class="spell-details">
-                                          <textarea placeholder="Cantrip details..."
-                                  class="cantrip-description"
-                                  oninput="autoSizeTextarea(this)"
-                                  style="width: 100%; min-height: 40px;"></textarea>
-                                          </div>
-                                          `;
+                                                                  <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
+                                                                  <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
+                                                                  <div class="spell-details">
+                                                                  <textarea placeholder="Cantrip details..."
+                                                          class="cantrip-description"
+                                                          oninput="autoSizeTextarea(this)"
+                                                          style="width: 100%; min-height: 40px;"></textarea>
+                                                                  </div>
+                                                                  `;
             cantripsList.appendChild(row);
         }
 
@@ -2030,13 +2373,13 @@
             const initialTotal = (parseFloat(qty) || 0) * (parseFloat(weight) || 0);
 
             row.innerHTML = `
-                                            <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                            <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
-                                            <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                                            <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                            <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                            `;
+                                                                    <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                    <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
+                                                                    <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                                                                    <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                    <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                                                                    <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                    `;
             list.appendChild(row);
             updateTotalWeight();
         }
@@ -2052,19 +2395,19 @@
             row.className = 'inventory-row';
             row.style.marginBottom = "15px";
             row.innerHTML = `
-                                            <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                            <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
-                                            <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                                            <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                            <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                            <div class="spell-details" style="grid-column: span 6;">
-                                            <textarea class="eq-desc"
-                                  placeholder="Potion description..."
-                                  oninput="autoSizeTextarea(this)"
-                                  style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
-                                            </div>
-                                            `;
+                                                                    <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                    <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
+                                                                    <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                                                                    <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                    <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                                                                    <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                    <div class="spell-details" style="grid-column: span 6;">
+                                                                    <textarea class="eq-desc"
+                                                          placeholder="Potion description..."
+                                                          oninput="autoSizeTextarea(this)"
+                                                          style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
+                                                                    </div>
+                                                                    `;
             list.appendChild(row);
             updateTotalWeight();
         }
@@ -2111,28 +2454,28 @@
             const row = document.createElement("div");
             row.className = "spell-row"; // Applies the grid layout
             row.innerHTML = `
-                                            <input type="checkbox" class="spell-prepared">
-                                            <input type="checkbox" class="spell-used">
-                                            <select class="spell-level-select">
-                                            <option value="0">Level 1</option>
-                                            <option value="1">Level 2</option>
-                                            <option value="2">Level 3</option>
-                                            <option value="3">Level 4</option>
-                                            <option value="4">Level 5</option>
-                                            <option value="5">Level 6</option>
-                                            <option value="6">Level 7</option>
-                                            <option value="7">Level 8</option>
-                                            <option value="8">Level 9</option>
-                                            </select>
-                                            <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
-                                            <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
-                                            <div class="spell-details">
-                                            <textarea placeholder="Spell details..."
-                                  class="spell-description"
-                                  oninput="autoSizeTextarea(this)"
-                                  style="width: 100%; min-height: 40px;"></textarea>
-                                            </div>
-                                            `;
+                                                                    <input type="checkbox" class="spell-prepared">
+                                                                    <input type="checkbox" class="spell-used">
+                                                                    <select class="spell-level-select">
+                                                                    <option value="0">Level 1</option>
+                                                                    <option value="1">Level 2</option>
+                                                                    <option value="2">Level 3</option>
+                                                                    <option value="3">Level 4</option>
+                                                                    <option value="4">Level 5</option>
+                                                                    <option value="5">Level 6</option>
+                                                                    <option value="6">Level 7</option>
+                                                                    <option value="7">Level 8</option>
+                                                                    <option value="8">Level 9</option>
+                                                                    </select>
+                                                                    <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
+                                                                    <button class="remove-spell" type="button" onclick="this.parentElement.remove()">✖</button>
+                                                                    <div class="spell-details">
+                                                                    <textarea placeholder="Spell details..."
+                                                          class="spell-description"
+                                                          oninput="autoSizeTextarea(this)"
+                                                          style="width: 100%; min-height: 40px;"></textarea>
+                                                                    </div>
+                                                                    `;
 
             spellsList.appendChild(row);
         }
@@ -2450,25 +2793,6 @@
             }, 50);
         }
 
-        //        function generateStatusEffects() {
-        //            const grid = document.getElementById('statusGrid');
-        //            if (!grid) return;
-        //            grid.innerHTML = '';
-
-        //            conditions.forEach(condition => {
-        //                const div = document.createElement('div');
-        //                div.style.cssText = "display: flex; align-items: center; gap: 8px; padding: 6px; border: 2px solid #888; border-radius: 4px; background: #fdfdfd; transition: all 0.2s;";
-
-        //                const id = `cond_${condition.toLowerCase()}`;
-
-        //                div.innerHTML = `
-        //    <input type="checkbox" id="${id}" onchange="updateStatusStyle(this)" style="width: 18px; height: 18px; cursor: pointer;">
-        //    <label for="${id}" style="font-size: 12px; cursor: pointer; flex: 1; color: #000; font-weight: bold;">${condition}</label>
-        //`;
-        //                grid.appendChild(div);
-        //            });
-        //        }
-
         function addNewTracker(name = "", current = 0, max = 6) {
             const container = document.getElementById('trackerContainer');
             const trackerId = 'track_' + Date.now() + Math.floor(Math.random() * 1000);
@@ -2480,51 +2804,30 @@
             div.style.cssText = "margin-top: 15px; padding: 15px; background: rgba(102, 126, 234, 0.05); border-radius: 8px; border: 2px solid #555;";
 
             div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;">
-                <input type="text" class="tracker-name"
-                       value="${name === "What Status or Condition do you have?" ? "" : name}"
-                       placeholder="What Status or Condition do you have?"
-                       style="font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 5px 8px; border: 1px solid #888; border-radius: 4px; background: rgba(255,255,255,0.1); flex: 1; color: #e0e0e0;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;">
+                                        <input type="text" class="tracker-name"
+                                               value="${name === "What Status or Condition do you have?" ? "" : name}"
+                                               placeholder="What Status or Condition do you have?"
+                                               style="font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 5px 8px; border: 1px solid #888; border-radius: 4px; background: rgba(255,255,255,0.1); flex: 1; color: #e0e0e0;">
 
-                <div style="display: flex; align-items: center; gap: 5px;">
-                    <input type="number" class="tracker-current" value="${current}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
-                    <span style="font-weight: bold; color: white;">/</span>
-                    <input type="number" class="tracker-max" value="${max}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
-                </div>
+                                        <div style="display: flex; align-items: center; gap: 5px;">
+                                            <input type="number" class="tracker-current" value="${current}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
+                                            <span style="font-weight: bold; color: white;">/</span>
+                                            <input type="number" class="tracker-max" value="${max}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
+                                        </div>
 
-                <button class="remove-attack"
-                        style="padding: 5px 10px; font-size: 14px; cursor: pointer; background: #d32f2f; color: white; border: none; border-radius: 4px;"
-                        onclick="this.parentElement.parentElement.remove()">✖</button>
-            </div>
+                                        <button class="remove-attack"
+                                                style="padding: 5px 10px; font-size: 14px; cursor: pointer; background: #d32f2f; color: white; border: none; border-radius: 4px;"
+                                                onclick="this.parentElement.parentElement.remove()">✖</button>
+                                    </div>
 
-            <div style="width: 100%; height: 16px; background: #333; border-radius: 8px; overflow: hidden; border: 1px solid #444; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
-                <div class="tracker-fill" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s ease, background-color 0.5s ease;"></div>
-            </div>
-        `;
+                                    <div style="width: 100%; height: 16px; background: #333; border-radius: 8px; overflow: hidden; border: 1px solid #444; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
+                                        <div class="tracker-fill" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s ease, background-color 0.5s ease;"></div>
+                                    </div>
+                                `;
 
             container.appendChild(div);
             updateTrackerVisuals(trackerId);
-        }
-
-        function updateTrackerVisuals(id) {
-            const row = document.getElementById(id);
-            if (!row) return;
-
-            const current = parseFloat(row.querySelector('.tracker-current').value) || 0;
-            const max = parseFloat(row.querySelector('.tracker-max').value) || 1;
-            const fill = row.querySelector('.tracker-fill');
-
-            let percent = Math.min(Math.max((current / max) * 100, 0), 100);
-            fill.style.width = percent + "%";
-
-            // Color shifting: Green -> Yellow -> Red
-            if (percent < 50) {
-                fill.style.backgroundColor = "#4caf50";
-            } else if (percent < 85) {
-                fill.style.backgroundColor = "#ffeb3b";
-            } else {
-                fill.style.backgroundColor = "#f44336";
-            }
         }
 
         function addEquipment() {
@@ -2532,46 +2835,49 @@
             const row = document.createElement('div');
             row.className = 'equipment-row';
             row.innerHTML = `
-                                            <input type="text" placeholder="Item Name" class="eq-name">
-                                            <input type="text" placeholder="e.g. 5gp" class="eq-price">
-                                            <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
-                                            <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                            `;
+                                                                    <input type="text" placeholder="Item Name" class="eq-name">
+                                                                    <input type="text" placeholder="e.g. 5gp" class="eq-price">
+                                                                    <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
+                                                                    <button class="remove-attack" type="button" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                    `;
             list.appendChild(row);
         }
 
         function saveCharacter() {
-            const charName = document.getElementById('characterName').value.trim();
-            if (!charName) {
-                alert('Please enter a character name to save.');
+            if (!restrictedFeature('Saving')) return;
+
+            // Get the name from the Save Input field
+            const saveName = document.getElementById('characterName').value.trim();
+
+            if (!saveName) {
+                alert("Please enter a name in the Save box first!");
                 return;
             }
 
             const data = getCharacterData();
-            const key = `character_${charName}`;
 
             try {
-                // Update Master List
+                // Save the specific character data
+                localStorage.setItem(`character_${saveName}`, JSON.stringify(data));
+
+                // Update the master index of all characters
                 let characters = JSON.parse(localStorage.getItem('characterList') || '[]');
-                if (!characters.includes(charName)) {
-                    characters.push(charName);
+                if (!characters.includes(saveName)) {
+                    characters.push(saveName);
                     localStorage.setItem('characterList', JSON.stringify(characters));
+                    updateCharacterList();
                 }
 
-                // Save Data
-                localStorage.setItem(key, JSON.stringify(data));
-
-                updateCharacterList();
-                document.getElementById('characterList').value = charName;
-
-                alert(`Character "${charName}" saved!`);
+                activeCharacterName = saveName;
+                document.getElementById('characterList').value = saveName;
+                alert(`Successfully saved: ${saveName}`);
             } catch (e) {
-                console.error(e);
-                alert("SAVE FAILED: The image you uploaded might be too large for the browser's memory. Try a smaller image or use the compressed version provided in the fix.");
+                alert("Save Error: Your browser storage might be full (often caused by very large images).");
             }
         }
 
         function saveAsNewCharacter() {
+            if (!restrictedFeature('Save As New')) return;
             const charName = document.getElementById('characterName').value.trim();
             if (!charName) {
                 alert('Please enter a NEW character name to save.');
@@ -2727,33 +3033,33 @@
             div.id = containerId;
 
             div.innerHTML = `
-                                            <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
-                                            onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                            <div class="container-header-row">
-                                            <div class="field">
-                                            <label>Container Name</label>
-                                            <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack" oninput="updateTotalWeight()">
-                                            </div>
-                                            <div class="field">
-                                            <label>Weight</label>
-                                            <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-                                            </div>
-                                            <div class="field">
-                                            <label>Max Weight</label>
-                                            <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
-                                            </div>
-                                            </div>
-                                            <div class="container-item-header">
-                                            <div>Qty</div>
-                                            <div>Item Name</div>
-                                            <div>Description</div>
-                                            <div>Value</div>
-                                            <div>Weight</div>
-                                            <div></div>
-                                            </div>
-                                            <div class="container-items-area"></div>
-                                            <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
-                                            `;
+                                                                    <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
+                                                                    onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                    <div class="container-header-row">
+                                                                    <div class="field">
+                                                                    <label>Container Name</label>
+                                                                    <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack" oninput="updateTotalWeight()">
+                                                                    </div>
+                                                                    <div class="field">
+                                                                    <label>Weight</label>
+                                                                    <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                                                                    </div>
+                                                                    <div class="field">
+                                                                    <label>Max Weight</label>
+                                                                    <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
+                                                                    </div>
+                                                                    </div>
+                                                                    <div class="container-item-header">
+                                                                    <div>Qty</div>
+                                                                    <div>Item Name</div>
+                                                                    <div>Description</div>
+                                                                    <div>Value</div>
+                                                                    <div>Weight</div>
+                                                                    <div></div>
+                                                                    </div>
+                                                                    <div class="container-items-area"></div>
+                                                                    <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
+                                                                    `;
 
             list.appendChild(div);
             return containerId; // Return the ID so the import loop can find it
@@ -2766,13 +3072,13 @@
             const row = document.createElement('div');
             row.className = 'container-item-row';
             row.innerHTML = `
-                                <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
-                                <input type="text" class="eq-name" placeholder="Item Name">
-                                <input type="text" class="eq-desc" placeholder="Description">
-                                <input type="text" class="eq-price" placeholder="Value">
-                                <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
-                                <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
-                            `;
+                                                        <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
+                                                        <input type="text" class="eq-name" placeholder="Item Name">
+                                                        <input type="text" class="eq-desc" placeholder="Description">
+                                                        <input type="text" class="eq-price" placeholder="Value">
+                                                        <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
+                                                        <button class="remove-attack" onclick="this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                    `;
             itemsArea.appendChild(row);
         }
 
@@ -2796,49 +3102,49 @@
             div.setAttribute('data-is-vehicle', isVehicle);
 
             div.innerHTML = `
-                                                        <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
-                                                                onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
-                                                        <div class="mount-stats-grid">
-                                                            <div class="field">
-                                                                <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
-                                                                <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
-                                                            </div>
-                                                            <div class="field">
-                                                                <label>Type/Team</label>
-                                                                <input type="text" value="${type}">
-                                                            </div>
-                                                            <div class="field">
-                                                                <label>Total Load</label>
-                                                                <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-                                                            </div>
-                                                            <div class="field">
-                                                                <label>Capacity</label>
-                                                                <input type="number" class="max-mount-cap" value="${maxWgt}"
-                                                                       ${isVehicle ? 'readonly style="background:#fff; color:#007bff; font-weight:bold; border-color:#007bff;"' : ''} oninput="syncVehicleCapacity()">
-                                                            </div>
-                                                            <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
-                                                                <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
-                                                                <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
-                                                            </div>
-                                                        </div>
-                                                        <div class="mount-hp-ac-speed">
-                                                            <div class="field"><label>HP</label><input type="number" value="${hp}"></div>
-                                                            <div class="field"><label>AC</label><input type="number" value="${ac}"></div>
-                                                            <div class="field"><label>${isVehicle ? 'Collision' : 'Attack'}</label><input type="text" placeholder="e.g. 1d6"></div>
-                                                            <div class="field"><label>Manual Addon Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')"></div>
-                                                        </div>
-                                                        <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
-                                                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
-                                                            <div class="linked-containers-area"></div>
-                                                            <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
-                                                        </div>
-                                                        ${isVehicle ? `
-                                                        <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
-                                                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
-                                                            <div class="hitched-animals-area"></div>
-                                                            <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
-                                                        </div>` : ''}
-                                                    `;
+                                                                                <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
+                                                                                        onclick="this.parentElement.remove(); syncVehicleCapacity()">✖</button>
+                                                                                <div class="mount-stats-grid">
+                                                                                    <div class="field">
+                                                                                        <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
+                                                                                        <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
+                                                                                    </div>
+                                                                                    <div class="field">
+                                                                                        <label>Type/Team</label>
+                                                                                        <input type="text" value="${type}">
+                                                                                    </div>
+                                                                                    <div class="field">
+                                                                                        <label>Total Load</label>
+                                                                                        <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                                                                                    </div>
+                                                                                    <div class="field">
+                                                                                        <label>Capacity</label>
+                                                                                        <input type="number" class="max-mount-cap" value="${maxWgt}"
+                                                                                               ${isVehicle ? 'readonly style="background:#fff; color:#007bff; font-weight:bold; border-color:#007bff;"' : ''} oninput="syncVehicleCapacity()">
+                                                                                    </div>
+                                                                                    <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
+                                                                                        <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
+                                                                                        <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="mount-hp-ac-speed">
+                                                                                    <div class="field"><label>HP</label><input type="number" value="${hp}"></div>
+                                                                                    <div class="field"><label>AC</label><input type="number" value="${ac}"></div>
+                                                                                    <div class="field"><label>${isVehicle ? 'Collision' : 'Attack'}</label><input type="text" placeholder="e.g. 1d6"></div>
+                                                                                    <div class="field"><label>Manual Addon Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')"></div>
+                                                                                </div>
+                                                                                <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
+                                                                                    <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
+                                                                                    <div class="linked-containers-area"></div>
+                                                                                    <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
+                                                                                </div>
+                                                                                ${isVehicle ? `
+                                                                                <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
+                                                                                    <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
+                                                                                    <div class="hitched-animals-area"></div>
+                                                                                    <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
+                                                                                </div>` : ''}
+                                                                            `;
             list.appendChild(div);
         }
 
@@ -2871,12 +3177,12 @@
             const options = available.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
 
             row.innerHTML = `
-                                        <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
-                                        <option value="">-- Select Animal --</option>
-                                        ${options}
-                                        </select>
-                                        <button class="remove-attack" onclick="removeAnimalHitch(this)">✖</button>
-                                        `;
+                                                                <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
+                                                                <option value="">-- Select Animal --</option>
+                                                                ${options}
+                                                                </select>
+                                                                <button class="remove-attack" onclick="removeAnimalHitch(this)">✖</button>
+                                                                `;
 
             animalArea.appendChild(row);
         }
@@ -2927,16 +3233,67 @@
             row.style.marginBottom = '5px';
 
             row.innerHTML = `
-                                                                                                                    <select class="container-selector"
-                                                                                                                            onfocus="populateContainerDropdown(this)"
-                                                                                                                            onchange="updateMountLoad('${mountId}')">
-                                                                                                                        <option value="0">-- Select Container --</option>
-                                                                                                                    </select>
-                                                                                                                    <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
-                                                                                                                    <button class="remove-attack" onclick="this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
-                                                                                                                `;
+                                                                                                                                            <select class="container-selector"
+                                                                                                                                                    onfocus="populateContainerDropdown(this)"
+                                                                                                                                                    onchange="updateMountLoad('${mountId}')">
+                                                                                                                                                <option value="0">-- Select Container --</option>
+                                                                                                                                            </select>
+                                                                                                                                            <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
+                                                                                                                                            <button class="remove-attack" onclick="this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
+                                                                                                                                        `;
             containerArea.appendChild(row);
-        }        
+        }
+
+        //function updateMountLoad(mountId) {
+        //    const card = document.getElementById(mountId);
+        //    if (!card) return;
+
+        //    // 1. Get Manual Weight
+        //    const manualInput = card.querySelector('.manual-mount-load');
+        //    let totalCalculatedLoad = manualInput ? parseFloat(manualInput.value) || 0 : 0;
+
+        //    // 2. Add Rider Weight if checked
+        //    const ridingCheckbox = card.querySelector('.is-riding');
+        //    if (ridingCheckbox && ridingCheckbox.checked) {
+        //        const charWeightInput = document.getElementById('weight');
+        //        const charWeight = charWeightInput ? parseFloat(charWeightInput.value) || 0 : 0;
+        //        totalCalculatedLoad += charWeight;
+        //    }
+
+        //    // 3. Sync Hitched Containers (Safety Check Added)
+        //    card.querySelectorAll('.linked-container-row').forEach(row => {
+        //        const selector = row.querySelector('.container-selector');
+        //        const weightDisplay = row.querySelector('.selected-weight');
+
+        //        if (selector && selector.value !== "0") {
+        //            // Look up the actual container by its ID
+        //            const targetContainer = document.getElementById(selector.value);
+        //            if (targetContainer) {
+        //                const currentWgtText = targetContainer.querySelector('.current-cont-wgt').textContent;
+        //                const currentWgt = parseFloat(currentWgtText) || 0;
+
+        //                weightDisplay.textContent = currentWgt.toFixed(2);
+        //                totalCalculatedLoad += currentWgt;
+        //            }
+        //        } else {
+        //            weightDisplay.textContent = "0.00";
+        //        }
+        //    });
+
+        //    // 4. Update display and colors (Green/Orange/Red)
+        //    const display = card.querySelector('.current-mount-load');
+        //    if (display) {
+        //        display.textContent = totalCalculatedLoad.toFixed(2);
+        //        const capacity = parseFloat(card.querySelector('.max-mount-cap').value) || 0;
+        //        const percent = capacity > 0 ? (totalCalculatedLoad / capacity) : 0;
+
+        //        display.style.color = '#2e7d32'; // Default Green
+        //        if (capacity > 0) {
+        //            if (percent > 1.0) display.style.color = '#d32f2f'; // Red
+        //            else if (percent >= 0.9) display.style.color = '#f57c00'; // Orange
+        //        }
+        //    }
+        //}
 
         function syncVehicleCapacity() {
             // ADD THIS SAFETY CHECK: If the list is empty, stop the function immediately
@@ -2998,47 +3355,47 @@
             const compListId = 'compList_' + Date.now();
 
             project.innerHTML = `
-                                                                                                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
-                                                                                                                <input type="text" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
-                                                                                                                <select>
-                                                                                                                    <option>Common</option><option>Uncommon</option><option>Rare</option>
-                                                                                                                    <option>Very Rare</option><option>Legendary</option>
-                                                                                                                </select>
-                                                                                                                <input type="number" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
-                                                                                                            </div>
+                                                                                                                                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
+                                                                                                                                        <input type="text" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
+                                                                                                                                        <select>
+                                                                                                                                            <option>Common</option><option>Uncommon</option><option>Rare</option>
+                                                                                                                                            <option>Very Rare</option><option>Legendary</option>
+                                                                                                                                        </select>
+                                                                                                                                        <input type="number" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
+                                                                                                                                    </div>
 
-                                                                                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                                                                                                                <input type="text" placeholder="Required Tools/Proficiency">
-                                                                                                                <select class="rule-select" onchange="calculateCrafting(this)">
-                                                                                                                    <option value="2024">2024 Rules (Cost/10 days)</option>
-                                                                                                                    <option value="XGtE">XGtE (Workweeks)</option>
-                                                                                                                    <option value="2014">2014 (5gp/day)</option>
-                                                                                                                </select>
-                                                                                                            </div>
+                                                                                                                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                                                                                                                                        <input type="text" placeholder="Required Tools/Proficiency">
+                                                                                                                                        <select class="rule-select" onchange="calculateCrafting(this)">
+                                                                                                                                            <option value="2024">2024 Rules (Cost/10 days)</option>
+                                                                                                                                            <option value="XGtE">XGtE (Workweeks)</option>
+                                                                                                                                            <option value="2014">2014 (5gp/day)</option>
+                                                                                                                                        </select>
+                                                                                                                                    </div>
 
-                                                                                                            <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
-                                                                                                                <label style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
-                                                                                                                <div id="${compListId}" style="margin-top: 5px;"></div>
-                                                                                                                <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;"
-                                                                                                                    onclick="addComponentToProject('${compListId}')">+ Add Component</button>
-                                                                                                            </div>
+                                                                                                                                    <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
+                                                                                                                                        <label style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
+                                                                                                                                        <div id="${compListId}" style="margin-top: 5px;"></div>
+                                                                                                                                        <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;"
+                                                                                                                                            onclick="addComponentToProject('${compListId}')">+ Add Component</button>
+                                                                                                                                    </div>
 
-                                                                                                            <div style="margin-top: 15px;">
-                                                                                                                <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
-                                                                                                                <div style="background: #ddd; height: 10px; border-radius: 5px;">
-                                                                                                                    <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
-                                                                                                                </div>
-                                                                                                                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
-                                                                                                                    <span>Invested: <input type="number" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
-                                                                                                                    <span class="days-left">Remaining: ? Days</span>
-                                                                                                                </div>
-                                                                                                            </div>
+                                                                                                                                    <div style="margin-top: 15px;">
+                                                                                                                                        <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
+                                                                                                                                        <div style="background: #ddd; height: 10px; border-radius: 5px;">
+                                                                                                                                            <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
+                                                                                                                                        </div>
+                                                                                                                                        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
+                                                                                                                                            <span>Invested: <input type="number" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
+                                                                                                                                            <span class="days-left">Remaining: ? Days</span>
+                                                                                                                                        </div>
+                                                                                                                                    </div>
 
-                                                                                                            <textarea placeholder="Complications & Notes..."
-                                  oninput="autoSizeTextarea(this)"
-                                  style="margin-top: 10px; min-height: 60px;"></textarea>
-                                                                                                            <button class="remove-attack" onclick="this.parentElement.remove()">Cancel Project</button>
-                                                                                                        `;
+                                                                                                                                    <textarea placeholder="Complications & Notes..."
+                                                          oninput="autoSizeTextarea(this)"
+                                                          style="margin-top: 10px; min-height: 60px;"></textarea>
+                                                                                                                                    <button class="remove-attack" onclick="this.parentElement.remove()">Cancel Project</button>
+                                                                                                                                `;
             list.appendChild(project);
         }
 
@@ -3051,43 +3408,48 @@
             row.style.gap = '8px';
             row.style.marginBottom = '4px';
             row.innerHTML = `
-                                                                                                            <input type="checkbox" style="width: 14px; height: 14px;">
-                                                                                                            <input type="text" placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;">
-                                                                                                            <button class="remove-attack" style="padding: 2px 6px;" onclick="this.parentElement.remove()">✖</button>
-                                                                                                        `;
+                                                                                                                                    <input type="checkbox" style="width: 14px; height: 14px;">
+                                                                                                                                    <input type="text" placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;">
+                                                                                                                                    <button class="remove-attack" style="padding: 2px 6px;" onclick="this.parentElement.remove()">✖</button>
+                                                                                                                                `;
             list.appendChild(row);
         }
 
         function calculateCrafting(element) {
             const card = element.closest('.text-box');
+            if (!card) return;
+
+            // Pull GP values safely
             const totalGp = parseFloat(card.querySelector('.total-gp').value) || 0;
-            const invested = parseFloat(card.querySelector('input[value]').parentElement.querySelector('input').value) || 0;
+            const investedFields = card.querySelectorAll('input[type="number"]');
+            // Finds the 'Invested' input which is usually the second number box in the row
+            const invested = parseFloat(investedFields[1]?.value) || 0;
             const ruleSet = card.querySelector('.rule-select').value;
 
-            // Progress Percentage
+            // Update Progress Bar
             const percent = totalGp > 0 ? (invested / totalGp) * 100 : 0;
-            card.querySelector('.progress-fill').style.width = Math.min(percent, 100) + "%";
+            const fill = card.querySelector('.progress-fill');
+            if (fill) fill.style.width = Math.min(percent, 100) + "%";
 
-            // Remaining Time Calculation
-            let remaining = "Calculation Error";
+            // Calculate Days Remaining
+            let remainingText = "";
             const remainingGp = totalGp - invested;
 
-            if (remainingGp <= 0) {
-                remaining = "Completed!";
+            if (remainingGp <= 0 && totalGp > 0) {
+                remainingText = "Completed!";
             } else {
-                if (ruleSet === "2024") {
-                    // 2024: Cost / 10 = total days
-                    remaining = Math.ceil(remainingGp / 10) + " Days";
-                } else if (ruleSet === "XGtE") {
-                    // XGtE: 50gp per workweek (5 days) = 10gp per day
-                    remaining = Math.ceil(remainingGp / 10) + " Days (" + (remainingGp / 50).toFixed(1) + " Weeks)";
-                } else {
-                    // 2014: 5gp per day
-                    remaining = Math.ceil(remainingGp / 5) + " Days";
+                const rate = (ruleSet === "2024") ? 10 : (ruleSet === "2014") ? 5 : 10;
+                const days = Math.ceil(remainingGp / rate);
+                remainingText = days > 0 ? `${days} Days` : "0 Days";
+
+                if (ruleSet === "XGtE") {
+                    const weeks = (remainingGp / 50).toFixed(1);
+                    remainingText += ` (~${weeks} Weeks)`;
                 }
             }
 
-            card.querySelector('.days-left').innerText = "Remaining: " + remaining;
+            const display = card.querySelector('.days-left');
+            if (display) display.innerText = "Remaining: " + remainingText;
         }
 
         function handlePortraitUpload(input) {
@@ -3188,67 +3550,27 @@
             }
         }
 
-        const conditions = [
-            "Blinded", "Charmed", "Corrupted", "Deafened", "Exhaustion", "Frightened",
-            "Grappled", "Incapacitated", "Invisible", "Paralyzed",
-            "Petrified", "Poisoned", "Prone", "Restrained", "Stunned", "Unconscious"
-        ];
-
-        function generateStatusEffects() {
-            const grid = document.getElementById('statusGrid');
-            if (!grid) return;
-            grid.innerHTML = ''; // Clear it
-
-            conditions.forEach(condition => {
-                const div = document.createElement('div');
-                div.style.cssText = "display: flex; align-items: center; gap: 8px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; background: #fff; transition: background 0.2s;";
-
-                // Use the condition name as the ID
-                const id = `cond_${condition.toLowerCase()}`;
-
-                div.innerHTML = `
-                <input type="checkbox" id="${id}" onchange="updateStatusStyle(this)" style="width: 16px; height: 16px; cursor: pointer;">
-                <label for="${id}" style="font-size: 12px; cursor: pointer; flex: 1;">${condition}</label>
-            `;
-                grid.appendChild(div);
-            });
-        }
-
         function updateGauge() {
-            const current = parseFloat(document.getElementById('gaugeCurrent').value) || 0;
-            const max = parseFloat(document.getElementById('gaugeMax').value) || 1;
+            const currentEl = document.getElementById('gaugeCurrent');
+            const maxEl = document.getElementById('gaugeMax');
             const fill = document.getElementById('gaugeFill');
+            if (!currentEl || !maxEl || !fill) return;
 
-            // Calculate percentage
+            const current = parseFloat(currentEl.value) || 0;
+            const max = parseFloat(maxEl.value) || 1;
+
             let percent = (current / max) * 100;
             if (percent > 100) percent = 100;
             if (percent < 0) percent = 0;
 
-            // Update Width
             fill.style.width = percent + "%";
 
-            // Color Logic (Green -> Yellow -> Red)
             if (percent < 50) {
-                fill.style.backgroundColor = "#4caf50"; // Green
+                fill.style.backgroundColor = "#4caf50";
             } else if (percent < 85) {
-                fill.style.backgroundColor = "#ffeb3b"; // Yellow
+                fill.style.backgroundColor = "#ffeb3b";
             } else {
-                fill.style.backgroundColor = "#f44336"; // Red
-            }
-        }
-
-        function updateStatusStyle(checkbox) {
-            const parent = checkbox.parentElement;
-            if (checkbox.checked) {
-                // CHANGED: Darker gold border and more visible background
-                parent.style.background = "#fff59d"; // Bright yellow/gold
-                parent.style.borderColor = "#f9a825"; // Saturated amber border
-                parent.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-            } else {
-                // Reset to the new darker default
-                parent.style.background = "#fdfdfd";
-                parent.style.borderColor = "#888";
-                parent.style.boxShadow = "none";
+                fill.style.backgroundColor = "#f44336";
             }
         }
 
@@ -3322,6 +3644,7 @@
         }
 
         function exportCharacter() {
+            if (!restrictedFeature('Exporting')) return;
             const charName = document.getElementById('characterName').value.trim() || 'character';
             const data = getCharacterData();
 
@@ -3464,6 +3787,17 @@
             }
         }
 
+        // This function "Logs In" the user after a successful Supabase check
+        function loginLicense(email) {
+            // Force lowercase to prevent caps-lock issues later
+            const cleanEmail = email.trim().toLowerCase();
+
+            localStorage.setItem('isActivated', 'true');
+            localStorage.setItem('licenseEmail', cleanEmail);
+
+            console.log("Session started for: " + cleanEmail);
+        }
+
         function showPage(pageId, element) {
             // 1. Hide all pages
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -3488,8 +3822,277 @@
             window.scrollTo(0, 0);
         }
 
+        function logoutLicense() {
+            if (confirm("Are you sure you want to log out? This will lock premium features on this device until you activate again.")) {
+                // Removes the "paid" flag from your browser's memory
+                localStorage.removeItem('isActivated');
+                // Optional: clear the email if you want a total reset
+                localStorage.removeItem('licenseEmail');
+
+                alert("Logged out successfully. The sheet is now in Trial Mode.");
+                location.reload();
+            }
+        }
+
+        // 1. Generate the grid of checkboxes
+        function generateStatusEffects() {
+            const grid = document.getElementById('statusGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            const effects = ["Blinded", "Charmed", "Deafened", "Frightened", "Grappled", "Incapacitated", "Invisible", "Paralyzed", "Petrified", "Poisoned", "Prone", "Restrained", "Stunned", "Unconscious", "Exhaustion", "Corruption"];
+
+            effects.forEach(name => {
+                const wrapper = document.createElement('div');
+                const max = (name === "Exhaustion") ? 6 : (name === "Corruption" ? 15 : 1);
+                wrapper.innerHTML = `
+                <label style="display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer;">
+                    <input type="checkbox" data-effect="${name}" data-max="${max}" onchange="handleStatusChange(this)">
+                    <span>${name}</span>
+                </label>`;
+                grid.appendChild(wrapper);
+            });
+        }
+
+        // 2. Handle what happens when you click a box
+        function handleStatusChange(checkbox) {
+            const name = checkbox.getAttribute('data-effect');
+            const max = checkbox.getAttribute('data-max');
+
+            if (checkbox.checked) {
+                if (!document.querySelector(`[data-linked-effect="${name}"]`)) {
+                    createStatusTracker(name, max);
+                }
+            } else {
+                const existing = document.querySelector(`[data-linked-effect="${name}"]`);
+                if (existing) existing.remove();
+            }
+        }
+
+        // 3. Create the "Framed" tracker for the effect
+        function createStatusTracker(name, max) {
+            const container = document.getElementById('trackerContainer');
+            const id = 'status-' + name.toLowerCase().replace(/\s/g, '-');
+            const div = document.createElement('div');
+            div.className = 'status-tracker-frame';
+            div.id = id;
+            div.setAttribute('data-linked-effect', name);
+            div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold; font-size: 14px;">${name.toUpperCase()}</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="number" class="tracker-current" value="1" oninput="updateTrackerVisuals('${id}')" style="width: 45px; text-align: center; font-weight: bold;">
+                    <span style="opacity: 0.5;">/</span>
+                    <input type="number" class="tracker-max" value="${max}" readonly style="width: 45px; text-align: center; border: none; background: transparent;">
+                </div>
+            </div>
+            <div style="width: 100%; height: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                <div class="tracker-bar-fill" style="width: 0%; height: 100%; background: #ffeb3b; transition: width 0.3s ease;"></div>
+            </div>
+
+            <textarea class="status-info-text"
+                      spellcheck="false"
+                      oninput="autoSizeTextarea(this)"
+                      placeholder="Custom rules or notes..."></textarea>
+
+            <button onclick="uncheckStatus('${name}'); document.getElementById('${id}').remove();"
+                    style="margin-top: 10px; background: none; border: none; color: #ff5252; cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0;">
+                Dismiss Condition
+            </button>
+        `;
+            container.appendChild(div);
+            updateTrackerVisuals(id); // This will set the initial text and the height
+        }
+
+        function uncheckStatus(name) {
+            const cb = document.querySelector(`input[data-effect="${name}"]`);
+            if (cb) cb.checked = false;
+        }
+
+        // --- 4. UPDATE VISUALS AND MECHANICAL TEXT ---
+        function updateTrackerVisuals(id) {
+            const row = document.getElementById(id);
+            if (!row) return;
+
+            const current = parseInt(row.querySelector('.tracker-current').value) || 0;
+            const max = parseInt(row.querySelector('.tracker-max').value) || 1;
+            const fill = row.querySelector('.tracker-bar-fill');
+            const infoText = row.querySelector('.status-info-text');
+            const effectName = row.getAttribute('data-linked-effect');
+
+            // Update the progress bar
+            fill.style.width = Math.min((current / max) * 100, 100) + '%';
+
+            if (infoText && STATUS_DESCRIPTIONS[effectName]) {
+                const desc = STATUS_DESCRIPTIONS[effectName];
+                let newDefaultContent = "";
+
+                // Determine the NEW system rules based on current level
+                if (effectName === "Exhaustion") {
+                    let cumulative = [];
+                    for (let i = 1; i <= current; i++) {
+                        if (desc[i]) cumulative.push(`• ${desc[i]}`);
+                    }
+                    newDefaultContent = cumulative.join("\n");
+                } else if (effectName === "Corruption") {
+                    if (current <= 2) newDefaultContent = desc["0-2"];
+                    else if (current <= 4) newDefaultContent = desc["3-4"];
+                    else if (current <= 6) newDefaultContent = desc["5-6"];
+                    else if (current <= 8) newDefaultContent = desc["7-8"];
+                    else newDefaultContent = desc["9-15"];
+                } else {
+                    newDefaultContent = typeof desc === 'string' ? desc : "";
+                }
+
+                // --- SMART MERGE LOGIC ---
+                // Get the text currently in the box
+                const currentUserText = infoText.value;
+                // Get the last text the SYSTEM put in there
+                const lastSystemText = infoText.getAttribute('data-last-auto-value') || "";
+
+                if (currentUserText === "" || currentUserText === lastSystemText) {
+                    // If the user hasn't typed anything, just update to new rules
+                    infoText.value = newDefaultContent;
+                } else {
+                    // The user HAS typed something.
+                    // We find the "Custom Note" by removing the old system text from the box
+                    let customNotes = currentUserText.replace(lastSystemText, "").trim();
+
+                    // Rebuild the box: New Rules + Your Notes
+                    if (customNotes !== "") {
+                        infoText.value = newDefaultContent + "\n" + customNotes;
+                    } else {
+                        infoText.value = newDefaultContent;
+                    }
+                }
+
+                // Save what we just wrote so we can recognize it next time
+                infoText.setAttribute('data-last-auto-value', newDefaultContent);
+
+                // AUTO-SIZE: Make the box grow to fit the content
+                if (typeof autoSizeTextarea === 'function') {
+                    autoSizeTextarea(infoText);
+                }
+            }
+        }
+
+        // This makes the box turn gold when checked
+        function updateStatusStyle(checkbox) {
+            const parent = checkbox.parentElement;
+            if (checkbox.checked) {
+                parent.style.background = "#fff59d"; // Gold
+                parent.style.borderColor = "#f9a825";
+            } else {
+                parent.style.background = "#fff";
+                parent.style.borderColor = "#ddd";
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
-            // 1. Initial Load Sequences
+            // --- 0. PERMANENT THEME & BACKGROUND LOGIC ---
+            const bgInput1 = document.getElementById('bgColor1');
+            const bgInput2 = document.getElementById('bgColor2');
+
+            function applySavedTheme() {
+                const savedColors = JSON.parse(localStorage.getItem('theme_colors'));
+                if (savedColors) {
+                    document.documentElement.style.setProperty('--bg-color-1', savedColors.color1);
+                    document.documentElement.style.setProperty('--bg-color-2', savedColors.color2);
+                    if (bgInput1) bgInput1.value = savedColors.color1;
+                    if (bgInput2) bgInput2.value = savedColors.color2;
+                }
+            }
+
+            function saveThemeColors() {
+                if (!bgInput1 || !bgInput2) return;
+                const c1 = bgInput1.value;
+                const c2 = bgInput2.value;
+                document.documentElement.style.setProperty('--bg-color-1', c1);
+                document.documentElement.style.setProperty('--bg-color-2', c2);
+                localStorage.setItem('theme_colors', JSON.stringify({ color1: c1, color2: c2 }));
+            }
+
+            applySavedTheme();
+
+            if (bgInput1 && bgInput2) {
+                bgInput1.addEventListener('input', saveThemeColors);
+                bgInput2.addEventListener('input', saveThemeColors);
+            }
+
+            // --- 1. HOW-TO POPUP LOGIC ---
+            const modal = document.getElementById('howtoModal');
+            const closeBtn = document.getElementById('closeHowto');
+            const checkbox = document.getElementById('dontShowAgain');
+
+            const hidePopup = localStorage.getItem('hideHowto');
+            if (modal) modal.style.display = hidePopup ? 'none' : 'flex';
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    if (checkbox && checkbox.checked) localStorage.setItem('hideHowto', 'true');
+                    modal.style.display = 'none';
+                });
+            }
+
+            // --- 2. TRIAL & LICENSE RESTRICTION LOGIC ---
+            // Globally accessible restrictedFeature function
+            window.restrictedFeature = function (featureName) {
+                const email = localStorage.getItem('licenseEmail');
+
+                // 1. If licensed, everything is unlocked.
+                if (email) return true;
+
+                // 2. Manage 30-day Timer
+                let installDate = localStorage.getItem('app_install_date');
+                if (!installDate) {
+                    installDate = Date.now();
+                    localStorage.setItem('app_install_date', installDate);
+                }
+
+                const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+                const isTrialExpired = (Date.now() - installDate) > thirtyDaysInMs;
+
+                // 3. HARD LOCK AFTER 30 DAYS
+                if (isTrialExpired) {
+                    alert("Your 30-day trial has expired. All features are locked. Please activate a license.");
+                    document.getElementById('license-lock').style.display = 'flex';
+                    return false;
+                }
+
+                // 4. DURING TRIAL: ONLY "Save As New" WORKS
+                if (featureName === 'Save As New') {
+                    return true;
+                } else {
+                    alert(`${featureName} is locked during trial. Only 'Save As New' is available.`);
+                    document.getElementById('license-lock').style.display = 'flex';
+                    return false;
+                }
+            };
+
+            // --- 3. STATUS EFFECTS TRACKER LOGIC ---
+            const statusGrid = document.getElementById('statusGrid');
+            if (statusGrid) {
+                statusGrid.addEventListener('change', (e) => {
+                    if (e.target.tagName === 'INPUT') {
+                        const effectName = e.target.getAttribute('data-effect');
+                        const maxVal = e.target.getAttribute('data-max') || 1;
+
+                        if (e.target.checked) {
+                            // Only create if it doesn't already exist
+                            if (!document.querySelector(`[data-linked-effect="${effectName}"]`)) {
+                                createStatusTracker(effectName, maxVal);
+                            }
+                        } else {
+                            // Remove tracker if unchecked
+                            const existing = document.querySelector(`[data-linked-effect="${effectName}"]`);
+                            if (existing) existing.remove();
+                        }
+                    }
+                });
+            }
+
+            // --- 4. INITIAL LOAD SEQUENCES ---
+            checkLicenseStatus();
+            runHeartbeat();
             loadDarkModePreference();
             loadSharedCharacter();
             updateCharacterList();
@@ -3497,114 +4100,126 @@
             updateGauge();
             updateModifiers();
 
-            // 2. Setup GLOBAL calculation listener
+            // --- 5. ACTIVATE BUTTON LOGIC ---
+            const activateBtn = document.getElementById('activate-btn');
+            if (activateBtn) {
+                activateBtn.onclick = async () => {
+                    const emailInput = document.getElementById('license-email');
+                    const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
+                    const statusDiv = document.getElementById('lock-status');
+                    const machineId = localStorage.getItem('rpg_browser_id');
+
+                    if (!email) {
+                        if (statusDiv) statusDiv.innerText = "Please enter an email.";
+                        return;
+                    }
+
+                    if (statusDiv) {
+                        statusDiv.style.color = "#ffeb3b";
+                        statusDiv.innerText = "Connecting to server...";
+                    }
+
+                    try {
+                        const response = await fetch('https://bkfwuueflwsfzktkuxpk.supabase.co/functions/v1/verify-license', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, machineId })
+                        });
+                        const result = await response.json();
+                        if (result.authorized) {
+                            loginLicense(email);
+                            localStorage.setItem('lastServerCheck', Date.now());
+                            alert("Success! Your RPG Character Sheet is fully activated.");
+                            location.reload();
+                        } else {
+                            if (statusDiv) {
+                                statusDiv.style.color = "#f44336";
+                                statusDiv.innerText = "Error: " + (result.message || "Invalid license.");
+                            }
+                        }
+                    } catch (err) {
+                        if (statusDiv) {
+                            statusDiv.style.color = "#f44336";
+                            statusDiv.innerText = "Connection error.";
+                        }
+                    }
+                };
+            }
+
+            // --- 6. GLOBAL INPUT LISTENERS & UI ---
+            const displayIdEl = document.getElementById('display-id');
+            if (displayIdEl) displayIdEl.innerText = localStorage.getItem('rpg_browser_id');
+
             document.body.addEventListener('input', (e) => {
                 const target = e.target;
 
-                // Update modifiers and spellcasting
+                // Auto-Size text areas
+                if (target.tagName === 'TEXTAREA') autoSizeTextarea(target);
+
+                // Update Modifiers and Bars
                 if (target.type === "number" || target.type === "checkbox" || target.id === "spellAbility") {
                     updateModifiers();
+                    if (target.id === "xp" || target.id === "xpMax") updateXPBar();
+                    if (target.id === "currentHp" || target.id === "maxHp") updateHealthBar();
 
-                    if (target.id === "xp" || target.id === "xpMax") {
-                        updateXPBar();
-                    }
-
-                    if (target.id === "currentHp" || target.id === "maxHp") {
-                        updateHealthBar();
-                    }
-
+                    // If it's a tracker, update visuals (which now includes status info text)
                     if (target.classList.contains('tracker-current') || target.classList.contains('tracker-max')) {
-                        const trackerId = target.closest('.tracker-row').id;
-                        updateTrackerVisuals(trackerId);
+                        const trackerRow = target.closest('.tracker-row');
+                        if (trackerRow) updateTrackerVisuals(trackerRow.id);
                     }
                 }
 
-                // Specifically handle vehicle capacity math
-                if (target.classList.contains('max-mount-cap') || target.classList.contains('mount-name')) {
-                    syncVehicleCapacity();
-                }
-
-                // XP Highlight Logic
-                const xpValue = parseInt(document.getElementById('xp').value) || 0;
-                const xpMax = parseInt(document.getElementById('xpMax').value) || 0;
-                const levelBox = document.getElementById('level');
-
-                if (xpValue >= xpMax && xpMax > 0) {
-                    levelBox.style.backgroundColor = "#fff9c4"; // Light gold highlight
-                    levelBox.style.borderColor = "#fbc02d";
-                } else {
-                    levelBox.style.backgroundColor = "";
-                    levelBox.style.borderColor = "";
+                // Auto-Save Trigger
+                if (target.closest('input, select, textarea')) {
+                    clearTimeout(window.saveTimeout);
+                    window.saveTimeout = setTimeout(autoSave, 1000);
                 }
             });
 
-            // 3. AUTO-SAVE / AUTO-LOAD LOGIC
+            // --- 7. AUTO-SAVE / AUTO-LOAD ---
             window.autoSave = function () {
                 const data = getCharacterData();
                 localStorage.setItem('autosave_char', JSON.stringify(data));
-                console.log("Progress auto-saved.");
             };
 
             window.autoLoad = function () {
                 const savedData = localStorage.getItem('autosave_char');
-                if (savedData) {
-                    setCharacterData(JSON.parse(savedData));
-                    console.log("Previous session restored.");
-                }
+                if (savedData) setCharacterData(JSON.parse(savedData));
             };
 
-            // Listen for ANY input or change to trigger an auto-save
-            ['input', 'change'].forEach(eventType => {
-                document.addEventListener(eventType, (e) => {
-
-                    if (e.target.tagName === 'TEXTAREA') {
-                        autoSizeTextarea(e.target);
-                    }
-
-                    if (e.target.closest('input, select, textarea')) {
-                        clearTimeout(window.saveTimeout);
-                        window.saveTimeout = setTimeout(autoSave, 1000);
-                    }
-                });
-            });
-
-            // 4. Run the load function immediately when the page is ready
             autoLoad();
 
-            // 5. INSTALL PROMPT LOGIC (Mobile/PWA)
+            // --- 8. HEARTBEAT & INSTALL ---
+            async function runHeartbeat() {
+                const email = localStorage.getItem('licenseEmail');
+                const machineId = localStorage.getItem('rpg_browser_id');
+                if (!email || !machineId) return;
+                try {
+                    const response = await fetch('https://bkfwuueflwsfzktkuxpk.supabase.co/functions/v1/verify-license', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email.toLowerCase(), machineId, heartbeat: true })
+                    });
+                    const result = await response.json();
+                    if (!result.authorized) logoutLicense();
+                } catch (err) { console.log("Heartbeat failed (Offline)."); }
+            }
+
             let deferredPrompt;
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
-                showInstallPromotion();
-            });
-
-            function showInstallPromotion() {
-                if (deferredPrompt && !localStorage.getItem('installPromptShown')) {
+                if (!localStorage.getItem('installPromptShown')) {
                     setTimeout(() => {
-                        if (confirm('Install RPG Character Sheet as an app for easier access?')) {
+                        if (confirm('Install RPG Character Sheet as an app?')) {
                             deferredPrompt.prompt();
-                            deferredPrompt.userChoice.then((choiceResult) => {
-                                if (choiceResult.outcome === 'accepted') {
-                                    console.log('User accepted the install prompt');
-                                }
-                                deferredPrompt = null;
-                            });
+                            deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
                         }
                         localStorage.setItem('installPromptShown', 'true');
                     }, 3000);
                 }
-            }
-        });
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(() => console.log('Offline ready.'))
-                    .catch(err => console.log('SW error:', err));
             });
-        }
-
+        });
     </script>
 </body>
 </html>
