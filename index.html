@@ -38,59 +38,80 @@
             transition: background 0.3s ease;
         }
 
-                body.dark-mode .container {
-                    background: #2a2a3e;
-                    color: #e0e0e0;
-                }
+        :root {
+            --bg-color-1: #667eea;
+            --bg-color-2: #764ba2;
+            --dark-overlay: rgba(0, 0, 0, 0); /* Invisible by default */
+        }
 
-                body.dark-mode .stat-box,
-                body.dark-mode .combat-box,
-                body.dark-mode .skill-list,
-                body.dark-mode .saves-section,
-                body.dark-mode .text-box,
-                body.dark-mode .attacks-section,
-                body.dark-mode .attunement-section {
-                    background: #1e1e2e;
+        body.dark-mode {
+            --dark-overlay: rgba(0, 0, 0, 0.5); /* Darkens the custom colors */
+            background-color: #1a1a1a; /* Fallback */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Layer 1: Dark overlay | Layer 2: Custom Gradient */
+            background: linear-gradient(var(--dark-overlay), var(--dark-overlay)), linear-gradient(135deg, var(--bg-color-1) 0%, var(--bg-color-2) 100%);
+            background-attachment: fixed; /* Keeps gradient smooth while scrolling */
+            padding: 20px;
+            min-height: 100vh;
+            transition: background 0.3s ease;
+        }
+
+            body.dark-mode .container {
+                background: #2a2a3e;
+                color: #e0e0e0;
+            }
+
+            body.dark-mode .stat-box,
+            body.dark-mode .combat-box,
+            body.dark-mode .skill-list,
+            body.dark-mode .saves-section,
+            body.dark-mode .text-box,
+            body.dark-mode .attacks-section,
+            body.dark-mode .attunement-section {
+                background: #1e1e2e;
+                border-color: #4a4a5e;
+            }
+
+                body.dark-mode .stat-box h3,
+                body.dark-mode .combat-box label,
+                body.dark-mode .skill-list h3,
+                body.dark-mode .saves-section h3,
+                body.dark-mode .text-box h3,
+                body.dark-mode .attacks-section h3,
+                body.dark-mode .attunement-section h3 {
+                    color: #e0e0e0;
                     border-color: #4a4a5e;
                 }
 
-                    body.dark-mode .stat-box h3,
-                    body.dark-mode .combat-box label,
-                    body.dark-mode .skill-list h3,
-                    body.dark-mode .saves-section h3,
-                    body.dark-mode .text-box h3,
-                    body.dark-mode .attacks-section h3,
-                    body.dark-mode .attunement-section h3 {
-                        color: #e0e0e0;
-                        border-color: #4a4a5e;
-                    }
+            body.dark-mode input,
+            body.dark-mode textarea,
+            body.dark-mode select {
+                background: #16162e;
+                color: #e0e0e0;
+                border-color: #4a4a5e;
+            }
 
-                body.dark-mode input,
-                body.dark-mode textarea,
-                body.dark-mode select {
-                    background: #16162e;
-                    color: #e0e0e0;
-                    border-color: #4a4a5e;
+                body.dark-mode input:focus,
+                body.dark-mode textarea:focus,
+                body.dark-mode select:focus {
+                    border-color: #667eea;
                 }
 
-                    body.dark-mode input:focus,
-                    body.dark-mode textarea:focus,
-                    body.dark-mode select:focus {
-                        border-color: #667eea;
-                    }
+            body.dark-mode .field label,
+            body.dark-mode .stat-name {
+                color: #b0b0c0;
+            }
 
-                body.dark-mode .field label,
-                body.dark-mode .stat-name {
-                    color: #b0b0c0;
-                }
+            body.dark-mode .modifier {
+                color: #8b9bea;
+            }
 
-                body.dark-mode .modifier {
-                    color: #8b9bea;
-                }
-
-                body.dark-mode .skill-bonus {
-                    color: #8b9bea;
-                }
+            body.dark-mode .skill-bonus {
+                color: #8b9bea;
+            }
 
         .dark-mode-toggle {
             position: fixed;
@@ -204,6 +225,90 @@
             border-bottom-color: rgba(255,255,255,0.1);
         }
 
+        /* --- Boxed Status Checkboxes --- */
+        #statusGrid div {
+            border: 1px solid #ccc;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            color: #333; /* Dark text for light mode boxes */
+        }
+
+            /* Gold background when checked */
+            #statusGrid div:has(input:checked) {
+                background: #ffd700 !important;
+                border-color: #d4af37 !important;
+                box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+                color: #000 !important;
+            }
+
+        .status-info-text {
+            width: 100%;
+            min-height: 20px;
+            margin-top: 12px;
+            padding: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+            font-family: inherit;
+            font-style: italic;
+            resize: none;
+            overflow: hidden; /* Hide scrollbars */
+            border-radius: 6px;
+            /* Light Mode */
+            background: rgba(0, 0, 0, 0.04);
+            color: #d32f2f !important;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode .status-info-text {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffeb3b !important;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-info-text:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Framed Status Trackers */
+        .status-tracker-frame {
+            border: 2px solid #555;
+            background: rgba(102, 126, 234, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+            color: #333; /* Text inside the frame */
+        }
+
+        body.dark-mode .status-tracker-frame {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: #444;
+            color: #eee;
+        }
+
+        /* Make Exhaustion text red/bold in descriptions */
+        .exhaustion-stack {
+            color: #d32f2f; /* Strong Red */
+            /*font-weight: bold;*/
+            display: block;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode .exhaustion-stack {
+            color: #ffeb3b !important; /* Lighter Red for dark background */
+            border-bottom-color: rgba(255,255,255,0.1);
+        }
+
         .spell-level-header {
             cursor: pointer;
             user-select: none;
@@ -242,6 +347,42 @@
         body.dark-mode .spell-level-header {
             border-bottom-color: #4a4a5e;
         }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+            .status-grid label {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.9em;
+                cursor: pointer;
+                transition: transform 0.1s;
+            }
+
+                .status-grid label:hover {
+                    transform: translateX(5px);
+                }
+
+                /* Styling for the tooltips when hovering over effects */
+                .status-grid label[title]:hover::after {
+                    content: attr(title);
+                    position: absolute;
+                    background: #333;
+                    color: #fff;
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    z-index: 100;
+                    width: 200px;
+                    margin-top: 40px;
+                }
 
         .status-grid {
             display: grid;
@@ -1079,6 +1220,84 @@
         /* Adjust main container for the bar */
         body {
             padding-bottom: 70px !important; /* Prevents bar from covering content */
+        }
+
+        .notes-editor {
+            width: 100%;
+            min-height: 400px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff; /* Classic paper look */
+            color: #333;
+            line-height: 1.6;
+            outline: none;
+            overflow-y: auto;
+        }
+
+        body.dark-mode .notes-editor {
+            background: #2c2c2c;
+            color: #eee;
+            border-color: #444;
+        }
+
+        .btn-tool {
+            padding: 5px 10px;
+            border: 1px solid #aaa;
+            background: #eee;
+            color: #333; /* Forces dark text in Light Mode */
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+            /* Fix for the dropdown options specifically */
+            .btn-tool option {
+                background: #fff;
+                color: #333;
+            }
+
+        body.dark-mode .btn-tool {
+            background: #444;
+            color: #eee; /* Light text for Dark Mode */
+            border-color: #666;
+        }
+
+            /* Ensure options are visible in Dark Mode */
+            body.dark-mode .btn-tool option {
+                background: #333;
+                color: #eee;
+            }
+
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 0 5px #667eea;
+            }
+
+            50% {
+                box-shadow: 0 0 15px #8b9bea;
+            }
+
+            100% {
+                box-shadow: 0 0 5px #667eea;
+            }
+        }
+
+        @keyframes criticalFlash {
+            0% {
+                border-color: #444;
+                box-shadow: none;
+            }
+
+            50% {
+                border-color: #f44336;
+                box-shadow: 0 0 12px #f44336;
+            }
+
+            100% {
+                border-color: #444;
+                box-shadow: none;
+            }
         }
 
         .notes-editor {

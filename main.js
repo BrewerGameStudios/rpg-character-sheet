@@ -80,10 +80,14 @@ function createWindow() {
                             type: 'info',
                             title: 'About RPG Character Sheet',
                             message: 'RPG Character Sheet v2.0.2',
+<<<<<<< HEAD
                             detail: 'Code and Design by Brewer Game Studios 2026.\n\n'  +
+=======
+                            detail: 'Code and Design by Brewer Game Studios 2026.\n\n' +
+>>>>>>> 21e15c71be61a392ba8cffcea0ed9ebed8bf8fe3
                                 'Compatible with the 5th Edition of the worlds most popular tabletop RPG.\n\n' +
                                 'May your rolls always be with advantage.'
-                        }); 
+                        });
                     }
                 },
                 {
