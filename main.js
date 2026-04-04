@@ -79,7 +79,7 @@ function createWindow() {
                         dialog.showMessageBox(mainWindow, {
                             type: 'info',
                             title: 'About RPG Character Sheet',
-                            message: 'RPG Character Sheet v2.0',
+                            message: 'RPG Character Sheet v2.0.2',
                             detail: 'Code and Design by Brewer Game Studios 2026.\n\n'  +
                                 'Compatible with the 5th Edition of the worlds most popular tabletop RPG.\n\n' +
                                 'May your rolls always be with advantage.'
@@ -100,7 +100,7 @@ function createWindow() {
 
                         // Define the email parameters
                         const email = 'BrewerGameStudios@Gmail.com';
-                        const subject = encodeURIComponent('Bug Report: RPG Character Sheet v2.0');
+                        const subject = encodeURIComponent('Bug Report: RPG Character Sheet v2.0.2');
                         const body = encodeURIComponent(
                             '--- BUG REPORT ---\n' +
                             'Description of Issue:\n\n' +
