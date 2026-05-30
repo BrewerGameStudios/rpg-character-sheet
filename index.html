@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <meta name="description" content="Interactive Fantasy RPG Character Sheet for tabletop gaming">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RPG Character Sheet">
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkZhbnRhc3kgUlBHIENoYXJhY3RlciBTaGVldCIsCiAgInNob3J0X25hbWUiOiAiUlBHIFNoZWV0IiwKICAiZGVzY3JpcHRpb24iOiAiSW50ZXJhY3RpdmUgY2hhcmFjdGVyIHNoZWV0IGZvciB0YWJsZXRvcCBSUEdzIiwKICAic3RhcnRfdXJsIjogIi4vIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjNjY3ZWVhIiwKICAidGhlbWVfY29sb3IiOiAiIzY2N2VlYSIsCiAgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyB2aWV3Qm94PScwIDAgMTkyIDE5MiclM0UlM0NyZWN0IHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyBmaWxsPSclMjM2NjdlZWEnLyUzRSUzQ3RleHQgeD0nNTAlMjUnIHk9JzUwJTI1JyBmb250LXNpemU9JzgwJyBmb250LWZhbWlseT0nQXJpYWwnIGZpbGw9J3doaXRlJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBkb21pbmFudC1iYXNlbGluZT0nbWlkZGxlJyUzRSVGMCU5RiU5MyU5QyUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsCiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyB2aWV3Qm94PScwIDAgNTEyIDUxMiclM0UlM0NyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyBmaWxsPSclMjM2NjdlZWEnLyUzRSUzQ3RleHQgeD0nNTAlMjUnIHk9JzUwJTI1JyBmb250LXNpemU9JzI0MCcgZm9udC1mYW1pbHk9J0FyaWFsJyBmaWxsPSd3aGl0ZScgdGV4dC1hbmNob3I9J21pZGRsZScgZG9taW5hbnQtYmFzZWxpbmU9J21pZGRsZSclM0UlRjAlOUYlOTMlOUMlM0MvdGV4dCUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <!--<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkZhbnRhc3kgUlBHIENoYXJhY3RlciBTaGVldCIsCiAgInNob3J0X25hbWUiOiAiUlBHIFNoZWV0IiwKICAiZGVzY3JpcHRpb24iOiAiSW50ZXJhY3RpdmUgY2hhcmFjdGVyIHNoZWV0IGZvciB0YWJsZXRvcCBSUEdzIiwKICAic3RhcnRfdXJsIjogIi4vIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjNjY3ZWVhIiwKICAidGhlbWVfY29sb3IiOiAiIzY2N2VlYSIsCiAgIm9yaWVudGF0aW9uIjogInBvcnRyYWl0IiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyB2aWV3Qm94PScwIDAgMTkyIDE5MiclM0UlM0NyZWN0IHdpZHRoPScxOTInIGhlaWdodD0nMTkyJyBmaWxsPSclMjM2NjdlZWEnLyUzRSUzQ3RleHQgeD0nNTAlMjUnIHk9JzUwJTI1JyBmb250LXNpemU9JzgwJyBmb250LWZhbWlseT0nQXJpYWwnIGZpbGw9J3doaXRlJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBkb21pbmFudC1iYXNlbGluZT0nbWlkZGxlJyUzRSVGMCU5RiU5MyU5QyUzQy90ZXh0JTNFJTNDL3N2ZyUzRSIsCiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyB2aWV3Qm94PScwIDAgNTEyIDUxMiclM0UlM0NyZWN0IHdpZHRoPSc1MTInIGhlaWdodD0nNTEyJyBmaWxsPSclMjM2NjdlZWEnLyUzRSUzQ3RleHQgeD0nNTAlMjUnIHk9JzUwJTI1JyBmb250LXNpemU9JzI0MCcgZm9udC1mYW1pbHk9J0FyaWFsJyBmaWxsPSd3aGl0ZScgdGV4dC1hbmNob3I9J21pZGRsZScgZG9taW5hbnQtYmFzZWxpbmU9J21pZGRsZSclM0UlRjAlOUYlOTMlOUMlM0MvdGV4dCUzRSUzQy9zdmclM0UiLAogICAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAgICJ0eXBlIjogImltYWdlL3N2Zyt4bWwiCiAgICB9CiAgXQp9">-->
     <title>Fantasy RPG Character Sheet</title>
     <style>
         * {
@@ -36,27 +39,7 @@
             padding: 20px;
             min-height: 100vh;
             transition: background 0.3s ease;
-        }
-
-        :root {
-            --bg-color-1: #667eea;
-            --bg-color-2: #764ba2;
-            --dark-overlay: rgba(0, 0, 0, 0); /* Invisible by default */
-        }
-
-        body.dark-mode {
-            --dark-overlay: rgba(0, 0, 0, 0.5); /* Darkens the custom colors */
-            background-color: #1a1a1a; /* Fallback */
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* Layer 1: Dark overlay | Layer 2: Custom Gradient */
-            background: linear-gradient(var(--dark-overlay), var(--dark-overlay)), linear-gradient(135deg, var(--bg-color-1) 0%, var(--bg-color-2) 100%);
-            background-attachment: fixed; /* Keeps gradient smooth while scrolling */
-            padding: 20px;
-            min-height: 100vh;
-            transition: background 0.3s ease;
+            padding-bottom: 95px !important; /* Prevents bar from covering content on mobile viewports */
         }
 
             body.dark-mode .container {
@@ -105,10 +88,7 @@
                 color: #b0b0c0;
             }
 
-            body.dark-mode .modifier {
-                color: #8b9bea;
-            }
-
+            body.dark-mode .modifier,
             body.dark-mode .skill-bonus {
                 color: #8b9bea;
             }
@@ -172,94 +152,9 @@
             line-height: 1.5;
             font-family: inherit;
             font-style: italic;
-            resize: none; 
-            overflow: hidden; /* Hide scrollbars */
-            border-radius: 6px;
-            /* Light Mode */
-            background: rgba(0, 0, 0, 0.04);
-            color: #d32f2f !important;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        body.dark-mode .status-info-text {
-            background: rgba(255, 255, 255, 0.05);
-            color: #ffeb3b !important;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .status-info-text:focus {
-            outline: none;
-            border-color: #ffd700;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* Framed Status Trackers */
-        .status-tracker-frame {
-            border: 2px solid #555;
-            background: rgba(102, 126, 234, 0.05);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            position: relative;
-            color: #333; /* Text inside the frame */
-        }
-
-        body.dark-mode .status-tracker-frame {
-            background: rgba(0, 0, 0, 0.2);
-            border-color: #444;
-            color: #eee;
-        }
-
-        /* Make Exhaustion text red/bold in descriptions */
-        .exhaustion-stack {
-            color: #d32f2f; /* Strong Red */
-            /*font-weight: bold;*/
-            display: block;
-            margin-bottom: 4px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-        }
-
-        body.dark-mode .exhaustion-stack {
-            color: #ffeb3b !important; /* Lighter Red for dark background */
-            border-bottom-color: rgba(255,255,255,0.1);
-        }
-
-        /* --- Boxed Status Checkboxes --- */
-        #statusGrid div {
-            border: 1px solid #ccc;
-            padding: 8px 10px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.4);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            color: #333; /* Dark text for light mode boxes */
-        }
-
-            /* Gold background when checked */
-            #statusGrid div:has(input:checked) {
-                background: #ffd700 !important;
-                border-color: #d4af37 !important;
-                box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-                color: #000 !important;
-            }
-
-        .status-info-text {
-            width: 100%;
-            min-height: 20px;
-            margin-top: 12px;
-            padding: 10px;
-            font-size: 12px;
-            line-height: 1.5;
-            font-family: inherit;
-            font-style: italic;
             resize: none;
             overflow: hidden; /* Hide scrollbars */
             border-radius: 6px;
-            /* Light Mode */
             background: rgba(0, 0, 0, 0.04);
             color: #d32f2f !important;
             border: 1px solid rgba(0, 0, 0, 0.1);
@@ -295,10 +190,8 @@
             color: #eee;
         }
 
-        /* Make Exhaustion text red/bold in descriptions */
         .exhaustion-stack {
             color: #d32f2f; /* Strong Red */
-            /*font-weight: bold;*/
             display: block;
             margin-bottom: 4px;
             border-bottom: 1px solid rgba(0,0,0,0.1);
@@ -384,56 +277,21 @@
                     margin-top: 40px;
                 }
 
-        .status-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            background: rgba(0,0,0,0.1);
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-            .status-grid label {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                font-size: 0.9em;
-                cursor: pointer;
-                transition: transform 0.1s;
-            }
-
-                .status-grid label:hover {
-                    transform: translateX(5px);
-                }
-
-                /* Styling for the tooltips when hovering over effects */
-                .status-grid label[title]:hover::after {
-                    content: attr(title);
-                    position: absolute;
-                    background: #333;
-                    color: #fff;
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    z-index: 100;
-                    width: 200px;
-                    margin-top: 40px;
-                }
-
         .save-controls {
             max-width: 1200px;
+            width: 100%;
             margin: 0 auto 20px auto;
             background: #fff;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             display: flex;
             gap: 10px;
             align-items: center;
-            flex-wrap: wrap;
+            flex-wrap: wrap; /* This is the critical line */
+            justify-content: center;
         }
 
-            .save-controls select {
+            .save-controls select, .save-controls input {
                 flex: 1;
                 min-width: 200px;
                 padding: 10px;
@@ -465,115 +323,30 @@
                         background: #b71c1c;
                     }
 
-            .save-controls input {
-                flex: 1;
-                min-width: 200px;
-                padding: 10px;
-                border: 2px solid #ddd;
-                border-radius: 4px;
-                font-size: 14px;
-            }
-
-        @media print {
-            body {
-                background: white;
-                padding: 0;
-            }
-
-            .dark-mode-toggle {
-                display: none !important;
-            }
-
-            .save-controls {
-                display: none !important;
-            }
-
-            .container {
-                max-width: 100%;
-                box-shadow: none;
-                padding: 20px;
-                margin: 0;
-                background: white !important;
-                color: black !important;
-            }
-
-            .btn {
-                display: none !important;
-            }
-
-            .remove-attack,
-            .remove-attunement {
-                display: none !important;
-            }
-
-            input[type="file"] {
-                display: none !important;
-            }
-
-            /* Force light mode colors for print */
-            .stat-box,
-            .combat-box,
-            .skill-list,
-            .saves-section,
-            .text-box,
-            .attacks-section,
-            .attunement-section {
-                background: #f9f9f9 !important;
-                border-color: #333 !important;
-                color: black !important;
-            }
-
-            input,
-            textarea,
-            select {
-                background: white !important;
-                color: black !important;
-                border-color: #333 !important;
-            }
-
-            /* Make sure content fits on page */
-            .text-box textarea {
-                border: 1px solid #333;
-                min-height: 60px;
-            }
-
-            /* Prevent page breaks inside important sections */
-            .stat-box,
-            .combat-box,
-            .skill-list,
-            .attacks-section,
-            .attunement-section {
-                page-break-inside: avoid;
-            }
-
-            /* Adjust spacing for print */
-            .header,
-            .stats-section,
-            .combat-section,
-            .saves-section,
-            .skills-section,
-            .attacks-section,
-            .attunement-section,
-            .text-area-section {
-                margin-bottom: 15px;
-            }
-        }
-
         .container {
             max-width: 1200px;
+            width: 100%;
             margin: 0 auto;
             background: #fff;
-            padding: 30px;
+            padding: 20px;
             border-radius: 10px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            box-sizing: border-box;
         }
 
         .header {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr 1fr; /* Two equal columns */
             gap: 15px;
             margin-bottom: 20px;
         }
+
+            /* Force Level and XP to wrap to a new line */
+            .header .field:nth-child(3),
+            .header .field:nth-child(4) {
+                grid-row: 2;
+            }
 
         .field {
             display: flex;
@@ -1114,7 +887,6 @@
             display: grid;
             grid-template-columns: 50px minmax(80px, 1.5fr) minmax(100px, 2fr) minmax(50px, 1fr) minmax(50px, 1fr) 40px;
             gap: 10px;
-            gap: 10px;
             font-size: 11px;
             font-weight: bold;
             text-transform: uppercase;
@@ -1192,15 +964,14 @@
         .weight-good {
             color: #2e7d32;
         }
-        /* Dark Green */
+
         .weight-near-max {
             color: #f57c00;
         }
-        /* Orange */
+
         .weight-over {
             color: #d32f2f;
         }
-        /* Red */
 
         /* Ensure dark mode visibility */
         body.dark-mode .current-mount-load,
@@ -1217,164 +988,132 @@
                 display: block; /* Only show active page */
             }
 
-        /* Adjust main container for the bar */
-        body {
-            padding-bottom: 70px !important; /* Prevents bar from covering content */
+        .rich-text-toolbar {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
         }
 
-        .notes-editor {
-            width: 100%;
-            min-height: 400px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background: #fff; /* Classic paper look */
-            color: #333;
-            line-height: 1.6;
-            outline: none;
-            overflow-y: auto;
-        }
-
-        body.dark-mode .notes-editor {
-            background: #2c2c2c;
-            color: #eee;
-            border-color: #444;
-        }
-
-        .btn-tool {
-            padding: 5px 10px;
-            border: 1px solid #aaa;
-            background: #eee;
-            color: #333; /* Forces dark text in Light Mode */
-            cursor: pointer;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-            /* Fix for the dropdown options specifically */
-            .btn-tool option {
-                background: #fff;
-                color: #333;
+        /* --- Targeted iPhone Layout Fixes --- */
+        @media (max-width: 600px) {
+            /* Main body padding mitigation */
+            body {
+                padding: 10px !important;
+                padding-bottom: 95px !important; /* Ensures bottom nav never overlaps items */
             }
 
-        body.dark-mode .btn-tool {
-            background: #444;
-            color: #eee; /* Light text for Dark Mode */
-            border-color: #666;
-        }
-
-            /* Ensure options are visible in Dark Mode */
-            body.dark-mode .btn-tool option {
-                background: #333;
-                color: #eee;
+            .container {
+                padding: 12px !important;
             }
 
-        @keyframes pulseGlow {
-            0% {
-                box-shadow: 0 0 5px #667eea;
+            /* Ability Scores Container: Switch from rigid 6-columns to 3x2 grid */
+            .stats-section {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 8px !important;
             }
 
-            50% {
-                box-shadow: 0 0 15px #8b9bea;
+            /* Saving Throws Container: Wrap from 3 columns to 2 for text headroom */
+            .saves-section > div {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
             }
 
-            100% {
-                box-shadow: 0 0 5px #667eea;
-            }
-        }
-
-        @keyframes criticalFlash {
-            0% {
-                border-color: #444;
-                box-shadow: none;
-            }
-
-            50% {
-                border-color: #f44336;
-                box-shadow: 0 0 12px #f44336;
+            /* Attacks Container: Dynamic single-column card layouts per row */
+            .attack-row {
+                grid-template-columns: 1fr !important;
+                gap: 6px !important;
+                border: 1px solid #ddd;
+                padding: 10px;
+                border-radius: 6px;
+                position: relative;
             }
 
-            100% {
-                border-color: #444;
-                box-shadow: none;
-            }
-        }
+                .attack-row .remove-attack {
+                    position: absolute;
+                    top: 6px;
+                    right: 6px;
+                }
 
-        .notes-editor {
-            width: 100%;
-            min-height: 400px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background: #fff; /* Classic paper look */
-            color: #333;
-            line-height: 1.6;
-            outline: none;
-            overflow-y: auto;
-        }
-
-        body.dark-mode .notes-editor {
-            background: #2c2c2c;
-            color: #eee;
-            border-color: #444;
-        }
-
-        .btn-tool {
-            padding: 5px 10px;
-            border: 1px solid #aaa;
-            background: #eee;
-            color: #333; /* Forces dark text in Light Mode */
-            cursor: pointer;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-            /* Fix for the dropdown options specifically */
-            .btn-tool option {
-                background: #fff;
-                color: #333;
+            body.dark-mode .attack-row {
+                border-color: #4a4a5e;
             }
 
-        body.dark-mode .btn-tool {
-            background: #444;
-            color: #eee; /* Light text for Dark Mode */
-            border-color: #666;
-        }
-
-            /* Ensure options are visible in Dark Mode */
-            body.dark-mode .btn-tool option {
-                background: #333;
-                color: #eee;
+            /* Page List (Bottom Navigation Bar): Smooth horizontal scrolling behavior */
+            .bottom-nav {
+                justify-content: flex-start !important;
+                overflow-x: auto !important;
+                scroll-behavior: smooth;
+                -webkit-overflow-scrolling: touch;
+                padding: 8px 10px !important;
             }
 
-        @keyframes pulseGlow {
-            0% {
-                box-shadow: 0 0 5px #667eea;
+            .nav-item {
+                flex: 0 0 auto !important;
+                padding: 10px 14px !important;
+                margin-right: 5px;
             }
 
-            50% {
-                box-shadow: 0 0 15px #8b9bea;
+            /* Attire Equipped: Stack the two armor gear slots vertically instead of crushing columns */
+            #infoPage .text-box:nth-of-type(2) > div {
+                grid-template-columns: 1fr !important;
+                gap: 10px !important;
             }
 
-            100% {
-                box-shadow: 0 0 5px #667eea;
-            }
-        }
-
-        @keyframes criticalFlash {
-            0% {
-                border-color: #444;
-                box-shadow: none;
+            /* Storage Containers: Restructure row layout into a clean flex grid asset wrap */
+            .container-item-header {
+                display: none !important;
             }
 
-            50% {
-                border-color: #f44336;
-                box-shadow: 0 0 12px #f44336;
+            .container-item-row {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 6px !important;
+                border-bottom: 2px dashed #ccc;
+                padding-bottom: 12px;
+                margin-bottom: 12px;
             }
 
-            100% {
-                border-color: #444;
-                box-shadow: none;
+            body.dark-mode .container-item-row {
+                border-bottom-color: #4a4a5e;
+            }
+
+            /* Set input column spreads */
+            .container-item-row input:nth-child(1) {
+                grid-column: span 1;
+            }
+            /* Qty */
+            .container-item-row input:nth-child(2) {
+                grid-column: span 2;
+            }
+            /* Name takes a full line */
+            .container-item-row input:nth-child(3) {
+                grid-column: span 2;
+            }
+            /* Description takes a full line */
+            .container-item-row input:nth-child(4) {
+                grid-column: span 1;
+            }
+            /* Value */
+            .container-item-row input:nth-child(5) {
+                grid-column: span 1;
+            }
+            /* Weight */
+            .container-item-row button {
+                grid-column: span 1;
+                justify-self: end;
+            }
+
+            /* Active Crafting Projects: Break flat layout rows into single line flex flows */
+            #craftingList > .text-box > div:nth-of-type(1),
+            #craftingList > .text-box > div:nth-of-type(2) {
+                grid-template-columns: 1fr !important;
+                gap: 8px !important;
+            }
+
+            #craftingList .days-left {
+                display: block;
+                width: 100%;
+                margin-top: 4px;
             }
         }
 
@@ -1386,8 +1125,33 @@
             .page {
                 display: block !important;
             }
-            /* Show everything for printing */
         }
+
+        #howtoModal {
+            display: none; /* Hidden by default, script shows it */
+            position: fixed;
+            z-index: 5000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+            #howtoModal > div {
+                background-color: white;
+                padding: 25px;
+                border-radius: 10px;
+                max-width: 500px;
+                width: 100%;
+                max-height: 80vh; /* Limits height to 80% of the screen */
+                overflow-y: auto; /* Adds a scrollbar if content is too long */
+                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+                position: relative;
+            }
     </style>
 </head>
 <body>
@@ -1441,10 +1205,37 @@
         <button class="delete-btn" onclick="deleteCharacter()">Delete</button>
         <button onclick="if(!restrictedFeature('Exporting')) return; exportCharacter()">Export File</button>
         <button onclick="if(!restrictedFeature('Importing')) return; document.getElementById('importFile').click()">Import File</button>
-        <button onclick="if(!restrictedFeature('Printing')) return; window.print()" style="background: #4caf50;">🖨️ Print</button>
+        <button onclick="if(!restrictedFeature('Printing')) return; window.print()" style="background: #4caf50;">Print</button>
         <button id="unlock-btn" onclick="document.getElementById('license-lock').style.display = 'flex'" style="background: #ffa726;">Unlock Full Version</button>
         <button id="logout-btn" onclick="logoutLicense()" style="background: #607d8b; display: none;">Log Out</button>
+        <button id="install-btn" style="display:none; background: #2e7d32; color: white;" class="btn">Install</button>
+        <button onclick="toggleCloudModal()" style="background: #667eea; border: 2px solid white;">Cloud Backups</button>
         <input type="file" id="importFile" accept=".char" style="display: none;" onchange="importCharacter(event)">
+    </div>
+
+    <div id="cloudModal" style="display:none; position:fixed; z-index:4000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items:center; justify-content:center;">
+        <div class="text-box" style="max-width: 600px; width: 90%; background: white; padding: 25px; border: 3px solid #667eea; border-radius: 10px; position: relative;">
+            <button onclick="toggleCloudModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer; color: #666;">✖</button>
+
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                Cloud Backup Manager
+            </h2>
+
+            <p style="font-size: 13px; color: #555; margin-bottom: 20px;">
+                Save your characters to the cloud to access them on any device linked to your email.
+            </p>
+
+            <div id="cloud-status-msg" style="margin-bottom: 10px; font-weight: bold; font-size: 13px; text-align: center;"></div>
+
+            <div id="cloud-character-list" style="max-height: 300px; overflow-y: auto; background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 10px; margin-bottom: 20px;">
+                <p style="text-align: center; color: #888;">Fetching your legends from the stars...</p>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="flex: 2; background: #667eea;" onclick="backupToCloud()">Backup Current Character</button>
+                <button class="btn" style="flex: 1; background: #607d8b;" onclick="refreshCloudList()">🔄 Refresh</button>
+            </div>
+        </div>
     </div>
 
     <div id="mainPage" class="page active">
@@ -1464,17 +1255,17 @@
                 </div>
                 <div class="field">
                     <label>Experience Points</label>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                        <div style="display: flex; align-items: center; gap: 2px;">
-                            <input type="number" id="xpMod" placeholder="+/-" style="width: 55px; text-align: center; height: 35px; border-radius: 4px 0 0 4px; border-right: none;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: nowrap;">
+                        <div style="display: flex; align-items: center; gap: 2px; flex-shrink: 0;">
+                            <input type="number" id="xpMod" placeholder="+/-" style="width: 120px; text-align: center; height: 35px; border-radius: 4px 0 0 4px; border-right: none;">
                             <button type="button" onclick="adjustXP(true)" style="height: 35px; padding: 0 8px; cursor: pointer; background: #28a745; color: white; border: 1px solid #28a745; font-weight: bold;">+</button>
                             <button type="button" onclick="adjustXP(false)" style="height: 35px; padding: 0 10px; cursor: pointer; background: #dc3545; color: white; border: 1px solid #dc3545; border-radius: 0 4px 4px 0; font-weight: bold;">-</button>
                         </div>
 
-                        <div style="display: flex; align-items: center; gap: 5px; flex-grow: 1;">
-                            <input type="number" id="xp" value="0" oninput="updateXPBar()" style="flex: 1; text-align: center;">
+                        <div style="display: flex; align-items: center; gap: 5px; flex-grow: 1; min-width: 0;">
+                            <input type="number" id="xp" value="0" oninput="updateXPBar()" style="flex: 1; text-align: center; min-width: 0; width: 100%;">
                             <span style="color: #666; font-weight: bold;">/</span>
-                            <input type="number" id="xpMax" value="300" placeholder="Goal" oninput="updateXPBar()" style="flex: 1; text-align: center;">
+                            <input type="number" id="xpMax" value="300" placeholder="Goal" oninput="updateXPBar()" style="flex: 1; text-align: center; min-width: 0; width: 100%;">
                         </div>
                     </div>
                 </div>
@@ -1838,7 +1629,7 @@
                 <button class="btn" onclick="addPotion()">+ Add Potion</button>
             </div>
             <div style="text-align: center; margin-top: 30px; opacity: 0.5; font-size: 10px;">
-                Brewer Game Studios | RPG Character Sheet v2.1.3 | Hardware ID: <span id="display-id"></span>
+                Brewer Game Studios | RPG Character Sheet v2.1.4 | Hardware ID: <span id="display-id"></span> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
             </div>
         </div>
     </div>
@@ -2043,9 +1834,7 @@
     </div>-->
 
     <div id="containersPage" class="page">
-        <div class="total-weight-display" style="margin-top: 20px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
-            Total Inventory Weight: <span id="totalWeight">0.0</span> lbs
-        </div>
+
         <div class="container">
             <div class="attacks-section">
                 <h3>Inventory</h3>
@@ -2072,6 +1861,12 @@
                     </div>
                 </div>
             </div>
+            <div class="total-weight-display" style="margin-top: 20px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
+                Total Global Weight: <span id="totalWeight">0.00</span> lbs
+            </div>
+            <div class="total-weight-display" style="margin-top: 20px; font-weight: bold; border-top: 0px solid #333; padding-top: 10px;">
+                Total Inventory Weight: <span id="totalWeight">0.0</span> lbs
+            </div>
         </div>
         <div class="container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -2081,9 +1876,7 @@
 
             <div id="dynamicContainerList"></div>
 
-            <div class="total-weight-display" style="margin-top: 20px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
-                Total Global Weight: <span id="totalWeight">0.00</span> lbs
-            </div>
+
         </div>
     </div>
 
@@ -2120,7 +1913,7 @@
         <div class="text-box" style="max-width: 500px; width: 90%; max-height: 90vh; background: white; padding: 25px; position: relative; border: 3px solid #667eea; overflow-y: auto;">
             <button onclick="toggleHelpModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
 
-            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet v2.1.3</h2> <!--update version info-->
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet v2.1.4</h2> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
 
             <div style="text-align: center; margin: 20px 0;">
                 <p style="font-style: italic; font-size: 17px; color: #555;">
@@ -2133,10 +1926,10 @@
             <p><strong>Developed by:</strong> Brewer Game Studios</p>
             <p><strong>Release Date:</strong> February 2026</p>
             <div style="margin-top: 20px; background: #f0f0f0; padding: 15px; border-radius: 5px;">
-                <h4 style="margin-bottom: 5px; color: #333;">🐞 Bug Reports & Suggestions</h4>
+                <h4 style="margin-bottom: 5px; color: #333;">Bug Reports & Suggestions</h4>
                 <p style="font-size: 13px; color: #333; line-height: 1.4;">
                     Found an issue? Click the link below to open a bug report or send a Suggestion in your email client:<br>
-                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug%20Report%3A%20RPG%20Character%20Sheet%20v2.1.2&body=---%20BUG%20REPORT%20---%0ADescription%20of%20Issue%3A%0A%0ASteps%20to%20Reproduce%3A%0A%0AExpected%20Result%3A%0A%0AActual%20Result%3A%0A%0A---%20Questions%20or%20Comments%20---%0A%0A---%20System%20Info%20---%0APlatform%3A%20Windows%20or%20Android?%0AVersion%3A%202.1.2"
+                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug%20Report%3A%20RPG%20Character%20Sheet%20v2.1.4&body=---%20BUG%20REPORT%20---%0ADescription%20of%20Issue%3A%0A%0ASteps%20to%20Reproduce%3A%0A%0AExpected%20Result%3A%0A%0AActual%20Result%3A%0A%0A---%20Questions%20or%20Comments%20---%0A%0A---%20System%20Info%20---%0APlatform%3A%20Windows%20or%20Android?%0AVersion%3A%202.1.4"
                        style="color: #667eea; font-weight: bold; text-decoration: none;">
                         Email Us
                     </a>
@@ -2144,7 +1937,7 @@
             </div>
 
             <div style="margin-top: 20px; font-size: 12px; color: #666;">
-                <p>Built with HTML5, JavaScript, and Electron. All character data is saved locally, only to your device.</p>
+                <p>Built with HTML5, JavaScript, and Electron. All character data is saved locally, only to your device, with cloud save available.</p>
             </div>
 
             <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.02); border-top: 1px solid #eee; font-size: 10px; color: #777; line-height: 1.5; text-align: justify;">
@@ -2167,8 +1960,8 @@
                 <li><strong>Install (Android):</strong> Tap the <strong>three dots (⋮)</strong> in Chrome and select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
                 <li><strong>Install (iOS/iPhone):</strong> Open in <strong>Safari (you must use Safari)</strong>, tap the <strong>Share icon</strong> (square with arrow), scroll down and tap <strong>"Add to Home Screen"</strong> for best view use in horizontal mode as iOS isnt optimized yet.</li>
                 <li><strong>Exporting:</strong> Click <strong>Export Character</strong> to create a backup file. These files are ultra-lightweight, making them easy to share with your DM or party via <strong>email, text, Discord, or any chat app that allows file sharing.</strong></li>
-
-                <li><strong>Importing:</strong> Use <strong>Import Character</strong> to load a file sent to you by another player or to restore a character from a backup file on a new device.</li>
+                <li><strong>Importing:</strong> Use <strong>Import Character</strong> to load a file sent to you by another player or to restore a character from a backup file.</li>
+                <li><strong>Cloud Saving:</strong> Click <strong>Cloud Backups</strong> to import, export, or remove saved characters from the cloud. Files are accessible by your unique user-Id only.</li>
             </ul>
 
             <div style="margin-bottom:20px; display:flex; align-items:center;">
@@ -2229,6 +2022,12 @@
     </nav>
 
     <script>
+        const supabaseUrl = 'https://bkfwuueflwsfzktkuxpk.supabase.co';
+        const supabaseKey = 'sb_publishable_DK79mZfep1vfYGmhspaFdA_qTYte9tF';
+
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        const CURRENT_SHEET_VERSION = "2.1.4";  // *********MUST CHANGE THIS WHEN MAKING UPDATES FOR AUTO INSTALLER TO SEE! UPDATE ALL VERSION NUMBERS AT THE SAME TIME*********
         let activeCharacterName = null; // Tracks the currently loaded character
 
         const STATUS_DESCRIPTIONS = {
@@ -2241,12 +2040,21 @@
                 6: "Level 6: Death"
             },
             "Corruption": {
-                "0-2": "Touched: Minor cosmetic changes only.",
-                "3-4": "Marked: Minor Mutation. Disadvantage on Deception.",
-                "5-6": "Changed: Major Mutation. Disadvantage on all Charisma checks.",
-                "7-8": "Consumed: Severe transformations. Faction Priority Target.",
-                "9-15": "Shardbound: Transformation into NPC begins. Final session."
+                "0-2": "【 STAGE: TOUCHED 】\n◆ PHYSICAL: Subtle metallic sheen; eyes reflect light; crystalline nails; metallic hair strands.\n◆ MECHANICAL: No current penalties.\n◆ SOCIAL: Noticed by experts/Ash Priests; animals uneasy.\n◆ RECOVERY: Natural recovery (6mo isolation).",
+
+                "3-5": "【 STAGE: MARKED 】\n◆ PHYSICAL: Circuit-veins; metallic voice; cool skin; mirror eyes.\n◆ MECHANICAL: Minor Mutation Table roll; Disadvantage on Deception; possible STR/Vision buffs.\n◆ SOCIAL: -1 CHA checks (uncorrupted); Ash Priests demand purification.\n◆ RECOVERY: Dedicated effort & rituals.",
+
+                "6-8": "【 STAGE: CHANGED 】\n◆ PHYSICAL: Integrated machine parts; metallic armor patches; jerky precision.\n◆ MECHANICAL: Major Mutation Table roll; Disadvantage on CHA checks; weapon resistance; electronics malfunction (10ft).\n◆ SOCIAL: -3 CHA checks; NPC fear; barred from territories; Faction Priority Target.\n◆ RECOVERY: Rare resources only.",
+
+                "9-15": "【 STAGE: LOST / SHARDBOUND 】\n◆ PHYSICAL: More machine than human; reality glitches; metallic hum; glowing eyes.\n◆ MECHANICAL: Becoming Abomination; Disadvantage on WIS/CHA; Advantage on STR/CON; DC 12 WIS save or Exhaustion.\n◆ SOCIAL: Treated as monster; attacked on sight.\n◆ TRAJECTORY: NPC transformation begins; Final Session."
             },
+            //"Corruption": {
+            //    "0-2": "Touched: Minor cosmetic changes only.",
+            //    "3-4": "Marked: Minor Mutation. Disadvantage on Deception.",
+            //    "5-6": "Changed: Major Mutation. Disadvantage on all Charisma checks.",
+            //    "7-8": "Consumed: Severe transformations. Faction Priority Target.",
+            //    "9-15": "Shardbound: Transformation into NPC begins. Final session."
+            //},
             "Blinded": "Can't see. Fails sight checks. Disadvantage on attacks. Attacks against you have advantage.",
             "Charmed": "Can't attack charmer. Charmer has advantage on social checks.",
             "Deafened": "Can't hear. Automatically fails hearing checks.",
@@ -2310,6 +2118,57 @@
             const lockMsg = document.getElementById('lock-message');
             const closeBtn = document.getElementById('close-lock-btn');
             const counterDiv = document.getElementById('trial-counter'); // Ensure this ID matches your HTML
+
+            try {
+                const { data: serverData, error } = await _supabase
+                    .from('app_metadata')
+                    .select('latest_version, global_lock_active')
+                    .single();
+
+                if (!error && serverData) {
+                    if (serverData.latest_version !== CURRENT_SHEET_VERSION) {
+                        console.log("New version detected. Preparing update...");
+
+                        if ('serviceWorker' in navigator) {
+                            const registration = await navigator.serviceWorker.getRegistration();
+                            if (registration) {
+                                // 1. Listen for the state change so we know WHEN it finishes installing
+                                registration.onupdatefound = () => {
+                                    const installingWorker = registration.installing;
+                                    installingWorker.onstatechange = () => {
+                                        if (installingWorker.state === 'installed') {
+                                            // 2. Only reload once the files are physically on the device
+                                            alert(`Update v${serverData.latest_version} installed successfully. Restarting now!`);
+                                            window.location.reload();
+                                        }
+                                    };
+                                };
+
+                                // 3. Trigger the actual check
+                                await registration.update();
+
+                                // 4. Fallback: If the worker was already waiting in the background,
+                                // the alert above might not fire. This handles that edge case.
+                                if (registration.waiting) {
+                                    alert("New version ready. Applying update...");
+                                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                                    window.location.reload();
+                                }
+                            }
+                        }
+                    }
+
+                    // GLOBAL KILL-SWITCH
+                    if (serverData.global_lock_active === true) {
+                        lockOverlay.style.display = 'flex';
+                        if (closeBtn) closeBtn.style.display = 'none';
+                        lockMsg.innerHTML = `<strong>Maintenance Lock:</strong> This version is disabled.`;
+                        return;
+                    }
+                }
+            } catch (serverErr) {
+                console.warn("Update server unreachable.");
+            }
 
             // --- 1. SECURITY HEARTBEAT CHECK ---
             if (lastCheck && (now - parseInt(lastCheck) > NINETY_DAYS_MS)) {
@@ -2393,7 +2252,7 @@
 
             // 3. HARD LOCK AFTER 30 DAYS
             if (isTrialExpired) {
-                alert("Your 30-day trial has expired. All features are now locked. Please activate a license to continue.");
+                alert("Your 30-day trial has expired. All features are now locked. Please activate a license to continue. If you feel that this is a mistake please reach out to mailto:BrewerGameStudios@gmail.com ");
                 document.getElementById('license-lock').style.display = 'flex';
                 return false;
             }
@@ -2550,11 +2409,11 @@
             const row = document.createElement("div");
             row.className = "attack-row";
             row.innerHTML = `
-                                                                         <input type="text" placeholder="Weapon Name">
-                                                                         <input type="text" placeholder="Atk Bonus">
-                                                                         <input type="text" placeholder="Damage/Type">
-                                                                         <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to delete this attack?'))this.parentElement.remove()">✖</button>
-                                                                         `;
+                                                                                     <input type="text" placeholder="Weapon Name">
+                                                                                     <input type="text" placeholder="Atk Bonus">
+                                                                                     <input type="text" placeholder="Damage/Type">
+                                                                                     <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to delete this attack?'))this.parentElement.remove()">✖</button>
+                                                                                     `;
             attacksList.appendChild(row);
         }
 
@@ -2564,10 +2423,10 @@
             const row = document.createElement('div');
             row.className = 'attunement-row';
             row.innerHTML = `
-                                                                         <input type="checkbox" onchange="updateAttunementCount()">
-                                                                         <input type="text" placeholder="Magic Item Name">
-                                                                         <button class="remove-attunement" type="button" onclick="if(confirm('Are you sure you want to delete this attunement?'))this.parentElement.remove(); updateAttunementCount()">✖</button>
-                                                                         `;
+                                                                                     <input type="checkbox" onchange="updateAttunementCount()">
+                                                                                     <input type="text" placeholder="Magic Item Name">
+                                                                                     <button class="remove-attunement" type="button" onclick="if(confirm('Are you sure you want to delete this attunement?'))this.parentElement.remove(); updateAttunementCount()">✖</button>
+                                                                                     `;
             list.appendChild(row);
             updateAttunementCount();
         }
@@ -2581,15 +2440,15 @@
             row.style.gridTemplateColumns = "1fr 40px"; // Simpler grid for Cantrips: Name + Delete
 
             row.innerHTML = `
-                                                                          <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
-                                                                          <button class="remove-spell" type="button" onclick="if(confirm('Are you sure you want to delete this cantrip?'))this.parentElement.remove()">✖</button>
-                                                                          <div class="spell-details">
-                                                                          <textarea placeholder="Cantrip details..."
-                                                                  class="cantrip-description"
-                                                                  oninput="autoSizeTextarea(this)"
-                                                                  style="width: 100%; min-height: 40px;"></textarea>
-                                                                          </div>
-                                                                          `;
+                                                                                      <input type="text" placeholder="Cantrip Name" class="cantrip-name" style="width: 100%; padding: 5px;">
+                                                                                      <button class="remove-spell" type="button" onclick="if(confirm('Are you sure you want to delete this cantrip?'))this.parentElement.remove()">✖</button>
+                                                                                      <div class="spell-details">
+                                                                                      <textarea placeholder="Cantrip details..."
+                                                                              class="cantrip-description"
+                                                                              oninput="autoSizeTextarea(this)"
+                                                                              style="width: 100%; min-height: 40px;"></textarea>
+                                                                                      </div>
+                                                                                      `;
             cantripsList.appendChild(row);
         }
 
@@ -2710,13 +2569,13 @@
             const initialTotal = (parseFloat(qty) || 0) * (parseFloat(weight) || 0);
 
             row.innerHTML = `
-                                                                            <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                                                            <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
-                                                                            <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                                                                            <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                                                            <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                                                                            <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to delete this item?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                                                            `;
+                                                                                        <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                                        <input type="text" placeholder="Item Name" class="eq-name" value="${name}">
+                                                                                        <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                                                                                        <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                                        <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                                                                                        <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to delete this item?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                                        `;
             list.appendChild(row);
             updateTotalWeight();
         }
@@ -2732,19 +2591,19 @@
             row.className = 'inventory-row';
             row.style.marginBottom = "15px";
             row.innerHTML = `
-                                                                            <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                                                            <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
-                                                                            <input type="text" placeholder="Price" class="eq-price" value="${price}">
-                                                                            <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                                                            <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
-                                                                            <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to delete this potion?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                                                            <div class="spell-details" style="grid-column: span 6;">
-                                                                            <textarea class="eq-desc"
-                                                                  placeholder="Potion description..."
-                                                                  oninput="autoSizeTextarea(this)"
-                                                                  style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
-                                                                            </div>
-                                                                            `;
+                                                                                        <input type="number" class="eq-qty" value="${qty}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                                        <input type="text" placeholder="Potion Name" class="eq-name" value="${name}">
+                                                                                        <input type="text" placeholder="Price" class="eq-price" value="${price}">
+                                                                                        <input type="number" step="0.1" placeholder="Weight" class="eq-weight" value="${weight}" onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                                                                        <span class="eq-total-row-weight" style="text-align: center; font-weight: bold;">${initialTotal.toFixed(2)}</span>
+                                                                                        <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to delete this potion?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                                        <div class="spell-details" style="grid-column: span 6;">
+                                                                                        <textarea class="eq-desc"
+                                                                              placeholder="Potion description..."
+                                                                              oninput="autoSizeTextarea(this)"
+                                                                              style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
+                                                                                        </div>
+                                                                                        `;
             list.appendChild(row);
             updateTotalWeight();
         }
@@ -2791,28 +2650,28 @@
             const row = document.createElement("div");
             row.className = "spell-row"; // Applies the grid layout
             row.innerHTML = `
-                                                                            <input type="checkbox" class="spell-prepared">
-                                                                            <input type="checkbox" class="spell-used">
-                                                                            <select class="spell-level-select">
-                                                                            <option value="0">Level 1</option>
-                                                                            <option value="1">Level 2</option>
-                                                                            <option value="2">Level 3</option>
-                                                                            <option value="3">Level 4</option>
-                                                                            <option value="4">Level 5</option>
-                                                                            <option value="5">Level 6</option>
-                                                                            <option value="6">Level 7</option>
-                                                                            <option value="7">Level 8</option>
-                                                                            <option value="8">Level 9</option>
-                                                                            </select>
-                                                                            <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
-                                                                            <button class="remove-spell" type="button" onclick="if(confirm('Are you sure you want to delete this spell?'))this.parentElement.remove()">✖</button>
-                                                                            <div class="spell-details">
-                                                                            <textarea placeholder="Spell details..."
-                                                                  class="spell-description"
-                                                                  oninput="autoSizeTextarea(this)"
-                                                                  style="width: 100%; min-height: 40px;"></textarea>
-                                                                            </div>
-                                                                            `;
+                                                                                        <input type="checkbox" class="spell-prepared">
+                                                                                        <input type="checkbox" class="spell-used">
+                                                                                        <select class="spell-level-select">
+                                                                                        <option value="0">Level 1</option>
+                                                                                        <option value="1">Level 2</option>
+                                                                                        <option value="2">Level 3</option>
+                                                                                        <option value="3">Level 4</option>
+                                                                                        <option value="4">Level 5</option>
+                                                                                        <option value="5">Level 6</option>
+                                                                                        <option value="6">Level 7</option>
+                                                                                        <option value="7">Level 8</option>
+                                                                                        <option value="8">Level 9</option>
+                                                                                        </select>
+                                                                                        <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
+                                                                                        <button class="remove-spell" type="button" onclick="if(confirm('Are you sure you want to delete this spell?'))this.parentElement.remove()">✖</button>
+                                                                                        <div class="spell-details">
+                                                                                        <textarea placeholder="Spell details..."
+                                                                              class="spell-description"
+                                                                              oninput="autoSizeTextarea(this)"
+                                                                              style="width: 100%; min-height: 40px;"></textarea>
+                                                                                        </div>
+                                                                                        `;
 
             spellsList.appendChild(row);
         }
@@ -3141,27 +3000,27 @@
             div.style.cssText = "margin-top: 15px; padding: 15px; background: rgba(102, 126, 234, 0.05); border-radius: 8px; border: 2px solid #555;";
 
             div.innerHTML = `
-                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;">
-                                                <input type="text" class="tracker-name"
-                                                       value="${name === "What Status or Condition do you have?" ? "" : name}"
-                                                       placeholder="What Status or Condition do you have?"
-                                                       style="font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 5px 8px; border: 1px solid #888; border-radius: 4px; background: rgba(255,255,255,0.1); flex: 1; color: #e0e0e0;">
+                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px;">
+                                                            <input type="text" class="tracker-name"
+                                                                   value="${name === "What Status or Condition do you have?" ? "" : name}"
+                                                                   placeholder="What Status or Condition do you have?"
+                                                                   style="font-size: 11px; font-weight: bold; text-transform: uppercase; padding: 5px 8px; border: 1px solid #888; border-radius: 4px; background: rgba(255,255,255,0.1); flex: 1; color: #e0e0e0;">
 
-                                                <div style="display: flex; align-items: center; gap: 5px;">
-                                                    <input type="number" class="tracker-current" value="${current}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
-                                                    <span style="font-weight: bold; color: white;">/</span>
-                                                    <input type="number" class="tracker-max" value="${max}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
-                                                </div>
+                                                            <div style="display: flex; align-items: center; gap: 5px;">
+                                                                <input type="number" class="tracker-current" value="${current}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
+                                                                <span style="font-weight: bold; color: white;">/</span>
+                                                                <input type="number" class="tracker-max" value="${max}" oninput="updateTrackerVisuals('${trackerId}')" style="width: 45px; text-align: center; font-weight: bold; border: 2px solid #444; border-radius: 4px; background: rgba(0,0,0,0.3); color: white;">
+                                                            </div>
 
-                                                <button class="remove-attack"
-                                                        style="padding: 5px 10px; font-size: 14px; cursor: pointer; background: #d32f2f; color: white; border: none; border-radius: 4px;"
-                                                        onclick="if(confirm('Are you sure you want to delete this tracker?'))this.parentElement.parentElement.remove()">✖</button>
-                                            </div>
+                                                            <button class="remove-attack"
+                                                                    style="padding: 5px 10px; font-size: 14px; cursor: pointer; background: #d32f2f; color: white; border: none; border-radius: 4px;"
+                                                                    onclick="if(confirm('Are you sure you want to delete this tracker?'))this.parentElement.parentElement.remove()">✖</button>
+                                                        </div>
 
-                                            <div style="width: 100%; height: 16px; background: #333; border-radius: 8px; overflow: hidden; border: 1px solid #444; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
-                                                <div class="tracker-fill" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s ease, background-color 0.5s ease;"></div>
-                                            </div>
-                                        `;
+                                                        <div style="width: 100%; height: 16px; background: #333; border-radius: 8px; overflow: hidden; border: 1px solid #444; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
+                                                            <div class="tracker-fill" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s ease, background-color 0.5s ease;"></div>
+                                                        </div>
+                                                    `;
 
             container.appendChild(div);
             updateTrackerVisuals(trackerId);
@@ -3172,11 +3031,11 @@
             const row = document.createElement('div');
             row.className = 'equipment-row';
             row.innerHTML = `
-                                                                            <input type="text" placeholder="Item Name" class="eq-name">
-                                                                            <input type="text" placeholder="e.g. 5gp" class="eq-price">
-                                                                            <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
-                                                                            <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to delete this equipment slot?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                                                            `;
+                                                                                        <input type="text" placeholder="Item Name" class="eq-name">
+                                                                                        <input type="text" placeholder="e.g. 5gp" class="eq-price">
+                                                                                        <input type="number" step="0.1" value="0" placeholder="Weight" class="eq-weight" onchange="updateTotalWeight()">
+                                                                                        <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to delete this equipment slot?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                                        `;
             list.appendChild(row);
         }
 
@@ -3207,7 +3066,7 @@
 
                 activeCharacterName = saveName;
                 document.getElementById('characterList').value = saveName;
-                alert(`Successfully saved: ${saveName}`);
+                alert(`${saveName} has been saved successfully`);
             } catch (e) {
                 alert("Save Error: Your browser storage might be full (often caused by very large images).");
             }
@@ -3267,7 +3126,10 @@
 
                 updateModifiers();
 
-                console.log("Loaded: " + charName);
+                setTimeout(() => {
+                    saveCharacter();
+                    console.log("Auto-saved after dropdown selection.");
+                }, 100);
             }
         }
 
@@ -3370,33 +3232,33 @@
             div.id = containerId;
 
             div.innerHTML = `
-                                                                            <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
-                                                                            onclick="if(confirm('Are you sure you want to delete this container?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                                                            <div class="container-header-row">
-                                                                            <div class="field">
-                                                                            <label>Container Name</label>
-                                                                            <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack" oninput="updateTotalWeight()">
-                                                                            </div>
-                                                                            <div class="field">
-                                                                            <label>Weight</label>
-                                                                            <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-                                                                            </div>
-                                                                            <div class="field">
-                                                                            <label>Max Weight</label>
-                                                                            <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
-                                                                            </div>
-                                                                            </div>
-                                                                            <div class="container-item-header">
-                                                                            <div>Qty</div>
-                                                                            <div>Item Name</div>
-                                                                            <div>Description</div>
-                                                                            <div>Value</div>
-                                                                            <div>Weight</div>
-                                                                            <div></div>
-                                                                            </div>
-                                                                            <div class="container-items-area"></div>
-                                                                            <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
-                                                                            `;
+                                                                                        <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
+                                                                                        onclick="if(confirm('Are you sure you want to delete this container?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                                        <div class="container-header-row">
+                                                                                        <div class="field">
+                                                                                        <label>Container Name</label>
+                                                                                        <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack" oninput="updateTotalWeight()">
+                                                                                        </div>
+                                                                                        <div class="field">
+                                                                                        <label>Weight</label>
+                                                                                        <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                                                                                        </div>
+                                                                                        <div class="field">
+                                                                                        <label>Max Weight</label>
+                                                                                        <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
+                                                                                        </div>
+                                                                                        </div>
+                                                                                        <div class="container-item-header">
+                                                                                        <div>Qty</div>
+                                                                                        <div>Item Name</div>
+                                                                                        <div>Description</div>
+                                                                                        <div>Value</div>
+                                                                                        <div>Weight</div>
+                                                                                        <div></div>
+                                                                                        </div>
+                                                                                        <div class="container-items-area"></div>
+                                                                                        <button class="btn" onclick="addItemToContainer('${containerId}')">+ Add Item</button>
+                                                                                        `;
 
             list.appendChild(div);
             return containerId; // Return the ID so the import loop can find it
@@ -3409,13 +3271,13 @@
             const row = document.createElement('div');
             row.className = 'container-item-row';
             row.innerHTML = `
-                                                                <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
-                                                                <input type="text" class="eq-name" placeholder="Item Name">
-                                                                <input type="text" class="eq-desc" placeholder="Description">
-                                                                <input type="text" class="eq-price" placeholder="Value">
-                                                                <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
-                                                                <button class="remove-attack" onclick="if(confirm('Are you sure you want to delete this item from the container?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
-                                                            `;
+                                                                            <input type="number" class="eq-qty" value="1" oninput="updateTotalWeight()">
+                                                                            <input type="text" class="eq-name" placeholder="Item Name">
+                                                                            <input type="text" class="eq-desc" placeholder="Description">
+                                                                            <input type="text" class="eq-price" placeholder="Value">
+                                                                            <input type="number" step="0.1" class="eq-weight" value="0" oninput="updateTotalWeight()">
+                                                                            <button class="remove-attack" onclick="if(confirm('Are you sure you want to delete this item from the container?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                        `;
             itemsArea.appendChild(row);
         }
 
@@ -3439,49 +3301,49 @@
             div.setAttribute('data-is-vehicle', isVehicle);
 
             div.innerHTML = `
-                                                                                        <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
-                                                                                                onclick="if(confirm('Are you sure you want to delete this mount or vehicle?'))this.parentElement.remove(); syncVehicleCapacity()">✖</button>
-                                                                                        <div class="mount-stats-grid">
-                                                                                            <div class="field">
-                                                                                                <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
-                                                                                                <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
-                                                                                            </div>
-                                                                                            <div class="field">
-                                                                                                <label>Type/Team</label>
-                                                                                                <input type="text" value="${type}">
-                                                                                            </div>
-                                                                                            <div class="field">
-                                                                                                <label>Total Load</label>
-                                                                                                <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
-                                                                                            </div>
-                                                                                            <div class="field">
-                                                                                                <label>Capacity</label>
-                                                                                                <input type="number" class="max-mount-cap" value="${maxWgt}"
-                                                                                                       ${isVehicle ? 'readonly style="background:#fff; color:#007bff; font-weight:bold; border-color:#007bff;"' : ''} oninput="syncVehicleCapacity()">
-                                                                                            </div>
-                                                                                            <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
-                                                                                                <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
-                                                                                                <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
-                                                                                            </div>
-                                                                                        </div>
-                                                                                        <div class="mount-hp-ac-speed">
-                                                                                            <div class="field"><label>HP</label><input type="number" value="${hp}"></div>
-                                                                                            <div class="field"><label>AC</label><input type="number" value="${ac}"></div>
-                                                                                            <div class="field"><label>${isVehicle ? 'Collision' : 'Attack'}</label><input type="text" placeholder="e.g. 1d6"></div>
-                                                                                            <div class="field"><label>Manual Addon Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')"></div>
-                                                                                        </div>
-                                                                                        <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
-                                                                                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
-                                                                                            <div class="linked-containers-area"></div>
-                                                                                            <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
-                                                                                        </div>
-                                                                                        ${isVehicle ? `
-                                                                                        <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
-                                                                                            <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
-                                                                                            <div class="hitched-animals-area"></div>
-                                                                                            <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
-                                                                                        </div>` : ''}
-                                                                                    `;
+                                                                                                    <button class="remove-attack" style="position: absolute; top: 10px; right: 10px;"
+                                                                                                            onclick="if(confirm('Are you sure you want to delete this mount or vehicle?'))this.parentElement.remove(); syncVehicleCapacity()">✖</button>
+                                                                                                    <div class="mount-stats-grid">
+                                                                                                        <div class="field">
+                                                                                                            <label>${isVehicle ? 'Vehicle' : 'Mount'} Name</label>
+                                                                                                            <input type="text" class="mount-name" value="${name}" oninput="syncVehicleCapacity()">
+                                                                                                        </div>
+                                                                                                        <div class="field">
+                                                                                                            <label>Type/Team</label>
+                                                                                                            <input type="text" value="${type}">
+                                                                                                        </div>
+                                                                                                        <div class="field">
+                                                                                                            <label>Total Load</label>
+                                                                                                            <div class="current-mount-load" style="font-size: 16px; font-weight: bold; text-align: center; padding: 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
+                                                                                                        </div>
+                                                                                                        <div class="field">
+                                                                                                            <label>Capacity</label>
+                                                                                                            <input type="number" class="max-mount-cap" value="${maxWgt}"
+                                                                                                                   ${isVehicle ? 'readonly style="background:#fff; color:#007bff; font-weight:bold; border-color:#007bff;"' : ''} oninput="syncVehicleCapacity()">
+                                                                                                        </div>
+                                                                                                        <div class="field" style="background: rgba(102, 126, 234, 0.1); border-radius: 4px; padding: 2px;">
+                                                                                                            <label style="color: #4a4ba2; font-size: 8px;">Rider Mounted?</label>
+                                                                                                            <input type="checkbox" class="is-riding" onchange="updateMountLoad('${mountId}')" style="width: 18px; height: 18px; margin: 2px auto; display: block;">
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                    <div class="mount-hp-ac-speed">
+                                                                                                        <div class="field"><label>HP</label><input type="number" value="${hp}"></div>
+                                                                                                        <div class="field"><label>AC</label><input type="number" value="${ac}"></div>
+                                                                                                        <div class="field"><label>${isVehicle ? 'Collision' : 'Attack'}</label><input type="text" placeholder="e.g. 1d6"></div>
+                                                                                                        <div class="field"><label>Manual Addon Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')"></div>
+                                                                                                    </div>
+                                                                                                    <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
+                                                                                                        <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
+                                                                                                        <div class="linked-containers-area"></div>
+                                                                                                        <button class="btn" style="font-size:10px; padding:4px 8px;" onclick="addLinkedContainer('${mountId}')">+ Hitch Container</button>
+                                                                                                    </div>
+                                                                                                    ${isVehicle ? `
+                                                                                                    <div class="hitched-animals-section" style="margin-top:10px; padding:10px; background:rgba(118, 75, 162, 0.1); border-radius:5px;">
+                                                                                                        <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Animal Team</label>
+                                                                                                        <div class="hitched-animals-area"></div>
+                                                                                                        <button class="btn" style="font-size:10px; padding:4px 8px; background:#764ba2;" onclick="addAnimalToVehicle('${mountId}')">+ Hitch Animal</button>
+                                                                                                    </div>` : ''}
+                                                                                                `;
             list.appendChild(div);
         }
 
@@ -3514,12 +3376,12 @@
             const options = available.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
 
             row.innerHTML = `
-                                                                        <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
-                                                                        <option value="">-- Select Animal --</option>
-                                                                        ${options}
-                                                                        </select>
-                                                                        <button class="remove-attack" onclick="if(confirm('Are you sure you want to delete this animal from the hitch?'))removeAnimalHitch(this)">✖</button>
-                                                                        `;
+                                                                                    <select class="animal-selector" style="flex:1;" onchange="updateAnimalHitchID(this, '${vehicleId}')">
+                                                                                    <option value="">-- Select Animal --</option>
+                                                                                    ${options}
+                                                                                    </select>
+                                                                                    <button class="remove-attack" onclick="if(confirm('Are you sure you want to delete this animal from the hitch?'))removeAnimalHitch(this)">✖</button>
+                                                                                    `;
 
             animalArea.appendChild(row);
         }
@@ -3569,15 +3431,10 @@
             row.style.gap = '10px';
             row.style.marginBottom = '5px';
 
-            row.innerHTML = `
-                                                                                                                                                    <select class="container-selector"
-                                                                                                                                                            onfocus="populateContainerDropdown(this)"
-                                                                                                                                                            onchange="updateMountLoad('${mountId}')">
-                                                                                                                                                        <option value="0">-- Select Container --</option>
-                                                                                                                                                    </select>
-                                                                                                                                                    <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
-                                                                                                                                                    <button class="remove-attack" onclick="if(confirm('Are you sure you want to delete this linked container?'))this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
-                                                                                                                                                `;
+            row.innerHTML = `<select class="container-selector"onfocus="populateContainerDropdown(this)"onchange="updateMountLoad('${mountId}')"><option value="0">-- Select Container --</option>
+                    </select> <div class="selected-weight" style="text-align:center; font-weight:bold; padding-top:8px;">0.00</div>
+                     <button class="remove-attack" onclick="if(confirm('Are you sure you want to delete this linked container?'))this.parentElement.remove(); updateMountLoad('${mountId}')">✖</button>
+                    `;
             containerArea.appendChild(row);
         }
 
@@ -3692,47 +3549,46 @@
             const compListId = 'compList_' + Date.now();
 
             project.innerHTML = `
-                                                                                                                                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
-                                                                                                                                                <input type="text" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
-                                                                                                                                                <select>
-                                                                                                                                                    <option>Common</option><option>Uncommon</option><option>Rare</option>
-                                                                                                                                                    <option>Very Rare</option><option>Legendary</option>
-                                                                                                                                                </select>
-                                                                                                                                                <input type="number" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
-                                                                                                                                            </div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
+                    <input type="text" id="proj_name_${Date.now()}" name="proj_name" placeholder="Item Name (e.g. +1 Longsword)" style="font-weight: bold;">
+                <select id="proj_rarity_${Date.now()}" name="proj_rarity">
+                    <option>Common</option><option>Uncommon</option><option>Rare</option>
+                    <option>Very Rare</option><option>Legendary</option>
+                </select>
+                    <input type="number" id="proj_cost_${Date.now()}" name="proj_cost" placeholder="Total GP Cost" class="total-gp" oninput="calculateCrafting(this)">
+            </div>
 
-                                                                                                                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                                                                                                                                                <input type="text" placeholder="Required Tools/Proficiency">
-                                                                                                                                                <select class="rule-select" onchange="calculateCrafting(this)">
-                                                                                                                                                    <option value="2024">2024 Rules (Cost/10 days)</option>
-                                                                                                                                                    <option value="XGtE">XGtE (Workweeks)</option>
-                                                                                                                                                    <option value="2014">2014 (5gp/day)</option>
-                                                                                                                                                </select>
-                                                                                                                                            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="proj_tools_${Date.now()}" name="proj_tools" placeholder="Required Tools/Proficiency">
+                <select class="rule-select" id="proj_rules_${Date.now()}" name="proj_rules" onchange="calculateCrafting(this)">
+                    <option value="2024">2024 Rules (Cost/10 days)</option>
+                    <option value="XGtE">XGtE (Workweeks)</option>
+                    <option value="2014">2014 (5gp/day)</option>
+                </select>
+            </div>
 
-                                                                                                                                            <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
-                                                                                                                                                <label style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
-                                                                                                                                                <div id="${compListId}" style="margin-top: 5px;"></div>
-                                                                                                                                                <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;"
-                                                                                                                                                    onclick="addComponentToProject('${compListId}')">+ Add Component</button>
-                                                                                                                                            </div>
+            <div style="margin-top: 15px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 5px;">
+                <label for="comp_list_${Date.now()}" style="font-size: 10px; font-weight: bold; color: #667eea;">REQUIRED COMPONENTS / INGREDIENTS</label>
+                <div id="${compListId}" style="margin-top: 5px;"></div>
+                <button class="btn" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;"
+                onclick="addComponentToProject('${compListId}')">+ Add Component</button>
+            </div>
 
-                                                                                                                                            <div style="margin-top: 15px;">
-                                                                                                                                                <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
-                                                                                                                                                <div style="background: #ddd; height: 10px; border-radius: 5px;">
-                                                                                                                                                    <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
-                                                                                                                                                </div>
-                                                                                                                                                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
-                                                                                                                                                    <span>Invested: <input type="number" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
-                                                                                                                                                    <span class="days-left">Remaining: ? Days</span>
-                                                                                                                                                </div>
-                                                                                                                                            </div>
+            <div style="margin-top: 15px;">
+                <label style="font-size: 10px; font-weight: bold;">PROGRESS TRACKER</label>
+                <div style="background: #ddd; height: 10px; border-radius: 5px;">
+                    <div class="progress-fill" style="background: #667eea; width: 0%; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 5px;">
+                    <span>Invested: <input type="number" id="proj_invested_${Date.now()}" name="proj_invested" value="0" style="width: 60px;" oninput="calculateCrafting(this)"> GP</span>
+                    <span class="days-left">Remaining: ? Days</span>
+                </div>
+            </div>
 
-                                                                                                                                            <textarea placeholder="Complications & Notes..."
-                                                                  oninput="autoSizeTextarea(this)"
-                                                                  style="margin-top: 10px; min-height: 60px;"></textarea>
-                                                                                                                                            <button class="remove-attack" onclick="if(confirm('Are you sure you want to cancel this crafting project? All progress will be lost.')) { this.parentElement.remove(); }">Cancel Project</button>
-                                                                                                                                        `;
+            <textarea id="proj_notes_${Date.now()}" name="proj_notes" placeholder="Complications & Notes..."
+            oninput="autoSizeTextarea(this)" style="margin-top: 10px; min-height: 60px;"></textarea>
+            <button class="remove-attack" onclick="if(confirm('Are you sure you want to cancel this crafting project? All progress will be lost.')) { this.parentElement.remove();
+            }">Cancel Project</button>`;
             list.appendChild(project);
         }
 
@@ -3744,11 +3600,9 @@
             row.style.alignItems = 'center';
             row.style.gap = '8px';
             row.style.marginBottom = '4px';
-            row.innerHTML = `
-                                                                                                                                            <input type="checkbox" style="width: 14px; height: 14px;">
-                                                                                                                                            <input type="text" placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;">
-                                                                                                                                            <button class="remove-attack" style="padding: 2px 6px;" onclick="if(confirm('Are you sure you want to delete this component from this project?'))this.parentElement.remove()">✖</button>
-                                                                                                                                        `;
+            row.innerHTML = `<input type="checkbox" style="width: 14px; height: 14px;"><input type="text"
+                    placeholder="Component Name" style="flex: 1; font-size: 12px; padding: 4px;"><button class="remove-attack" style="padding: 2px 6px;"
+                    onclick="if(confirm('Are you sure you want to delete this component from this project?'))this.parentElement.remove()">✖</button> `;
             list.appendChild(row);
         }
 
@@ -4001,7 +3855,7 @@
             const characters = JSON.parse(localStorage.getItem('characterList') || '[]');
 
             select.innerHTML = '<option value="">-- Select Character --</option>';
-            characters.sort().forEach(name => { // Added sort so list stays alphabetical
+            characters.sort().forEach(name => {
                 const option = document.createElement('option');
                 option.value = name;
                 option.textContent = name;
@@ -4022,7 +3876,7 @@
             };
 
             const json = JSON.stringify(exportData, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
+            const blob = new Blob([json], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
 
             const a = document.createElement('a');
@@ -4033,7 +3887,8 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            alert(`Character exported as "${charName}.char"\nShare this file with others!`);
+            const fileName = `${charName.replace(/[^a-z0-9]/gi, '_')}.char`;
+            alert(`Character exported as "${fileName}"\nShare this file with others!`);
         }
 
         function importCharacter(event) {
@@ -4049,7 +3904,7 @@
                         setCharacterData(imported.data);
                         document.getElementById('characterName').value = imported.characterName || 'Imported Character';
 
-                        // --- FIX: Refresh the character dropdown immediately ---
+                        // ADD THIS: Save immediately so it appears in the dropdown list
                         saveCharacter();
 
                         alert(`Character "${imported.characterName}" imported and saved to your list!`);
@@ -4061,8 +3916,6 @@
                 }
             };
             reader.readAsText(file);
-
-            // Reset file input so the same file can be re-imported if needed
             event.target.value = '';
         }
 
@@ -4211,10 +4064,10 @@
                 const wrapper = document.createElement('div');
                 const max = (name === "Exhaustion") ? 6 : (name === "Corruption" ? 15 : 1);
                 wrapper.innerHTML = `
-                        <label style="display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer;">
-                            <input type="checkbox" data-effect="${name}" data-max="${max}" onchange="handleStatusChange(this)">
-                            <span>${name}</span>
-                        </label>`;
+                                    <label style="display: flex; align-items: center; gap: 8px; width: 100%; cursor: pointer;">
+                                        <input type="checkbox" data-effect="${name}" data-max="${max}" onchange="handleStatusChange(this)">
+                                        <span>${name}</span>
+                                    </label>`;
                 grid.appendChild(wrapper);
             });
         }
@@ -4243,28 +4096,28 @@
             div.id = id;
             div.setAttribute('data-linked-effect', name);
             div.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: bold; font-size: 14px;">${name.toUpperCase()}</span>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <input type="number" class="tracker-current" value="1" oninput="updateTrackerVisuals('${id}')" style="width: 45px; text-align: center; font-weight: bold;">
-                            <span style="opacity: 0.5;">/</span>
-                            <input type="number" class="tracker-max" value="${max}" readonly style="width: 45px; text-align: center; border: none; background: transparent;">
-                        </div>
-                    </div>
-                    <div style="width: 100%; height: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                        <div class="tracker-bar-fill" style="width: 0%; height: 100%; background: #ffeb3b; transition: width 0.3s ease;"></div>
-                    </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: bold; font-size: 14px;">${name.toUpperCase()}</span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="number" class="tracker-current" value="1" oninput="updateTrackerVisuals('${id}')" style="width: 45px; text-align: center; font-weight: bold;">
+                                        <span style="opacity: 0.5;">/</span>
+                                        <input type="number" class="tracker-max" value="${max}" readonly style="width: 45px; text-align: center; border: none; background: transparent;">
+                                    </div>
+                                </div>
+                                <div style="width: 100%; height: 10px; background: rgba(0,0,0,0.2); border-radius: 5px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                    <div class="tracker-bar-fill" style="width: 0%; height: 100%; background: #ffeb3b; transition: width 0.3s ease;"></div>
+                                </div>
 
-                    <textarea class="status-info-text"
-                              spellcheck="false"
-                              oninput="autoSizeTextarea(this)"
-                              placeholder="Custom rules or notes..."></textarea>
+                                <textarea class="status-info-text"
+                                          spellcheck="false"
+                                          oninput="autoSizeTextarea(this)"
+                                          placeholder="Custom rules or notes..."></textarea>
 
-                    <button onclick="uncheckStatus('${name}'); document.getElementById('${id}').remove();"
-                            style="margin-top: 10px; background: none; border: none; color: #ff5252; cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0;">
-                        Dismiss Condition
-                    </button>
-                `;
+                                <button onclick="uncheckStatus('${name}'); document.getElementById('${id}').remove();"
+                                        style="margin-top: 10px; background: none; border: none; color: #ff5252; cursor: pointer; font-size: 11px; text-decoration: underline; padding: 0;">
+                                    Dismiss Condition
+                                </button>
+                            `;
             container.appendChild(div);
             updateTrackerVisuals(id); // This will set the initial text and the height
         }
@@ -4300,11 +4153,21 @@
                     }
                     newDefaultContent = cumulative.join("\n");
                 } else if (effectName === "Corruption") {
+                    // Stage-based Content using updated ranges
                     if (current <= 2) newDefaultContent = desc["0-2"];
-                    else if (current <= 4) newDefaultContent = desc["3-4"];
-                    else if (current <= 6) newDefaultContent = desc["5-6"];
-                    else if (current <= 8) newDefaultContent = desc["7-8"];
+                    else if (current <= 5) newDefaultContent = desc["3-5"];
+                    else if (current <= 8) newDefaultContent = desc["6-8"];
                     else newDefaultContent = desc["9-15"];
+
+                    // Add "Cascade Event" triggers at specific milestones
+                    let cascade = "";
+                    if (current >= 15) cascade = "\n\n⚠️ CASCADE: Loss of Control (NPC Sacrifice)";
+                    else if (current >= 12) cascade = "\n\n⚠️ CASCADE: Reality Distortion (Spatial Warps)";
+                    else if (current >= 10) cascade = "\n\n⚠️ CASCADE: The Whispers (Engine service)";
+                    else if (current >= 8) cascade = "\n\n⚠️ CASCADE: Environmental Contamination";
+                    else if (current >= 5) cascade = "\n\n⚠️ CASCADE: First Major Mutation";
+
+                    newDefaultContent += cascade;
                 } else {
                     newDefaultContent = typeof desc === 'string' ? desc : "";
                 }
@@ -4627,20 +4490,152 @@
             }
 
             let deferredPrompt;
+            const installBtn = document.getElementById('install-btn');
+
             window.addEventListener('beforeinstallprompt', (e) => {
+                // Prevent the mini-infobar from appearing on mobile
                 e.preventDefault();
+                // Stash the event so it can be triggered later.
                 deferredPrompt = e;
-                if (!localStorage.getItem('installPromptShown')) {
-                    setTimeout(() => {
-                        if (confirm('Install RPG Character Sheet as an app?')) {
-                            deferredPrompt.prompt();
-                            deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
-                        }
-                        localStorage.setItem('installPromptShown', 'true');
-                    }, 3000);
+
+                // Show our custom install button
+                if (installBtn) {
+                    installBtn.style.display = 'inline-block';
                 }
             });
+
+            // Logic for when the user clicks your install button
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        // Show the install prompt
+                        deferredPrompt.prompt();
+                        // Wait for the user to respond to the prompt
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log(`User response to install prompt: ${outcome}`);
+                        // We've used the prompt, and can't use it again
+                        deferredPrompt = null;
+                        installBtn.style.display = 'none';
+                    }
+                });
+            }
+
+            // Hide button if already installed
+            window.addEventListener('appinstalled', () => {
+                if (installBtn) installBtn.style.display = 'none';
+                deferredPrompt = null;
+                console.log('PWA was installed');
+            });
         });
+
+        function toggleCloudModal() {
+            const modal = document.getElementById('cloudModal');
+            const isOpening = (modal.style.display === 'none' || modal.style.display === '');
+            modal.style.display = isOpening ? 'flex' : 'none';
+            if (isOpening) refreshCloudList();
+        }
+
+        async function refreshCloudList() {
+            const email = localStorage.getItem('licenseEmail');
+            const listDiv = document.getElementById('cloud-character-list');
+            const statusMsg = document.getElementById('cloud-status-msg');
+
+            if (!email) {
+                listDiv.innerHTML = `<p style="text-align:center; color:#d32f2f;">License Required: Please activate your sheet with an email to use Cloud Backups.</p>`;
+                return;
+            }
+
+            listDiv.innerHTML = `<p style="text-align:center; color:#666;">Scanning the cloud...</p>`;
+
+            try {
+                const { data, error } = await _supabase
+                    .from('character_backups')
+                    .select('char_name, updated_at')
+                    .eq('user_email', email.toLowerCase())
+                    .order('updated_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (data.length === 0) {
+                    listDiv.innerHTML = `<p style="text-align:center; color:#888;">No backups found. Hit "Backup Current" to start!</p>`;
+                } else {
+                    listDiv.innerHTML = data.map(char => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; gap: 10px;">
+                        <div>
+                            <strong style="display:block; color:#333;">${char.char_name}</strong>
+                            <small style="color:#888; font-size:10px;">Last Sync: ${new Date(char.updated_at).toLocaleDateString()}</small>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn" style="padding: 5px 10px; font-size: 11px; background:#4caf50;" onclick="loadFromCloud('${char.char_name}')">Load</button>
+                            <button class="btn" style="padding: 5px 10px; font-size: 11px; background:#f44336;" onclick="deleteFromCloud('${char.char_name}')">✖</button>
+                        </div>
+                    </div>
+                `).join('');
+                }
+            } catch (err) {
+                listDiv.innerHTML = `<p style="text-align:center; color:#d32f2f;">Error connecting to Cloud.</p>`;
+            }
+        }
+
+        async function backupToCloud() {
+            const email = localStorage.getItem('licenseEmail');
+            const charName = document.getElementById('characterName').value.trim();
+
+            if (!charName) return alert("Please name your character first!");
+
+            const data = getCharacterData();
+
+            const { error } = await _supabase
+                .from('character_backups')
+                .upsert({
+                    user_email: email.toLowerCase(),
+                    char_name: charName,
+                    char_data: data,
+                    updated_at: new Date()
+                }, { onConflict: 'user_email, char_name' });
+
+            if (error) {
+                alert("Backup failed: " + error.message);
+            } else {
+                refreshCloudList();
+            }
+        }
+
+        async function loadFromCloud(name) {
+            if (!confirm(`Are you sure you want to load "${name}"? This will overwrite what is currently on your screen.`)) return;
+
+            const email = localStorage.getItem('licenseEmail');
+            const { data, error } = await _supabase
+                .from('character_backups')
+                .select('char_data')
+                .eq('user_email', email.toLowerCase())
+                .eq('char_name', name)
+                .single();
+
+            if (data) {
+                setCharacterData(data.char_data);
+                document.getElementById('characterName').value = name;
+
+
+                saveCharacter();
+
+                toggleCloudModal();
+                alert(`Successfully summoned ${name} from the cloud and saved locally!`);
+            }
+        }
+
+        async function deleteFromCloud(name) {
+            if (!confirm(`Delete "${name}" from the cloud permanently?`)) return;
+
+            const email = localStorage.getItem('licenseEmail');
+            await _supabase
+                .from('character_backups')
+                .delete()
+                .eq('user_email', email.toLowerCase())
+                .eq('char_name', name);
+
+            refreshCloudList();
+        }
     </script>
 </body>
 </html>
