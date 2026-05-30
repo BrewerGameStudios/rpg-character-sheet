@@ -1007,6 +1007,28 @@
                 padding: 12px !important;
             }
 
+            /* FIX: Reset rigid desktop grid positions so Name, Class, Level, and XP stack cleanly inside the container */
+            .header {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+
+                .header .field:nth-child(3),
+                .header .field:nth-child(4) {
+                    grid-row: auto !important;
+                }
+
+            /* FIX: Prevent the XP Calculator input from pushing past the screen edge */
+            #xpMod {
+                width: 65px !important;
+                font-size: 13px !important;
+            }
+
+            .header .field:nth-child(4) div {
+                flex-wrap: wrap !important; /* Allows the goal tracking numbers to drop neatly under the buttons if necessary */
+                gap: 6px !important;
+            }
+
             /* Ability Scores Container: Switch from rigid 6-columns to 3x2 grid */
             .stats-section {
                 grid-template-columns: repeat(3, 1fr) !important;
