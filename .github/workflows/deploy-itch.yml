@@ -1,1 +1,26 @@
+name: Deploy to itch.io
 
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up butler
+        uses: jdno/setup-butler@v1
+
+      - name: Package web build
+        run: |
+          mkdir web-build
+          cp index.html manifest.json service-worker.js icon192.png icon512.png web-build/
+
+      - name: Push to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_CREDENTIALS }}
+        run: |
+          butler push web-build jcbrewer1/rpg-character-sheet-v20:web --userversion ${GITHUB_REF_NAME#v}
