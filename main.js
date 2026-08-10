@@ -79,12 +79,8 @@ function createWindow() {
                         dialog.showMessageBox(mainWindow, {
                             type: 'info',
                             title: 'About RPG Character Sheet',
-                            message: 'RPG Character Sheet v2.0.2',
-<<<<<<< HEAD
-                            detail: 'Code and Design by Brewer Game Studios 2026.\n\n'  +
-=======
+                            message: 'RPG Character Sheet v2.1.5', // UPDATE VERSION NUMBER WHEN UPDATING
                             detail: 'Code and Design by Brewer Game Studios 2026.\n\n' +
->>>>>>> 21e15c71be61a392ba8cffcea0ed9ebed8bf8fe3
                                 'Compatible with the 5th Edition of the worlds most popular tabletop RPG.\n\n' +
                                 'May your rolls always be with advantage.'
                         });
@@ -104,7 +100,7 @@ function createWindow() {
 
                         // Define the email parameters
                         const email = 'BrewerGameStudios@Gmail.com';
-                        const subject = encodeURIComponent('Bug Report: RPG Character Sheet v2.0.2');
+                        const subject = encodeURIComponent('Bug Report: RPG Character Sheet v2.1.5'); // **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************
                         const body = encodeURIComponent(
                             '--- BUG REPORT ---\n' +
                             'Description of Issue:\n\n' +
@@ -113,7 +109,7 @@ function createWindow() {
                             'Actual Result:\n\n' +
                             '--- System Info ---\n' +
                             'Platform: Windows (Electron App)\n' +
-                            'Version: 2.0.0'
+                            'Version: 2.1.5'  // **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************
                         );
 
                         // This opens the default email client with everything filled out
@@ -145,3 +141,4 @@ app.on('activate', () => {
         createWindow();
     }
 });
+
