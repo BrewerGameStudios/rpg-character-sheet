@@ -79,7 +79,7 @@ function createWindow() {
                         dialog.showMessageBox(mainWindow, {
                             type: 'info',
                             title: 'About RPG Character Sheet',
-                            message: 'RPG Character Sheet v2.1.5', // UPDATE VERSION NUMBER WHEN UPDATING
+                            message: 'RPG Character Sheet v2.2.0', // UPDATE VERSION NUMBER WHEN UPDATING
                             detail: 'Code and Design by Brewer Game Studios 2026.\n\n' +
                                 'Compatible with the 5th Edition of the worlds most popular tabletop RPG.\n\n' +
                                 'May your rolls always be with advantage.'
@@ -100,7 +100,7 @@ function createWindow() {
 
                         // Define the email parameters
                         const email = 'BrewerGameStudios@Gmail.com';
-                        const subject = encodeURIComponent('Bug Report: RPG Character Sheet v2.1.5'); // **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************
+                        const subject = encodeURIComponent('Bug Report: RPG Character Sheet v2.2.0'); // **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************
                         const body = encodeURIComponent(
                             '--- BUG REPORT ---\n' +
                             'Description of Issue:\n\n' +
@@ -109,7 +109,7 @@ function createWindow() {
                             'Actual Result:\n\n' +
                             '--- System Info ---\n' +
                             'Platform: Windows (Electron App)\n' +
-                            'Version: 2.1.5'  // **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************
+                            'Version: 2.2.0'  // **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************
                         );
 
                         // This opens the default email client with everything filled out

@@ -20,6 +20,20 @@
             box-sizing: border-box;
         }
 
+        /* Grid/flex items (combat boxes, attack rows, spell rows, etc.) default
+           to a minimum width equal to their own content's intrinsic size, which
+           pushes rows/cards wider than their container and gets silently
+           clipped by .container's overflow:hidden on narrow screens (tablets,
+           split-screen). Letting everything shrink below that default fixes
+           the overflow everywhere at once instead of patching each row. */
+        .container, .container * {
+            min-width: 0;
+        }
+
+        input, select, textarea {
+            max-width: 100%;
+        }
+
         :root {
             --bg-color-1: #667eea;
             --bg-color-2: #764ba2;
@@ -555,6 +569,26 @@
                 padding-bottom: 5px;
             }
 
+            /* Boxed Saving Throw items (mirrors the Status Effects boxes) so
+               each bonus is visually tied to its own ability, and a checked
+               save is obviously highlighted at a glance. */
+            .saves-section .skill-item {
+                border: 1px solid #ccc;
+                padding: 8px 10px;
+                border-radius: 6px;
+                background: rgba(255, 255, 255, 0.4);
+                transition: all 0.2s ease;
+                cursor: pointer;
+                margin-bottom: 0;
+            }
+
+                .saves-section .skill-item:has(input:checked) {
+                    background: #ffd700;
+                    border-color: #d4af37;
+                    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+                    color: #000;
+                }
+
         .text-area-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -877,7 +911,7 @@
 
         .container-header-row {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 40px;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
             gap: 15px;
             align-items: end;
             margin-bottom: 15px;
@@ -1035,6 +1069,32 @@
                 gap: 8px !important;
             }
 
+            /* Combat Stats Container (AC/Initiative/Speed/Prof/Passive Wis/Inspiration):
+               Same rigid 6-column overflow problem as Ability Scores above. */
+            .combat-section {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 8px !important;
+            }
+
+            /* Hit Points Row: Max/Temp/Current fit on one line on tablet & PC,
+               but stack on phones so Current HP's +/- controls stay usable. */
+            .hp-top-row {
+                grid-template-columns: 1fr !important;
+                gap: 8px !important;
+            }
+
+            /* Spellcasting Ability/Save DC/Attack Bonus: the ability dropdown
+               (e.g. "Intelligence") overflows a 3-up column on phones, so give
+               it its own line and pair the two number boxes below it. */
+            .spell-cast-row {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+
+                .spell-cast-row .field:first-child {
+                    grid-column: 1 / -1 !important;
+                }
+
             /* Saving Throws Container: Wrap from 3 columns to 2 for text headroom */
             .saves-section > div {
                 grid-template-columns: repeat(2, 1fr) !important;
@@ -1136,6 +1196,18 @@
                 display: block;
                 width: 100%;
                 margin-top: 4px;
+            }
+        }
+
+        /* Tablets (e.g. 768px iPad/Android portrait) are wide enough that the
+           phone breakpoint above never fires, but still too narrow for the
+           Combat Stats row's rigid 6 columns — the Inspiration box's checkbox
+           + number input get crushed to an unreadable sliver. Give it more
+           room a bit earlier than the phone layout needs. */
+        @media (max-width: 900px) and (min-width: 601px) {
+            .combat-section {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
             }
         }
 
@@ -1373,7 +1445,7 @@
             </div>
             <div class="Spell-cast-ability">
                 <div class="combat-box">
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+                    <div class="spell-cast-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
                         <div class="field">
                             <label>Spellcasting Ability</label>
                             <select id="spellAbility" onchange="updateModifiers()">
@@ -1399,60 +1471,55 @@
             <div class="hp-section-row">
                 <div class="combat-box" style="grid-column: span 5;">
                     <label>Hit Points</label>
-                    <div class="hp-section-row">
-                        <div class="combat-box" style="grid-column: span 5;">
-                            <label>Hit Points</label>
-                            <div class="hp-section">
-                                <div style="display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 10px; margin-bottom: 10px;">
-                                    <div>
-                                        <label style="font-size: 9px;">Max HP</label>
-                                        <input type="number" id="maxHp" value="20" oninput="updateHealthBar()" style="width: 100%;">
-                                    </div>
+                    <div class="hp-section">
+                        <div class="hp-top-row" style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 10px; margin-bottom: 10px;">
+                            <div>
+                                <label style="font-size: 9px;">Max HP</label>
+                                <input type="number" id="maxHp" value="20" oninput="updateHealthBar()" style="width: 100%;">
+                            </div>
 
-                                    <div>
-                                        <label style="font-size: 9px;">Current HP</label>
-                                        <div style="display: flex; align-items: center; gap: 2px;">
-                                            <input type="number" id="hpMod" placeholder="+/-" style="width: 45px; text-align: center; height: 30px; border: 1px solid #888; border-right: none; border-radius: 4px 0 0 4px; background: rgba(255,255,255,0.1);">
-                                            <button type="button" onclick="adjustHP(true)" style="height: 30px; padding: 0 5px; background: #28a745; color: white; border: 1px solid #28a745; cursor: pointer; font-weight: bold;">+</button>
-                                            <button type="button" onclick="adjustHP(false)" style="height: 30px; padding: 0 7px; background: #dc3545; color: white; border: 1px solid #dc3545; border-radius: 0 4px 4px 0; cursor: pointer; font-weight: bold;">-</button>
-                                            <input type="number" id="currentHp" value="20" oninput="updateHealthBar()" style="flex: 1; text-align: center; height: 30px; margin-left: 4px; font-weight: bold;">
+                            <div>
+                                <label style="font-size: 9px;">Temp HP</label>
+                                <input type="number" id="tempHp" value="0" style="width: 100%;">
+                            </div>
+
+                            <div>
+                                <label style="font-size: 9px;">Current HP</label>
+                                <div style="display: flex; align-items: center; gap: 2px;">
+                                    <input type="number" id="hpMod" placeholder="+/-" style="width: 70px; flex: 0 0 auto; text-align: center; height: 30px; border: 1px solid #888; border-right: none; border-radius: 4px 0 0 4px; background: rgba(255,255,255,0.1);">
+                                    <button type="button" onclick="adjustHP(true)" style="height: 30px; padding: 0 5px; background: #28a745; color: white; border: 1px solid #28a745; cursor: pointer; font-weight: bold;">+</button>
+                                    <button type="button" onclick="adjustHP(false)" style="height: 30px; padding: 0 7px; background: #dc3545; color: white; border: 1px solid #dc3545; border-radius: 0 4px 4px 0; cursor: pointer; font-weight: bold;">-</button>
+                                    <input type="number" id="currentHp" value="20" oninput="updateHealthBar()" style="flex: 1; min-width: 0; text-align: center; height: 30px; margin-left: 4px; font-weight: bold;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="hpBarContainer" style="width: 100%; height: 14px; background: #333; border-radius: 7px; overflow: hidden; border: 2px solid #444; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); margin-bottom: 10px;">
+                            <div id="hpBarFill" style="width: 100%; height: 100%; background: #4caf50; transition: width 0.3s ease, background-color 0.3s ease;"></div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="font-size: 9px;">Hit Dice</label>
+                                <input type="text" id="hitDice" placeholder="1d8" style="width: 100%;">
+                            </div>
+                            <div>
+                                <label style="font-size: 9px;">Death Saves</label>
+                                <div class="death-saves">
+                                    <div class="save-group">
+                                        <label>Successes</label>
+                                        <div class="save-checks">
+                                            <input type="checkbox" id="success1">
+                                            <input type="checkbox" id="success2">
+                                            <input type="checkbox" id="success3">
                                         </div>
                                     </div>
-
-                                    <div>
-                                        <label style="font-size: 9px;">Temp HP</label>
-                                        <input type="number" id="tempHp" value="0" style="width: 100%;">
-                                    </div>
-                                </div>
-
-                                <div id="hpBarContainer" style="width: 100%; height: 14px; background: #333; border-radius: 7px; overflow: hidden; border: 2px solid #444; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); margin-bottom: 10px;">
-                                    <div id="hpBarFill" style="width: 100%; height: 100%; background: #4caf50; transition: width 0.3s ease, background-color 0.3s ease;"></div>
-                                </div>
-
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                    <div>
-                                        <label style="font-size: 9px;">Hit Dice</label>
-                                        <input type="text" id="hitDice" placeholder="1d8" style="width: 100%;">
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 9px;">Death Saves</label>
-                                        <div class="death-saves">
-                                            <div class="save-group">
-                                                <label>Successes</label>
-                                                <div class="save-checks">
-                                                    <input type="checkbox" id="success1">
-                                                    <input type="checkbox" id="success2">
-                                                    <input type="checkbox" id="success3">
-                                                </div>
-                                            </div>
-                                            <div class="save-group">
-                                                <label>Failures</label>
-                                                <div class="save-checks">
-                                                    <input type="checkbox" id="fail1">
-                                                    <input type="checkbox" id="fail2">
-                                                    <input type="checkbox" id="fail3">
-                                                </div>
-                                            </div>
+                                    <div class="save-group">
+                                        <label>Failures</label>
+                                        <div class="save-checks">
+                                            <input type="checkbox" id="fail1">
+                                            <input type="checkbox" id="fail2">
+                                            <input type="checkbox" id="fail3">
                                         </div>
                                     </div>
                                 </div>
@@ -1625,6 +1692,14 @@
 
             <div class="attacks-section">
                 <h3>Attacks</h3>
+                <div class="ki-tracker" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; background: rgba(102, 126, 234, 0.05); border-radius: 8px; border: 1px solid #555; flex-wrap: wrap;">
+                    <label style="font-weight: bold; margin-right: auto;">Ki Points</label>
+                    <button type="button" onclick="adjustKi(-1)" style="width: 28px; height: 28px; cursor: pointer; background: #dc3545; color: white; border: none; border-radius: 4px; font-weight: bold;">-</button>
+                    <input type="number" id="kiCurrent" value="0" min="0" oninput="updateKi()" style="width: 45px; text-align: center;">
+                    <span>/</span>
+                    <input type="number" id="kiMax" value="0" min="0" oninput="updateKi()" style="width: 45px; text-align: center;">
+                    <button type="button" onclick="adjustKi(1)" style="width: 28px; height: 28px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold;">+</button>
+                </div>
                 <div id="attacksList">
                     <div class="attack-row">
                         <input type="text" placeholder="Weapon Name">
@@ -1634,6 +1709,13 @@
                     </div>
                 </div>
                 <button class="btn" onclick="addAttack()">+ Add Attack</button>
+            </div>
+
+            <div class="attacks-section">
+                <h3>Bonus Actions</h3>
+                <div id="bonusActionsList">
+                </div>
+                <button class="btn" onclick="addBonusAction()">+ Add Bonus Action</button>
             </div>
 
             <div class="attacks-section">
@@ -1651,7 +1733,7 @@
                 <button class="btn" onclick="addPotion()">+ Add Potion</button>
             </div>
             <div style="text-align: center; margin-top: 30px; opacity: 0.5; font-size: 10px;">
-                Brewer Game Studios | RPG Character Sheet v2.1.5 | Hardware ID: <span id="display-id"></span> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
+                Brewer Game Studios | RPG Character Sheet v2.2.0 | Hardware ID: <span id="display-id"></span> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
             </div>
         </div>
     </div>
@@ -1663,7 +1745,7 @@
                 <div class="header" style="display: flex; flex-direction: column; gap: 10px;">
                     <div class="field"><label>Race</label><input type="text" id="race"></div>
                     <div class="field"><label>Age</label><input type="text" id="age"></div>
-                    <div class="field"><label>Weight</label><input type="text" id="weight"></div>
+                    <div class="field"><label>Weight</label><input type="text" id="weight" oninput="updateTotalWeight()"></div>
                     <div class="field"><label>Height</label><input type="text" id="height"></div>
                     <div class="field"><label>Background</label><input type="text" id="background"></div>
                     <div class="field">
@@ -1846,36 +1928,54 @@
     <div id="containersPage" class="page">
 
         <div class="container">
-            <div class="attacks-section">
-                <h3>Inventory</h3>
-                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px; padding: 15px; background: #f0f0f0; border-radius: 8px;">
-                    <div class="field">
-                        <label>Copper (CP)</label>
-                        <input type="number" id="cp" value="0" style="width: 75%;">
-                    </div>
-                    <div class="field">
-                        <label>Silver (SP)</label>
-                        <input type="number" id="sp" value="0" style="width: 75%;">
-                    </div>
-                    <div class="field">
-                        <label>Electrum (EP)</label>
-                        <input type="number" id="ep" value="0" style="width: 75%;">
-                    </div>
-                    <div class="field">
-                        <label>Gold (GP)</label>
-                        <input type="number" id="gp" value="0" style="width: 75%;">
-                    </div>
-                    <div class="field">
-                        <label>Platinum (PP)</label>
-                        <input type="number" id="pp" value="0" style="width: 75%;">
-                    </div>
-                </div>
-            </div>
-            <div class="total-weight-display" style="margin-top: 20px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
+            <div class="total-weight-display" style="margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid #333; padding-bottom: 10px;">
                 Total Global Weight: <span id="totalWeight">0.00</span> lbs
             </div>
-            <div class="total-weight-display" style="margin-top: 20px; font-weight: bold; border-top: 0px solid #333; padding-top: 10px;">
-                Total Inventory Weight: <span id="totalWeight">0.0</span> lbs
+            <div class="attacks-section">
+                <h3>Coins</h3>
+                <div id="coinStacksList">
+                    <div class="coin-stack-row" style="margin-bottom: 15px; padding: 15px; background: #f0f0f0; border-radius: 8px; position: relative;">
+                        <button class="remove-attack" type="button" style="position: absolute; top: 10px; right: 10px;" onclick="if(confirm('Are you sure you want to delete this coin stack?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
+                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
+                            <div class="field">
+                                <label>Copper (CP)</label>
+                                <input type="number" class="coin-cp" value="0" style="width: 75%;" oninput="updateTotalWeight()">
+                            </div>
+                            <div class="field">
+                                <label>Silver (SP)</label>
+                                <input type="number" class="coin-sp" value="0" style="width: 75%;" oninput="updateTotalWeight()">
+                            </div>
+                            <div class="field">
+                                <label>Electrum (EP)</label>
+                                <input type="number" class="coin-ep" value="0" style="width: 75%;" oninput="updateTotalWeight()">
+                            </div>
+                            <div class="field">
+                                <label>Gold (GP)</label>
+                                <input type="number" class="coin-gp" value="0" style="width: 75%;" oninput="updateTotalWeight()">
+                            </div>
+                            <div class="field">
+                                <label>Platinum (PP)</label>
+                                <input type="number" class="coin-pp" value="0" style="width: 75%;" oninput="updateTotalWeight()">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+                            <div class="field">
+                                <label>Coins Stored In</label>
+                                <select class="coin-container-select container-selector" onfocus="populateContainerDropdown(this)" onchange="updateTotalWeight()">
+                                    <option value="0">-- Not in a Container (carried loose) --</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Coin Weight (50 coins = 1 lb)</label>
+                                <div class="coin-weight-display" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00 lbs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn" type="button" onclick="addCoinStack()">+ Add Coin Stack</button>
+            </div>
+            <div class="total-weight-display" style="margin-top: 20px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
+                Total Inventory Weight: <span id="totalWeightInventory">0.0</span> lbs
             </div>
         </div>
         <div class="container">
@@ -1923,7 +2023,7 @@
         <div class="text-box" style="max-width: 500px; width: 90%; max-height: 90vh; background: white; padding: 25px; position: relative; border: 3px solid #667eea; overflow-y: auto;">
             <button onclick="toggleHelpModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
 
-            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet v2.1.5</h2> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet v2.2.0</h2> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
 
             <div style="text-align: center; margin: 20px 0;">
                 <p style="font-style: italic; font-size: 17px; color: #555;">
@@ -1937,7 +2037,7 @@
                 <h4 style="margin-bottom: 5px; color: #333;">Bug Reports & Suggestions</h4>
                 <p style="font-size: 13px; color: #333; line-height: 1.4;">
                     Found an issue? Click the link below to open a bug report or send a Suggestion in your email client:
-                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug%20Report%3A%20RPG%20Character%20Sheet%20v2.1.5&body=---%20BUG%20REPORT%20---%0ADescription%20of%20Issue%3A%0A%0ASteps%20to%20Reproduce%3A%0A%0AExpected%20Result%3A%0A%0AActual%20Result%3A%0A%0A---%20Questions%20or%20Comments%20---%0A%0A---%20System%20Info%20---%0APlatform%3A%20Windows%20or%20Android?%0AVersion%3A%202.1.5"
+                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug%20Report%3A%20RPG%20Character%20Sheet%20v2.2.0&body=---%20BUG%20REPORT%20---%0ADescription%20of%20Issue%3A%0A%0ASteps%20to%20Reproduce%3A%0A%0AExpected%20Result%3A%0A%0AActual%20Result%3A%0A%0A---%20Questions%20or%20Comments%20---%0A%0A---%20System%20Info%20---%0APlatform%3A%20Windows%20or%20Android?%0AVersion%3A%202.2.0"
                        style="color: #667eea; font-weight: bold; text-decoration: none;">
                         Email Us
                     </a>
@@ -2138,7 +2238,7 @@
 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        const CURRENT_SHEET_VERSION = "2.1.5";  // *********MUST CHANGE THIS WHEN MAKING UPDATES FOR AUTO INSTALLER TO SEE! UPDATE ALL VERSION NUMBERS AT THE SAME TIME*********
+        const CURRENT_SHEET_VERSION = "2.2.0";  // *********MUST CHANGE THIS WHEN MAKING UPDATES FOR AUTO INSTALLER TO SEE! UPDATE ALL VERSION NUMBERS AT THE SAME TIME*********
         let activeCharacterName = null; // Tracks the currently loaded character
 
         const STATUS_DESCRIPTIONS = {
@@ -2452,6 +2552,12 @@
                 const modEl = document.getElementById(data.mod);
                 if (modEl) modEl.textContent = (mod >= 0 ? "+" : "") + mod;
 
+                // Dexterity modifier also drives Initiative
+                if (ability === 'dex') {
+                    const initEl = document.getElementById('initiative');
+                    if (initEl) initEl.value = mod;
+                }
+
                 // Update Saving Throws associated with this ability
                 data.saves.forEach(saveId => {
                     const cb = document.getElementById(saveId);
@@ -2515,6 +2621,26 @@
             }
         }
 
+        function updateKi() {
+            const cur = document.getElementById('kiCurrent');
+            const max = document.getElementById('kiMax');
+            if (!cur || !max) return;
+            const maxVal = parseInt(max.value) || 0;
+            let curVal = parseInt(cur.value) || 0;
+            curVal = Math.max(0, Math.min(curVal, maxVal));
+            cur.value = curVal;
+        }
+
+        function adjustKi(delta) {
+            const cur = document.getElementById('kiCurrent');
+            const max = document.getElementById('kiMax');
+            if (!cur || !max) return;
+            const maxVal = parseInt(max.value) || 0;
+            const curVal = parseInt(cur.value) || 0;
+            cur.value = Math.max(0, Math.min(curVal + delta, maxVal));
+            if (window.autoSave) autoSave();
+        }
+
         function addAttack() {
             const attacksList = document.getElementById("attacksList");
             const row = document.createElement("div");
@@ -2563,6 +2689,27 @@
             cantripsList.appendChild(row);
         }
 
+        function addBonusAction(name = '', description = '') {
+            const bonusActionsList = document.getElementById("bonusActionsList");
+            const row = document.createElement("div");
+
+            // Reuse 'spell-row' for the same grid layout / delete button sizing as Cantrips
+            row.className = "spell-row";
+            row.style.gridTemplateColumns = "1fr 40px";
+
+            row.innerHTML = `
+                                                                                                      <input type="text" placeholder="Bonus Action Name" class="bonus-action-name" style="width: 100%; padding: 5px;" value="${name}">
+                                                                                                      <button class="remove-spell" type="button" onclick="if(confirm('Are you sure you want to delete this bonus action?'))this.parentElement.remove()">✖</button>
+                                                                                                      <div class="spell-details">
+                                                                                                      <textarea placeholder="What does this bonus action do..."
+                                                                                              class="bonus-action-description"
+                                                                                              oninput="autoSizeTextarea(this)"
+                                                                                              style="width: 100%; min-height: 40px;">${description}</textarea>
+                                                                                                      </div>
+                                                                                                      `;
+            bonusActionsList.appendChild(row);
+        }
+
         function updateAttunementCount() {
             const list = document.getElementById('attunementList');
             const countEl = document.getElementById('attunementCount');
@@ -2575,7 +2722,34 @@
         function updateTotalWeight() {
             let globalTotal = 0;
 
+            // Coin weight: 5e rule is 50 coins of any denomination weigh 1 lb,
+            // combined across all coin types (not counted separately per type).
+            // Coins can be split across multiple stacks (e.g. a belt pouch AND
+            // a saddle bag), each assigned to its own container or carried loose.
+            const coinWeightByContainer = {};
+            let looseCoinWeight = 0;
+            document.querySelectorAll('#coinStacksList .coin-stack-row').forEach(stack => {
+                const cp = parseFloat(stack.querySelector('.coin-cp').value) || 0;
+                const sp = parseFloat(stack.querySelector('.coin-sp').value) || 0;
+                const ep = parseFloat(stack.querySelector('.coin-ep').value) || 0;
+                const gp = parseFloat(stack.querySelector('.coin-gp').value) || 0;
+                const pp = parseFloat(stack.querySelector('.coin-pp').value) || 0;
+                const stackWeight = (cp + sp + ep + gp + pp) / 50;
+
+                const weightDisplay = stack.querySelector('.coin-weight-display');
+                if (weightDisplay) weightDisplay.textContent = stackWeight.toFixed(2) + ' lbs';
+
+                const sel = stack.querySelector('.coin-container-select');
+                const containerId = sel ? sel.value : '0';
+                if (containerId !== '0') {
+                    coinWeightByContainer[containerId] = (coinWeightByContainer[containerId] || 0) + stackWeight;
+                } else {
+                    looseCoinWeight += stackWeight;
+                }
+            });
+
             // 1. Calculate Container Weights
+            let containersBaseWeightTotal = 0;
             document.querySelectorAll('.container-card').forEach(card => {
                 let containerSum = 0;
                 const maxWgt = parseFloat(card.querySelector('.max-cont-wgt').value) || 0;
@@ -2587,22 +2761,52 @@
                     containerSum += (qty * wgt);
                 });
 
+                // Any coin stacks stored in this container count toward its weight too
+                containerSum += coinWeightByContainer[card.id] || 0;
+
                 if (display) {
                     display.textContent = containerSum.toFixed(2);
-                    // Color logic for over-encumbrance
+                    // Color logic for over-encumbrance (based on contents only,
+                    // not the container's own weight — capacity is about what
+                    // you can pack into it, not what it weighs empty)
                     display.style.color = (maxWgt > 0 && containerSum > maxWgt) ? '#d32f2f' : '#2e7d32';
                 }
                 globalTotal += containerSum;
+
+                // The container's own (empty) weight isn't "inventory" — it's
+                // gear the character owns, so it only counts toward Global.
+                const baseWgtInput = card.querySelector('.cont-base-wgt');
+                containersBaseWeightTotal += baseWgtInput ? (parseFloat(baseWgtInput.value) || 0) : 0;
             });
 
-            // 2. Update BOTH master displays
-            const displays = ["totalWeight", "totalWeightBottom"]; // Use your actual IDs here
-            displays.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = globalTotal.toFixed(2);
+            // Coins carried loose (not assigned to any container) still add to
+            // the total weight the character is hauling around.
+            globalTotal += looseCoinWeight;
+
+            // 2. "Total Inventory Weight" = just the containers + coins above.
+            const inventoryDisplay = document.getElementById('totalWeightInventory');
+            if (inventoryDisplay) inventoryDisplay.textContent = globalTotal.toFixed(2);
+
+            // 3. "Total Global Weight" = everything: the character's own body
+            // weight, each mount's own weight, each container's own (empty)
+            // weight, plus the full inventory above (contents + coins).
+            // Hitched-container contents and rider weight are intentionally
+            // NOT re-added here even though mounts also display them in their
+            // own load total below — those are already counted once via the
+            // inventory total and the character's/container's own weight, so
+            // adding a mount's full load here would double-count them.
+            const charWeightInput = document.getElementById('weight');
+            const charWeight = charWeightInput ? parseFloat(charWeightInput.value.replace(/[^0-9.]/g, '')) || 0 : 0;
+
+            let mountsOwnWeightTotal = 0;
+            document.querySelectorAll('.mount-card .manual-mount-load').forEach(input => {
+                mountsOwnWeightTotal += parseFloat(input.value) || 0;
             });
 
-            // 3. Update Mounts
+            const globalDisplay = document.getElementById('totalWeight');
+            if (globalDisplay) globalDisplay.textContent = (globalTotal + charWeight + mountsOwnWeightTotal + containersBaseWeightTotal).toFixed(2);
+
+            // 4. Update Mounts
             document.querySelectorAll('.mount-card').forEach(mount => updateMountLoad(mount.id));
         }
 
@@ -2691,6 +2895,60 @@
             updateTotalWeight();
         }
 
+        function addCoinStack(cp = 0, sp = 0, ep = 0, gp = 0, pp = 0, containerId = '0') {
+            const list = document.getElementById('coinStacksList');
+            const row = document.createElement('div');
+            row.className = 'coin-stack-row';
+            row.style.cssText = 'margin-bottom: 15px; padding: 15px; background: #f0f0f0; border-radius: 8px; position: relative;';
+            row.innerHTML = `
+                                                                                                        <button class="remove-attack" type="button" style="position: absolute; top: 10px; right: 10px;" onclick="if(confirm('Are you sure you want to delete this coin stack?'))this.parentElement.remove(); updateTotalWeight()">✖</button>
+                                                                                                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
+                                                                                                        <div class="field">
+                                                                                                        <label>Copper (CP)</label>
+                                                                                                        <input type="number" class="coin-cp" value="${cp}" style="width: 75%;" oninput="updateTotalWeight()">
+                                                                                                        </div>
+                                                                                                        <div class="field">
+                                                                                                        <label>Silver (SP)</label>
+                                                                                                        <input type="number" class="coin-sp" value="${sp}" style="width: 75%;" oninput="updateTotalWeight()">
+                                                                                                        </div>
+                                                                                                        <div class="field">
+                                                                                                        <label>Electrum (EP)</label>
+                                                                                                        <input type="number" class="coin-ep" value="${ep}" style="width: 75%;" oninput="updateTotalWeight()">
+                                                                                                        </div>
+                                                                                                        <div class="field">
+                                                                                                        <label>Gold (GP)</label>
+                                                                                                        <input type="number" class="coin-gp" value="${gp}" style="width: 75%;" oninput="updateTotalWeight()">
+                                                                                                        </div>
+                                                                                                        <div class="field">
+                                                                                                        <label>Platinum (PP)</label>
+                                                                                                        <input type="number" class="coin-pp" value="${pp}" style="width: 75%;" oninput="updateTotalWeight()">
+                                                                                                        </div>
+                                                                                                        </div>
+                                                                                                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+                                                                                                        <div class="field">
+                                                                                                        <label>Coins Stored In</label>
+                                                                                                        <select class="coin-container-select container-selector" onfocus="populateContainerDropdown(this)" onchange="updateTotalWeight()">
+                                                                                                        <option value="0">-- Not in a Container (carried loose) --</option>
+                                                                                                        </select>
+                                                                                                        </div>
+                                                                                                        <div class="field">
+                                                                                                        <label>Coin Weight (50 coins = 1 lb)</label>
+                                                                                                        <div class="coin-weight-display" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00 lbs</div>
+                                                                                                        </div>
+                                                                                                        </div>
+                                                                                                        `;
+            list.appendChild(row);
+
+            if (containerId && containerId !== '0') {
+                const sel = row.querySelector('.coin-container-select');
+                populateContainerDropdown(sel);
+                sel.value = containerId;
+            }
+
+            updateTotalWeight();
+            return row;
+        }
+
         function addPotion(name = '', price = '', weight = 0, qty = 1, desc = '') {
             const list = document.getElementById('list-potions');
             if (!list) return;
@@ -2777,6 +3035,10 @@
                                                                                                         <input type="text" placeholder="Spell Name" class="spell-name" style="width: 100%; padding: 5px;">
                                                                                                         <button class="remove-spell" type="button" onclick="if(confirm('Are you sure you want to delete this spell?'))this.parentElement.remove()">✖</button>
                                                                                                         <div class="spell-details">
+                                                                                                        <div style="display: flex; gap: 8px; margin-bottom: 5px;">
+                                                                                                        <input type="text" placeholder="Casting Time" class="spell-casting-time" style="flex: 1; padding: 5px;">
+                                                                                                        <input type="text" placeholder="Duration" class="spell-duration" style="flex: 1; padding: 5px;">
+                                                                                                        </div>
                                                                                                         <textarea placeholder="Spell details..."
                                                                                               class="spell-description"
                                                                                               oninput="autoSizeTextarea(this)"
@@ -2798,7 +3060,9 @@
                 attacks: [],
                 spells: [],
                 cantrips: [],
+                bonusActions: [],
                 potions: [],
+                coinStacks: [],
                 inventory: {},
                 dynamicContainers: [],
                 dynamicMounts: [],
@@ -2809,7 +3073,7 @@
             document.querySelectorAll('input, textarea, select').forEach(el => {
                 if (el.id && !['characterList', 'characterName', 'importFile', 'portraitInput'].includes(el.id)) {
                     // Skip dynamic list items to handle them separately
-                    if (el.closest('#attunementList') || el.closest('#attacksList') || el.closest('#spellsList') || el.closest('#cantripsList') || el.closest('#craftingList') || el.closest('#list-potions')) return;
+                    if (el.closest('#attunementList') || el.closest('#attacksList') || el.closest('#spellsList') || el.closest('#cantripsList') || el.closest('#bonusActionsList') || el.closest('#craftingList') || el.closest('#list-potions') || el.closest('#coinStacksList')) return;
                     data[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
                 }
             });
@@ -2823,6 +3087,18 @@
                     price: row.querySelector('.eq-price').value,
                     weight: row.querySelector('.eq-weight').value,
                     desc: row.querySelector('.eq-desc').value
+                });
+            });
+
+            // Capture Coin Stacks
+            document.querySelectorAll('#coinStacksList .coin-stack-row').forEach(stack => {
+                data.coinStacks.push({
+                    cp: stack.querySelector('.coin-cp').value,
+                    sp: stack.querySelector('.coin-sp').value,
+                    ep: stack.querySelector('.coin-ep').value,
+                    gp: stack.querySelector('.coin-gp').value,
+                    pp: stack.querySelector('.coin-pp').value,
+                    containerId: stack.querySelector('.coin-container-select').value
                 });
             });
 
@@ -2846,6 +3122,8 @@
                         used: used.checked,
                         level: row.querySelector('.spell-level-select').value,
                         name: row.querySelector('.spell-name').value,
+                        castingTime: row.querySelector('.spell-casting-time').value,
+                        duration: row.querySelector('.spell-duration').value,
                         description: row.querySelector('.spell-description').value
                     });
                 }
@@ -2857,6 +3135,16 @@
                     data.cantrips.push({
                         name: nameInput.value,
                         description: row.querySelector('.cantrip-description').value
+                    });
+                }
+            });
+
+            document.querySelectorAll('#bonusActionsList .spell-row').forEach(row => {
+                const nameInput = row.querySelector('.bonus-action-name');
+                if (nameInput) {
+                    data.bonusActions.push({
+                        name: nameInput.value,
+                        description: row.querySelector('.bonus-action-description').value
                     });
                 }
             });
@@ -2892,6 +3180,7 @@
                     savedId: card.id,
                     name: card.querySelector('.cont-name').value,
                     maxWgt: card.querySelector('.max-cont-wgt').value,
+                    baseWgt: card.querySelector('.cont-base-wgt').value,
                     items: items
                 });
             });
@@ -2968,6 +3257,8 @@
             document.getElementById('list-potions').innerHTML = '<div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;"><div>Qty</div><div style="text-align: left;">Potion Name</div><div>Price</div><div>Unit Wt</div><div>Total Wt</div><div></div></div>';
             document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
             document.getElementById('cantripsList').innerHTML = '<div style="display: grid; grid-template-columns: 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666;"><div>Cantrip Name</div><div></div></div>';
+            document.getElementById('bonusActionsList').innerHTML = '';
+            document.getElementById('coinStacksList').innerHTML = '';
             document.getElementById('dynamicContainerList').innerHTML = '';
             document.getElementById('dynamicMountList').innerHTML = '';
             document.getElementById('craftingList').innerHTML = '';
@@ -2975,7 +3266,7 @@
             // 2. Restore Standard Fields (including Backstory and Bonds)
             Object.entries(data).forEach(([id, value]) => {
                 const el = document.getElementById(id);
-                if (!el || ['attunement', 'attacks', 'spells', 'cantrips', 'potions', 'dynamicContainers', 'dynamicMounts', 'craftingProjects', 'portrait'].includes(id)) return;
+                if (!el || ['attunement', 'attacks', 'spells', 'cantrips', 'bonusActions', 'potions', 'coinStacks', 'dynamicContainers', 'dynamicMounts', 'craftingProjects', 'portrait'].includes(id)) return;
                 if (el.type === 'checkbox') el.checked = value; else el.value = value;
             });
 
@@ -2998,14 +3289,15 @@
             // 5. Rebuild specialized lists
             if (data.attunement) data.attunement.forEach(a => { addAttunement(); const last = document.getElementById('attunementList').lastElementChild; last.querySelector('input[type="checkbox"]').checked = a.checked; last.querySelector('input[type="text"]').value = a.item; });
             if (data.attacks) data.attacks.forEach(atk => { addAttack(); const inputs = document.getElementById('attacksList').lastElementChild.querySelectorAll('input'); inputs[0].value = atk.name; inputs[1].value = atk.bonus; inputs[2].value = atk.damage; });
-            if (data.spells) data.spells.forEach(s => { addSpell(); const last = document.getElementById('spellsList').lastElementChild; last.querySelector('.spell-prepared').checked = s.prepared; last.querySelector('.spell-used').checked = s.used; last.querySelector('.spell-level-select').value = s.level; last.querySelector('.spell-name').value = s.name; last.querySelector('.spell-description').value = s.description; });
+            if (data.spells) data.spells.forEach(s => { addSpell(); const last = document.getElementById('spellsList').lastElementChild; last.querySelector('.spell-prepared').checked = s.prepared; last.querySelector('.spell-used').checked = s.used; last.querySelector('.spell-level-select').value = s.level; last.querySelector('.spell-name').value = s.name; last.querySelector('.spell-casting-time').value = s.castingTime || ''; last.querySelector('.spell-duration').value = s.duration || ''; last.querySelector('.spell-description').value = s.description; });
             if (data.cantrips) data.cantrips.forEach(c => { addCantrip(); const last = document.getElementById('cantripsList').lastElementChild; last.querySelector('.cantrip-name').value = c.name; last.querySelector('.cantrip-description').value = c.description; });
+            if (data.bonusActions) data.bonusActions.forEach(b => { addBonusAction(); const last = document.getElementById('bonusActionsList').lastElementChild; last.querySelector('.bonus-action-name').value = b.name; last.querySelector('.bonus-action-description').value = b.description; });
 
             // 6. Restore Storage Containers (Pass 1: Creation)
             const globalIdMap = {};
             if (data.dynamicContainers) {
                 data.dynamicContainers.forEach(cont => {
-                    const newId = addNewContainer(cont.name, cont.maxWgt);
+                    const newId = addNewContainer(cont.name, cont.maxWgt, cont.baseWgt || 0);
                     if (cont.savedId) globalIdMap[cont.savedId] = newId;
                     cont.items.forEach(i => {
                         addItemToContainer(newId);
@@ -3017,6 +3309,26 @@
                         row.querySelector('.eq-weight').value = i.weight;
                     });
                 });
+            }
+
+            // Restore Coin Stacks (and re-link each to its container now that
+            // container IDs are regenerated on every load).
+            if (data.coinStacks && data.coinStacks.length) {
+                data.coinStacks.forEach(c => {
+                    const remappedId = c.containerId && c.containerId !== '0'
+                        ? (globalIdMap[c.containerId] || c.containerId)
+                        : '0';
+                    addCoinStack(c.cp || 0, c.sp || 0, c.ep || 0, c.gp || 0, c.pp || 0, remappedId);
+                });
+            } else if (data.cp || data.sp || data.ep || data.gp || data.pp) {
+                // Backward compatibility: older saves stored a single global
+                // cp/sp/ep/gp/pp + coinContainer instead of a coinStacks list.
+                const remappedId = data.coinContainer && data.coinContainer !== '0'
+                    ? (globalIdMap[data.coinContainer] || data.coinContainer)
+                    : '0';
+                addCoinStack(data.cp || 0, data.sp || 0, data.ep || 0, data.gp || 0, data.pp || 0, remappedId);
+            } else {
+                addCoinStack();
             }
 
             // 7. Restore Mounts & Vehicles (Pass 1: Creation)
@@ -3268,6 +3580,8 @@
                 document.getElementById('list-potions').innerHTML = '<div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;"><div>Qty</div><div style="text-align: left;">Potion Name</div><div>Price</div><div>Unit Wt</div><div>Total Wt</div><div></div></div>';
                 document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
                 document.getElementById('cantripsList').innerHTML = '<div style="display: grid; grid-template-columns: 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666;"><div>Cantrip Name</div><div></div></div>';
+                document.getElementById('bonusActionsList').innerHTML = '';
+                document.getElementById('coinStacksList').innerHTML = '';
                 document.getElementById('trackerContainer').innerHTML = '';
 
                 // 3. Clear all standard text and number inputs
@@ -3297,6 +3611,7 @@
                 // 5. Add back one blank starting row for basic lists
                 addAttunement();
                 addAttack();
+                addCoinStack();
 
                 // 6. Reset Save Selection
                 document.getElementById('characterList').value = '';
@@ -3333,7 +3648,7 @@
             }
         }
 
-        function addNewContainer(name = '', maxWgt = 0) {
+        function addNewContainer(name = '', maxWgt = 0, baseWgt = 0) {
             const list = document.getElementById('dynamicContainerList');
             // Generates a unique timestamp + random string ID
             const containerId = 'cont_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -3351,12 +3666,16 @@
                                                                                                         <input type="text" class="cont-name" value="${name}" placeholder="e.g. Backpack" oninput="updateTotalWeight()">
                                                                                                         </div>
                                                                                                         <div class="field">
-                                                                                                        <label>Weight</label>
+                                                                                                        <label>Contents Weight</label>
                                                                                                         <div class="current-cont-wgt" style="font-size: 18px; font-weight: bold; text-align: center; padding: 8px; border: 2px solid #ddd; border-radius: 4px; background: #fff;">0.00</div>
                                                                                                         </div>
                                                                                                         <div class="field">
                                                                                                         <label>Max Weight</label>
                                                                                                         <input type="number" class="max-cont-wgt" value="${maxWgt}" oninput="updateTotalWeight()">
+                                                                                                        </div>
+                                                                                                        <div class="field">
+                                                                                                        <label>Container's Own Weight</label>
+                                                                                                        <input type="number" class="cont-base-wgt" value="${baseWgt}" oninput="updateTotalWeight()">
                                                                                                         </div>
                                                                                                         </div>
                                                                                                         <div class="container-item-header">
@@ -3441,7 +3760,7 @@
                                                                                                                         <div class="field"><label>HP</label><input type="number" value="${hp}"></div>
                                                                                                                         <div class="field"><label>AC</label><input type="number" value="${ac}"></div>
                                                                                                                         <div class="field"><label>${isVehicle ? 'Collision' : 'Attack'}</label><input type="text" placeholder="e.g. 1d6"></div>
-                                                                                                                        <div class="field"><label>Manual Addon Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateMountLoad('${mountId}')"></div>
+                                                                                                                        <div class="field"><label>Mount's Own Weight</label><input type="number" class="manual-mount-load" value="0" oninput="updateTotalWeight()"></div>
                                                                                                                     </div>
                                                                                                                     <div class="linked-containers-section" style="margin-top:10px; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
                                                                                                                         <label style="font-size:10px; font-weight:bold; text-transform:uppercase;">Hitched Containers</label>
@@ -4530,11 +4849,38 @@
                 }
             });
 
+            // Adding/removing a row (Attack, Spell, Bonus Action, Potion,
+            // Tracker, Attunement, Container, etc.) happens via a button
+            // click, which never fires an 'input' event above — so those
+            // additions/removals were never scheduling an autosave at all.
+            // Any click inside the sheet is cheap to save on, so just cover
+            // clicks the same way as typing.
+            document.body.addEventListener('click', (e) => {
+                if (e.target.closest('.container')) {
+                    clearTimeout(window.saveTimeout);
+                    window.saveTimeout = setTimeout(autoSave, 300);
+                }
+            });
+
             // --- 7. AUTO-SAVE / AUTO-LOAD ---
             window.autoSave = function () {
                 const data = getCharacterData();
                 localStorage.setItem('autosave_char', JSON.stringify(data));
             };
+
+            // Mobile browsers (Android especially) throttle or kill timers
+            // the instant a tab is backgrounded/switched away from, so a
+            // pending debounced autoSave() above can simply never fire.
+            // Flush immediately the moment the page is hidden/closed instead
+            // of waiting on the debounce timer.
+            function flushSave() {
+                clearTimeout(window.saveTimeout);
+                autoSave();
+            }
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') flushSave();
+            });
+            window.addEventListener('pagehide', flushSave);
 
             window.autoLoad = function () {
                 const savedData = localStorage.getItem('autosave_char');
