@@ -1,0 +1,24 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.rpgcharactersheet.app
+productName: RPG Character Sheet
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+files:
+  - filter:
+      - index.html
+      - main.js
+      - manifest.json
+      - service-worker.js
+      - icon.ico
+electronVersion: 28.3.3
