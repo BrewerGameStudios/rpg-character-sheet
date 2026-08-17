@@ -1,6 +1,6 @@
 {
 	"name": "rpg-character-sheet",
-	"version": "2.2.0",
+	"version": "2.3.0",
 	"description": "Fantasy RPG Character Sheet - Desktop Application",
 	"main": "main.js",
 	"scripts": {

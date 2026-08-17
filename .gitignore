@@ -1,8 +1,7 @@
 node_modules/
-dist/
-dist 1.0/
-dist 2.0/
+dist*/
 .vs/
+.claude/
 *.exe
 *.zip
 *.msi

@@ -34,6 +34,21 @@
             max-width: 100%;
         }
 
+        /* Flags a stat box that's still sitting on its stock "new character"
+           value (ability scores of 10, AC of 10, HP of 20) so it's obvious
+           at a glance which numbers still need to be filled in for real,
+           rather than looking like a deliberately-chosen 10. Clears the
+           instant the field is actually edited. */
+        .needs-attention {
+            color: #d32f2f !important;
+            border-color: #d32f2f !important;
+        }
+
+        body.dark-mode .needs-attention {
+            color: #ff6b6b !important;
+            border-color: #ff6b6b !important;
+        }
+
         :root {
             --bg-color-1: #667eea;
             --bg-color-2: #764ba2;
@@ -639,11 +654,39 @@
 
         .attack-row {
             display: grid;
-            grid-template-columns: 2fr 1fr 2fr auto;
+            grid-template-columns: 50px 2fr 1fr 2fr 40px;
             gap: 10px;
             align-items: center;
             margin-bottom: 8px;
         }
+
+            .attack-row input[type="checkbox"] {
+                justify-self: center;
+                width: 18px;
+                height: 18px;
+            }
+
+            /* Weapon/bonus/damage text wraps onto a new line instead of
+               scrolling out of view — a plain <input> can never do that, so
+               these are textareas that grow with autoSizeTextarea() instead. */
+            .attack-row textarea {
+                width: 100%;
+                resize: none;
+                overflow: hidden;
+                font-family: inherit;
+                font-size: 14px;
+                line-height: 1.3;
+                padding: 6px 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                min-height: 32px;
+            }
+
+            body.dark-mode .attack-row textarea {
+                background: #16162e;
+                color: #e0e0e0;
+                border-color: #4a4a5e;
+            }
 
         .remove-attack {
             background: #d32f2f;
@@ -862,6 +905,143 @@
             color: #4a4ba2;
         }
 
+        /* Recipe Cards: styled like an actual recipe/index card rather than
+           the app's usual form-panel look — warm parchment tone, serif
+           title, dashed section dividers. */
+        .recipe-card {
+            background: #fdf8ee;
+            border: 2px solid #c9a66b;
+            border-radius: 6px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+            position: relative;
+            color: #3a2f1d;
+        }
+
+        body.dark-mode .recipe-card {
+            background: #241d10;
+            border-color: #8a6d3b;
+            color: #ecdfc2;
+        }
+
+        .recipe-card-title {
+            display: block;
+            width: calc(100% - 40px);
+            font-size: 20px;
+            font-weight: bold;
+            font-family: Georgia, 'Times New Roman', serif;
+            border: none;
+            border-bottom: 2px dashed #c9a66b;
+            background: transparent;
+            color: inherit;
+            padding: 4px 0 8px 0;
+            margin-bottom: 12px;
+        }
+
+            .recipe-card-title:focus {
+                outline: none;
+                border-bottom-color: #8a6d3b;
+            }
+
+        body.dark-mode .recipe-card-title {
+            border-bottom-color: #8a6d3b;
+        }
+
+        .recipe-card label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #8a6d3b;
+            font-weight: bold;
+        }
+
+        body.dark-mode .recipe-card label {
+            color: #d8b978;
+        }
+
+        .recipe-card h4 {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8a6d3b;
+            margin: 14px 0 8px 0;
+            border-bottom: 1px solid rgba(201, 166, 107, 0.5);
+            padding-bottom: 4px;
+        }
+
+        body.dark-mode .recipe-card h4 {
+            color: #d8b978;
+            border-bottom-color: rgba(216, 185, 120, 0.35);
+        }
+
+        .recipe-yields {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(201, 166, 107, 0.6);
+            border-radius: 4px;
+            padding: 6px 8px;
+            font-size: 13px;
+            color: inherit;
+        }
+
+        body.dark-mode .recipe-yields {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .recipe-ingredient-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+            .recipe-ingredient-row input[type="checkbox"] {
+                width: 16px;
+                height: 16px;
+                accent-color: #8a6d3b;
+                flex-shrink: 0;
+            }
+
+            .recipe-ingredient-row input[type="text"] {
+                flex: 1;
+                background: rgba(255, 255, 255, 0.6);
+                border: 1px solid rgba(201, 166, 107, 0.5);
+                border-radius: 4px;
+                padding: 5px 8px;
+                font-size: 13px;
+                color: inherit;
+            }
+
+            body.dark-mode .recipe-ingredient-row input[type="text"] {
+                background: rgba(255, 255, 255, 0.06);
+            }
+
+            /* Checked ingredients read as "collected" — cross them off */
+            .recipe-ingredient-row:has(input[type="checkbox"]:checked) input[type="text"] {
+                text-decoration: line-through;
+                opacity: 0.55;
+            }
+
+        .recipe-instructions {
+            width: 100%;
+            min-height: 70px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(201, 166, 107, 0.5);
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            color: inherit;
+            resize: none;
+            overflow: hidden;
+        }
+
+        body.dark-mode .recipe-instructions {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
         /* Navigation Bar Styling */
         .bottom-nav {
             position: fixed;
@@ -1022,11 +1202,184 @@
                 display: block; /* Only show active page */
             }
 
+        /* --- Notes Editor (Google Docs/Keep-style overhaul) --- */
         .rich-text-toolbar {
-            margin-bottom: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 60;
+            margin-bottom: 0;
+            max-width: 850px;
+            margin-left: auto;
+            margin-right: auto;
             display: flex;
-            gap: 5px;
+            align-items: center;
+            gap: 6px;
             flex-wrap: wrap;
+            background: #fff;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+
+        body.dark-mode .rich-text-toolbar {
+            background: #1e1e2e;
+            border-color: #4a4a5e;
+        }
+
+        .btn-tool {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 13px;
+            line-height: 1;
+            cursor: pointer;
+            color: #333;
+            min-width: 32px;
+            text-align: center;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+            .btn-tool:hover {
+                background: #e2e2e2;
+            }
+
+            .btn-tool.active {
+                background: #667eea;
+                color: #fff;
+                border-color: #667eea;
+            }
+
+        body.dark-mode .btn-tool {
+            background: #2a2a3e;
+            border-color: #4a4a5e;
+            color: #e0e0e0;
+        }
+
+            body.dark-mode .btn-tool:hover {
+                background: #34344a;
+            }
+
+            /* "body.dark-mode .btn-tool" above has higher specificity than
+               plain ".btn-tool.active" (an extra element + class beats an
+               extra class alone), so without this override it silently won
+               the cascade in dark mode and Bold/Italic/Underline never
+               looked "on" no matter what queryCommandState said. Needs its
+               own explicitly higher-specificity rule, same fix already
+               applied to .color-swatch.selected below. */
+            body.dark-mode .btn-tool.active {
+                background: #667eea;
+                color: #fff;
+                border-color: #667eea;
+            }
+
+        select.btn-tool {
+            padding: 5px 6px;
+        }
+
+        input[type="color"].btn-tool {
+            padding: 2px;
+            width: 34px;
+            height: 30px;
+            cursor: pointer;
+        }
+
+        .color-swatch-row {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            padding: 0 4px;
+            border-left: 1px solid #ddd;
+            margin-left: 2px;
+        }
+
+        body.dark-mode .color-swatch-row {
+            border-left-color: #4a4a5e;
+        }
+
+        .color-swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            padding: 0;
+        }
+
+            .color-swatch:hover {
+                transform: scale(1.15);
+            }
+
+            /* Marks whichever swatch matches the color at the current
+               cursor/selection — kept in sync live, same as Bold/Italic/
+               Underline above, so it's always obvious which color (if any)
+               is "on" right now. */
+            .color-swatch.selected {
+                border-color: #667eea;
+                box-shadow: 0 0 0 2px #667eea;
+                transform: scale(1.1);
+            }
+
+        body.dark-mode .color-swatch {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+            body.dark-mode .color-swatch.selected {
+                border-color: #8b9bea;
+                box-shadow: 0 0 0 2px #8b9bea;
+            }
+
+        .notes-editor {
+            max-width: 850px;
+            margin: 0 auto;
+            min-height: 1100px; /* starts roughly Letter-page proportioned */
+            background: #fff;
+            color: #222;
+            caret-color: #667eea;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 40px 50px;
+            font-size: 15px;
+            line-height: 1.6;
+            outline: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+            .notes-editor.is-empty::before {
+                content: attr(data-placeholder);
+                color: #999;
+                pointer-events: none;
+            }
+
+        body.dark-mode .notes-editor {
+            background: #16162e;
+            color: #e0e0e0;
+            caret-color: #8b9bea;
+            border-color: #4a4a5e;
+        }
+
+            body.dark-mode .notes-editor.is-empty::before {
+                color: #777;
+            }
+
+        /* A neutral backdrop behind the "paper" so the page reads as its
+           own surface (with its shadow) rather than blending into the
+           container, which is white everywhere else in the app. */
+        #notes-tab .container {
+            background: #eef0f2;
+            /* .container's global overflow:hidden (needed elsewhere to stop
+               grid rows silently spilling out) also makes it the nearest
+               "scrolling ancestor" for anything inside it — which breaks
+               position:sticky entirely, since it confines stickiness to
+               this box instead of the viewport. Nothing on this page relies
+               on that clipping, so it's safe to open back up here. */
+            overflow: visible;
+        }
+
+        body.dark-mode #notes-tab .container {
+            background: #1a1a28;
         }
 
         /* --- Targeted iPhone Layout Fixes --- */
@@ -1249,6 +1602,29 @@
     </style>
 </head>
 <body>
+    <div id="logoSplash" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+        <video id="logoSplashVideo" autoplay muted playsinline
+               style="max-width: 100%; max-height: 100%; object-fit: contain;"
+               onended="dismissLogoSplash()" onerror="dismissLogoSplash()">
+            <source src="BrewerGameStudioLogoAnimation.mp4" type="video/mp4">
+        </video>
+        <button onclick="dismissLogoSplash()"
+                style="position: absolute; bottom: 24px; right: 24px; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.4); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 13px; backdrop-filter: blur(4px);">
+            Skip ▶
+        </button>
+    </div>
+    <script>
+        function dismissLogoSplash() {
+            const splash = document.getElementById('logoSplash');
+            if (!splash || splash.dataset.dismissed) return;
+            splash.dataset.dismissed = 'true';
+            splash.style.transition = 'opacity 0.4s ease';
+            splash.style.opacity = '0';
+            setTimeout(() => splash.remove(), 400);
+        }
+        // Safety net: never let a failed/blocked autoplay trap the user on the splash screen.
+        setTimeout(dismissLogoSplash, 10000);
+    </script>
     <div id="license-lock" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; color: white; text-align: center;">
         <div style="background: #222; padding: 2rem; border-radius: 10px; border: 1px solid #444; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 400px; width: 90%; position: relative;">
 
@@ -1303,7 +1679,7 @@
         <button id="unlock-btn" onclick="document.getElementById('license-lock').style.display = 'flex'" style="background: #ffa726;">Unlock Full Version</button>
         <button id="logout-btn" onclick="logoutLicense()" style="background: #607d8b; display: none;">Log Out</button>
         <button id="install-btn" style="display:none; background: #2e7d32; color: white;" class="btn">Install</button>
-        <button onclick="toggleCloudModal()" style="background: #667eea; border: 2px solid white;">Cloud Backups</button>
+        <button onclick="if(!restrictedFeature('Cloud Backups')) return; toggleCloudModal()" style="background: #667eea; border: 2px solid white;">Cloud Backups</button>
         <input type="file" id="importFile" accept=".char" style="display: none;" onchange="importCharacter(event)">
     </div>
 
@@ -1337,7 +1713,7 @@
             <div class="header">
                 <div class="field">
                     <label>Character Name</label>
-                    <input type="text" id="charName" placeholder="Enter name">
+                    <input type="text" id="charName" placeholder="Enter name" oninput="syncSaveNameFromCharName()">
                 </div>
                 <div class="field">
                     <label>Class</label>
@@ -1373,42 +1749,42 @@
                 <div class="stat-box">
                     <div class="stat-name">Strength</div>
                     <div class="stat-value">
-                        <input type="number" id="str" value="10" oninput="updateModifiers()">
+                        <input type="number" id="str" value="10" class="needs-attention" oninput="updateModifiers()">
                     </div>
                     <div class="modifier" id="strMod">+0</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-name">Dexterity</div>
                     <div class="stat-value">
-                        <input type="number" id="dex" value="10" oninput="updateModifiers()">
+                        <input type="number" id="dex" value="10" class="needs-attention" oninput="updateModifiers()">
                     </div>
                     <div class="modifier" id="dexMod">+0</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-name">Constitution</div>
                     <div class="stat-value">
-                        <input type="number" id="con" value="10" oninput="updateModifiers()">
+                        <input type="number" id="con" value="10" class="needs-attention" oninput="updateModifiers()">
                     </div>
                     <div class="modifier" id="conMod">+0</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-name">Intelligence</div>
                     <div class="stat-value">
-                        <input type="number" id="int" value="10" oninput="updateModifiers()">
+                        <input type="number" id="int" value="10" class="needs-attention" oninput="updateModifiers()">
                     </div>
                     <div class="modifier" id="intMod">+0</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-name">Wisdom</div>
                     <div class="stat-value">
-                        <input type="number" id="wis" value="10" oninput="updateModifiers()">
+                        <input type="number" id="wis" value="10" class="needs-attention" oninput="updateModifiers()">
                     </div>
                     <div class="modifier" id="wisMod">+0</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-name">Charisma</div>
                     <div class="stat-value">
-                        <input type="number" id="cha" value="10" oninput="updateModifiers()">
+                        <input type="number" id="cha" value="10" class="needs-attention" oninput="updateModifiers()">
                     </div>
                     <div class="modifier" id="chaMod">+0</div>
                 </div>
@@ -1417,7 +1793,7 @@
             <div class="combat-section">
                 <div class="combat-box">
                     <label>Armor Class</label>
-                    <input type="number" id="ac" value="10">
+                    <input type="number" id="ac" value="10" class="needs-attention">
                 </div>
                 <div class="combat-box">
                     <label>Initiative</label>
@@ -1425,7 +1801,7 @@
                 </div>
                 <div class="combat-box">
                     <label>Speed</label>
-                    <input type="text" id="speed" value="30 ft">
+                    <input type="text" id="speed" value="30 ft" class="needs-attention">
                 </div>
                 <div class="combat-box">
                     <label>Proficiency Bonus</label>
@@ -1433,7 +1809,7 @@
                 </div>
                 <div class="combat-box">
                     <label>Passive Wisdom (Perception)</label>
-                    <div id="passiveWis" style="font-size: 20px; font-weight: bold; color: #667eea; margin-top: 5px;">10</div>
+                    <input type="number" id="passiveWis" value="10">
                 </div>
                 <div class="combat-box">
                     <label>Inspiration</label>
@@ -1475,7 +1851,7 @@
                         <div class="hp-top-row" style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 10px; margin-bottom: 10px;">
                             <div>
                                 <label style="font-size: 9px;">Max HP</label>
-                                <input type="number" id="maxHp" value="20" oninput="updateHealthBar()" style="width: 100%;">
+                                <input type="number" id="maxHp" value="20" class="needs-attention" oninput="updateHealthBar()" style="width: 100%;">
                             </div>
 
                             <div>
@@ -1489,7 +1865,7 @@
                                     <input type="number" id="hpMod" placeholder="+/-" style="width: 70px; flex: 0 0 auto; text-align: center; height: 30px; border: 1px solid #888; border-right: none; border-radius: 4px 0 0 4px; background: rgba(255,255,255,0.1);">
                                     <button type="button" onclick="adjustHP(true)" style="height: 30px; padding: 0 5px; background: #28a745; color: white; border: 1px solid #28a745; cursor: pointer; font-weight: bold;">+</button>
                                     <button type="button" onclick="adjustHP(false)" style="height: 30px; padding: 0 7px; background: #dc3545; color: white; border: 1px solid #dc3545; border-radius: 0 4px 4px 0; cursor: pointer; font-weight: bold;">-</button>
-                                    <input type="number" id="currentHp" value="20" oninput="updateHealthBar()" style="flex: 1; min-width: 0; text-align: center; height: 30px; margin-left: 4px; font-weight: bold;">
+                                    <input type="number" id="currentHp" value="20" class="needs-attention" oninput="updateHealthBar()" style="flex: 1; min-width: 0; text-align: center; height: 30px; margin-left: 4px; font-weight: bold;">
                                 </div>
                             </div>
                         </div>
@@ -1701,10 +2077,18 @@
                     <button type="button" onclick="adjustKi(1)" style="width: 28px; height: 28px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold;">+</button>
                 </div>
                 <div id="attacksList">
+                    <div style="display: grid; grid-template-columns: 50px 2fr 1fr 2fr 40px; gap: 10px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; text-align: center;">
+                        <div>Equip</div>
+                        <div style="text-align: left;">Weapon/Attack</div>
+                        <div>Attack Bonus</div>
+                        <div>Damage/Type</div>
+                        <div></div>
+                    </div>
                     <div class="attack-row">
-                        <input type="text" placeholder="Weapon Name">
-                        <input type="text" placeholder="Atk Bonus">
-                        <input type="text" placeholder="Damage/Type">
+                        <input type="checkbox" title="Equipped" class="attack-equipped">
+                        <textarea rows="1" placeholder="Weapon/Attack Name" class="attack-name" oninput="autoSizeTextarea(this)"></textarea>
+                        <textarea rows="1" placeholder="Atk Bonus" class="attack-bonus" oninput="autoSizeTextarea(this)"></textarea>
+                        <textarea rows="1" placeholder="Damage/Type" class="attack-damage" oninput="autoSizeTextarea(this)"></textarea>
                         <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to remove this Attack?'))this.parentElement.remove()">✖</button>
                     </div>
                 </div>
@@ -1733,7 +2117,7 @@
                 <button class="btn" onclick="addPotion()">+ Add Potion</button>
             </div>
             <div style="text-align: center; margin-top: 30px; opacity: 0.5; font-size: 10px;">
-                Brewer Game Studios | RPG Character Sheet v2.2.0 | Hardware ID: <span id="display-id"></span> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
+                Brewer Game Studios | RPG Character Sheet v2.3.0 | Hardware ID: <span id="display-id"></span> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
             </div>
         </div>
     </div>
@@ -1791,6 +2175,7 @@
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <div class="field"><label>Back</label><input type="text" id="eqBack"></div>
+                        <div class="field"><label>Cloak / Cape</label><input type="text" id="eqCloak"></div>
                         <div class="field"><label>Body</label><input type="text" id="eqBody"></div>
                         <div class="field"><label>Waist</label><input type="text" id="eqWaist"></div>
                         <div class="field"><label>Secondary Weapon</label><input type="text" id="eqSecWep"></div>
@@ -2016,6 +2401,13 @@
                 </div>
                 <button class="btn" onclick="addCraftingProject()">+ Start New Project</button>
             </div>
+
+            <div class="attacks-section">
+                <h3>Recipe Cards</h3>
+                <div id="recipeCardsList">
+                </div>
+                <button class="btn" onclick="addRecipeCard()">+ Add Recipe Card</button>
+            </div>
         </div>
     </div>
 
@@ -2023,7 +2415,7 @@
         <div class="text-box" style="max-width: 500px; width: 90%; max-height: 90vh; background: white; padding: 25px; position: relative; border: 3px solid #667eea; overflow-y: auto;">
             <button onclick="toggleHelpModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
 
-            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet v2.2.0</h2> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet v2.3.0</h2> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
 
             <div style="text-align: center; margin: 20px 0;">
                 <p style="font-style: italic; font-size: 17px; color: #555;">
@@ -2037,7 +2429,7 @@
                 <h4 style="margin-bottom: 5px; color: #333;">Bug Reports & Suggestions</h4>
                 <p style="font-size: 13px; color: #333; line-height: 1.4;">
                     Found an issue? Click the link below to open a bug report or send a Suggestion in your email client:
-                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug%20Report%3A%20RPG%20Character%20Sheet%20v2.2.0&body=---%20BUG%20REPORT%20---%0ADescription%20of%20Issue%3A%0A%0ASteps%20to%20Reproduce%3A%0A%0AExpected%20Result%3A%0A%0AActual%20Result%3A%0A%0A---%20Questions%20or%20Comments%20---%0A%0A---%20System%20Info%20---%0APlatform%3A%20Windows%20or%20Android?%0AVersion%3A%202.2.0"
+                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug%20Report%3A%20RPG%20Character%20Sheet%20v2.3.0&body=---%20BUG%20REPORT%20---%0ADescription%20of%20Issue%3A%0A%0ASteps%20to%20Reproduce%3A%0A%0AExpected%20Result%3A%0A%0AActual%20Result%3A%0A%0A---%20Questions%20or%20Comments%20---%0A%0A---%20System%20Info%20---%0APlatform%3A%20Windows%20or%20Android?%0AVersion%3A%202.3.0"
                        style="color: #667eea; font-weight: bold; text-decoration: none;">
                         Email Us
                     </a>
@@ -2079,8 +2471,10 @@
             <button onclick="togglePrivacyModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
             <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">🔒 Privacy Policy</h2>
             <div style="font-size: 13px; color: #333; line-height: 1.7;">
-                <p style="margin-bottom: 12px;"><strong>Last Updated: June 19, 2026</strong></p>
+                <p style="margin-bottom: 12px;"><strong>Last Updated: August 16, 2026</strong></p>
                 <p style="margin-bottom: 12px;">Your privacy is highly important to us. This Privacy Policy explains what information we collect, how we use it, and how we protect your personal data when you purchase or use our TTRPG Character Sheet.</p>
+
+                <p style="margin-bottom: 12px; padding: 10px 12px; background: #eef0fc; border-left: 4px solid #667eea; border-radius: 4px;"><strong>In short about your email:</strong> We will never sell your email address. It's only ever used to send the occasional email when there's a major bug fix or update.</p>
 
                 <h4 style="color: #4a4ba2; margin: 15px 0 6px;">1. Information We Collect</h4>
                 <p style="margin-bottom: 6px;">We collect minimal personal data to fulfill your order and provide product updates:</p>
@@ -2107,14 +2501,14 @@
                 <p style="margin-bottom: 6px;">We do not sell, trade, or rent your personal information to third parties. Your data is shared only with trusted service providers necessary to operate the app:</p>
                 <ul style="padding-left: 18px; margin-bottom: 10px;">
                     <li style="margin-bottom: 5px;"><strong>Stripe:</strong> For secure payment processing and automated transaction management.</li>
-                    <li style="margin-bottom: 5px;"><strong>Supabase:</strong> For optional cloud save and license verification. Only your email and character data are stored, and only when you opt into these features. No advertising networks or analytics trackers are used in this app.</li>
+                    <li style="margin-bottom: 5px;"><strong>Supabase:</strong> For optional cloud save and license verification. Only your email and character data are stored. No advertising networks or analytics trackers are used in this app.</li>
                 </ul>
 
                 <h4 style="color: #4a4ba2; margin: 15px 0 6px;">4. Data Retention</h4>
                 <p style="margin-bottom: 10px;">We will retain your email and purchase history for as long as necessary to maintain your access to digital downloads, provide support, or comply with financial bookkeeping obligations.</p>
 
                 <h4 style="color: #4a4ba2; margin: 15px 0 6px;">5. Your Rights</h4>
-                <p style="margin-bottom: 10px;">Depending on your location, you may have the right to access, correct, or request the deletion of the personal information we hold about you. If you wish to update your contact information or be removed from our update list, please reach out via the support email listed on your receipt.</p>
+                <p style="margin-bottom: 10px;">Depending on your location, you may have the right to access, correct, or request the deletion of the personal information we hold about you. If you wish to update your contact information or be removed from our update list, please reach out to us at <a href="mailto:BrewerGameStudios@Gmail.com" style="color: #667eea; text-decoration: none;">BrewerGameStudios@Gmail.com</a>.</p>
 
                 <h4 style="color: #4a4ba2; margin: 15px 0 6px;">6. Security</h4>
                 <p>We take reasonable technical and administrative measures to protect your personal information against unauthorized access, loss, or alteration. However, no transmission over the internet is completely secure, and we cannot guarantee absolute security.</p>
@@ -2129,7 +2523,7 @@
             <button onclick="toggleTOSModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
             <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">📄 Terms of Service</h2>
             <div style="font-size: 13px; color: #333; line-height: 1.7;">
-                <p style="margin-bottom: 12px;"><strong>Last Updated: June 19, 2026</strong></p>
+                <p style="margin-bottom: 12px;"><strong>Last Updated: August 16, 2026</strong></p>
                 <p style="margin-bottom: 12px;">Welcome Adventurer. By purchasing, downloading, or using our TTRPG Character Sheet (the "Product"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use or purchase the Product.</p>
 
                 <h4 style="color: #4a4ba2; margin: 15px 0 6px;">1. License and Permitted Use</h4>
@@ -2154,7 +2548,7 @@
                 <p style="margin-bottom: 10px;">We reserve the right to modify these Terms at any time. Any updates will be posted on this page with an updated revision date.</p>
 
                 <h4 style="color: #4a4ba2; margin: 15px 0 6px;">6. Contact Information</h4>
-                <p>If you have any questions or require support regarding your purchase, please contact us via the information provided on your Stripe purchase receipt.</p>
+                <p>If you have any questions or require support regarding your purchase, please contact us at <a href="mailto:BrewerGameStudios@Gmail.com" style="color: #667eea; text-decoration: none;">BrewerGameStudios@Gmail.com</a>.</p>
             </div>
             <button class="btn" style="width: 100%; margin-top: 20px;" onclick="toggleTOSModal()">Close</button>
         </div>
@@ -2167,13 +2561,14 @@
                 <li><strong>Editing:</strong> Click on any field to enter character details.</li>
                 <li><strong>Trial Access:</strong> During your first 30 days, you can use <strong>Save As New</strong> to create character slots. All other features require a license.</li>
                 <li><strong>Flexibility:</strong> Although the sheet is strongly written around the 5e rule set, every field is customizable to fit those custom games.</li>
-                <li><strong>Auto-Save:</strong> Your changes are saved locally to your browser.</li>
+                <li><strong>Auto-Save:</strong> Your changes are saved locally to your hard drive.</li>
                 <li><strong>Dark Mode:</strong> Use the toggle to switch between themes.</li>
                 <li><strong>Install (Android):</strong> Tap the <strong>three dots (⋮)</strong> in Chrome and select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
                 <li><strong>Install (iOS/iPhone):</strong> Open in <strong>Safari (you must use Safari)</strong>, tap the <strong>Share icon</strong> (square with arrow), scroll down and tap <strong>"Add to Home Screen"</strong> for best view use in horizontal mode as iOS isnt optimized yet.</li>
                 <li><strong>Exporting:</strong> Click <strong>Export Character</strong> to create a backup file. These files are ultra-lightweight, making them easy to share with your DM or party via <strong>email, text, Discord, or any chat app that allows file sharing.</strong></li>
                 <li><strong>Importing:</strong> Use <strong>Import Character</strong> to load a file sent to you by another player or to restore a character from a backup file.</li>
                 <li><strong>Cloud Saving:</strong> Click <strong>Cloud Backups</strong> to import, export, or remove saved characters from the cloud. Files are accessible by your unique user-Id only.</li>
+                <li><strong>Your Email:</strong> We will never sell your email address. It's only ever used to send the occasional email when there's a major bug fix or update.</li>
             </ul>
 
             <div style="margin-bottom:20px; display:flex; align-items:center;">
@@ -2190,11 +2585,11 @@
             <div class="container">
                 <h3>Campaign & Character Notes</h3>
 
-                <div class="rich-text-toolbar" style="margin-bottom: 10px; display: flex; gap: 5px; flex-wrap: wrap;">
-                    <button class="btn-tool" onmousedown="event.preventDefault(); formatDoc('bold')" title="Bold"><b>B</b></button>
-                    <button class="btn-tool" onmousedown="event.preventDefault(); formatDoc('italic')" title="Italic"><i>I</i></button>
-                    <button class="btn-tool" onmousedown="event.preventDefault(); formatDoc('underline')" title="Underline"><u>U</u></button>
-                    <button class="btn-tool" onmousedown="event.preventDefault(); formatDoc('insertUnorderedList')" title="Bullets">• List</button>
+                <div class="rich-text-toolbar">
+                    <button class="btn-tool" data-cmd="bold" onmousedown="event.preventDefault(); formatDoc('bold')" title="Bold"><b>B</b></button>
+                    <button class="btn-tool" data-cmd="italic" onmousedown="event.preventDefault(); formatDoc('italic')" title="Italic"><i>I</i></button>
+                    <button class="btn-tool" data-cmd="underline" onmousedown="event.preventDefault(); formatDoc('underline')" title="Underline"><u>U</u></button>
+                    <button class="btn-tool" data-cmd="insertUnorderedList" onmousedown="event.preventDefault(); formatDoc('insertUnorderedList')" title="Bullets">• List</button>
 
                     <select class="btn-tool"
                             onmousedown="saveSelection()"
@@ -2205,17 +2600,32 @@
                         <option value="7">Huge</option>
                     </select>
 
-                    <input type="color" class="btn-tool"
-                           onmousedown="saveSelection()"
-                           onchange="formatDoc('foreColor', this.value)" title="Text Color">
+                    <div class="color-swatch-row" title="Text Color">
+                        <button type="button" class="color-swatch" data-color="#e74c3c" style="background:#e74c3c" onmousedown="event.preventDefault(); formatDoc('foreColor', '#e74c3c')"></button>
+                        <button type="button" class="color-swatch" data-color="#e67e22" style="background:#e67e22" onmousedown="event.preventDefault(); formatDoc('foreColor', '#e67e22')"></button>
+                        <button type="button" class="color-swatch" data-color="#f1c40f" style="background:#f1c40f" onmousedown="event.preventDefault(); formatDoc('foreColor', '#f1c40f')"></button>
+                        <button type="button" class="color-swatch" data-color="#2ecc71" style="background:#2ecc71" onmousedown="event.preventDefault(); formatDoc('foreColor', '#2ecc71')"></button>
+                        <button type="button" class="color-swatch" data-color="#3498db" style="background:#3498db" onmousedown="event.preventDefault(); formatDoc('foreColor', '#3498db')"></button>
+                        <button type="button" class="color-swatch" data-color="#9b59b6" style="background:#9b59b6" onmousedown="event.preventDefault(); formatDoc('foreColor', '#9b59b6')"></button>
+                        <button type="button" class="color-swatch" data-color="#2c3e50" style="background:#2c3e50" onmousedown="event.preventDefault(); formatDoc('foreColor', '#2c3e50')"></button>
+                        <button type="button" class="color-swatch" data-color="#000000" style="background:#000000" onmousedown="event.preventDefault(); formatDoc('foreColor', '#000000')"></button>
+                        <button type="button" class="color-swatch" data-color="#ffffff" style="background:#ffffff" title="White" onmousedown="event.preventDefault(); formatDoc('foreColor', '#ffffff')"></button>
+                        <input type="color" class="btn-tool" title="Custom Color"
+                               onmousedown="saveSelection()"
+                               onchange="formatDoc('foreColor', this.value); this.value = '#000000';">
+                    </div>
                 </div>
 
                 <div id="characterNotes"
                      contenteditable="true"
-                     class="notes-editor"
-                     oninput="saveNotes()"
+                     class="notes-editor is-empty"
+                     data-placeholder="Start typing your legend here..."
+                     spellcheck="true"
+                     autocorrect="on"
+                     autocapitalize="sentences"
+                     lang="en"
+                     oninput="updateNotesPlaceholder()"
                      onblur="saveSelection()">
-                    Start typing your legend here...
                 </div>
             </div>
         </div>
@@ -2238,7 +2648,7 @@
 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        const CURRENT_SHEET_VERSION = "2.2.0";  // *********MUST CHANGE THIS WHEN MAKING UPDATES FOR AUTO INSTALLER TO SEE! UPDATE ALL VERSION NUMBERS AT THE SAME TIME*********
+        const CURRENT_SHEET_VERSION = "2.3.0";  // *********MUST CHANGE THIS WHEN MAKING UPDATES FOR AUTO INSTALLER TO SEE! UPDATE ALL VERSION NUMBERS AT THE SAME TIME*********
         let activeCharacterName = null; // Tracks the currently loaded character
 
         const STATUS_DESCRIPTIONS = {
@@ -2292,6 +2702,56 @@
         };
 
         let currentCharacterKey = null;
+
+        // True whenever the on-screen sheet has edits that haven't been
+        // captured by a save/load yet. Used to warn before the character
+        // dropdown silently overwrites the screen with an older saved
+        // version — see loadSelectedCharacter().
+        let hasUnsavedChanges = false;
+
+        // Stat boxes whose "New Character" default (10, 20 for HP, 30 ft for
+        // Speed) reads like a plausible real value rather than an obvious
+        // placeholder. These get flagged red until actually edited — see
+        // .needs-attention. Values are the exact "New Character" defaults,
+        // used to tell a genuinely untouched field apart from one a player
+        // deliberately set back to the same number.
+        const NEEDS_ATTENTION_DEFAULTS = { str: '10', dex: '10', con: '10', int: '10', wis: '10', cha: '10', ac: '10', maxHp: '20', currentHp: '20', speed: '30 ft' };
+        const NEEDS_ATTENTION_FIELDS = Object.keys(NEEDS_ATTENTION_DEFAULTS);
+
+        function flagFreshDefaults() {
+            NEEDS_ATTENTION_FIELDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('needs-attention');
+            });
+        }
+
+        // Called after loading real character data (named slot, autosave
+        // backup, import, etc.). The save data itself remembers exactly
+        // which fields were still flagged, so a real Strength of 10 that's
+        // been confirmed once never comes back as "needs attention" just
+        // because the number matches the stock default — reload no longer
+        // has to guess from the value alone.
+        //
+        // Falls back to comparing against the stock default only for older
+        // saves made before this tracking existed.
+        function clearFreshDefaultFlags(data) {
+            const savedFlags = data && Array.isArray(data.needsAttentionFields) ? data.needsAttentionFields : null;
+
+            NEEDS_ATTENTION_FIELDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                const shouldFlag = savedFlags
+                    ? savedFlags.includes(id)
+                    : el.value === NEEDS_ATTENTION_DEFAULTS[id];
+
+                if (shouldFlag) {
+                    el.classList.add('needs-attention');
+                } else {
+                    el.classList.remove('needs-attention');
+                }
+            });
+        }
 
         const xpTable = {
             1: 300, 2: 900, 3: 2700, 4: 6500, 5: 14000,
@@ -2468,15 +2928,16 @@
                 return false;
             }
 
-            // 4. DURING THE 30 DAYS - ONLY "Save As New" WORKS
-            if (featureName === 'Save As New') {
-                return true;
-            } else {
-                // Block everything else immediately
-                alert(`${featureName} is locked during the trial. Only 'Save As New' is available. Activate the full version to unlock all features.`);
+            // 4. DURING THE 30 DAYS - only Importing/Exporting/Printing/Cloud
+            // Backups are locked. Saving, Save As New, and everything else
+            // work freely so the trial is actually usable day-to-day.
+            const lockedDuringTrial = ['Importing', 'Exporting', 'Printing', 'Cloud Backups'];
+            if (lockedDuringTrial.includes(featureName)) {
+                alert(`${featureName} is locked during the trial. Activate the full version to unlock all features.`);
                 document.getElementById('license-lock').style.display = 'flex';
                 return false;
             }
+            return true;
         }
 
         function updateXPMax() {
@@ -2487,6 +2948,13 @@
             if (xpTable[lvl]) {
                 xpMaxBox.value = xpTable[lvl];
             }
+
+            // Proficiency Bonus default, recalculated specifically when
+            // level changes (not on every keystroke elsewhere — see
+            // updateModifiers) so a manual override for homebrew rules
+            // survives edits to anything other than level.
+            const profDisplay = document.getElementById('profBonus');
+            if (profDisplay) profDisplay.value = Math.floor(((parseInt(lvl) || 1) - 1) / 4) + 2;
 
             updateXPBar();
         }
@@ -2534,11 +3002,16 @@
 
         // Master Update: Recalculates everything
         function updateModifiers() {
-            // 1. Proficiency Bonus Logic
-            const lvl = parseInt(document.getElementById('level').value) || 1;
-            const prof = Math.floor((lvl - 1) / 4) + 2;
+            // 1. Proficiency Bonus: auto-calculated from level (see
+            // updateXPMax, which runs specifically when level changes), but
+            // the box itself stays editable for homebrew rules. Read
+            // whatever's actually in the box rather than recomputing and
+            // overwriting it here — otherwise editing any ability score
+            // would silently stomp a manual override on every keystroke.
             const profDisplay = document.getElementById('profBonus');
-            if (profDisplay) profDisplay.value = prof;
+            const lvl = parseInt(document.getElementById('level').value) || 1;
+            const calculatedProf = Math.floor((lvl - 1) / 4) + 2;
+            const prof = profDisplay ? (parseInt(profDisplay.value) || calculatedProf) : calculatedProf;
 
             // 2. Loop through each ability defined in your 'abilities' object
             for (const [ability, data] of Object.entries(abilities)) {
@@ -2556,6 +3029,21 @@
                 if (ability === 'dex') {
                     const initEl = document.getElementById('initiative');
                     if (initEl) initEl.value = mod;
+                }
+
+                // Wisdom modifier drives Passive Wisdom (Perception): the
+                // 5e formula is 10 + Wis mod, plus proficiency bonus if
+                // proficient in Perception. This recalculates the DEFAULT
+                // every time Wisdom/level/Perception proficiency changes,
+                // but the field stays a plain editable input so gear bonuses
+                // or custom rules can still be added on top by hand.
+                if (ability === 'wis') {
+                    const passiveWisEl = document.getElementById('passiveWis');
+                    if (passiveWisEl) {
+                        const perceptionCb = document.getElementById('perception');
+                        const perceptionProficient = perceptionCb ? perceptionCb.checked : false;
+                        passiveWisEl.value = 10 + mod + (perceptionProficient ? prof : 0);
+                    }
                 }
 
                 // Update Saving Throws associated with this ability
@@ -2641,17 +3129,22 @@
             if (window.autoSave) autoSave();
         }
 
-        function addAttack() {
+        function addAttack(name = '', bonus = '', damage = '', equipped = false) {
             const attacksList = document.getElementById("attacksList");
             const row = document.createElement("div");
             row.className = "attack-row";
             row.innerHTML = `
-                                                                                                     <input type="text" placeholder="Weapon Name">
-                                                                                                     <input type="text" placeholder="Atk Bonus">
-                                                                                                     <input type="text" placeholder="Damage/Type">
+                                                                                                     <input type="checkbox" title="Equipped" class="attack-equipped" ${equipped ? 'checked' : ''}>
+                                                                                                     <textarea rows="1" placeholder="Weapon/Attack Name" class="attack-name" oninput="autoSizeTextarea(this)">${name}</textarea>
+                                                                                                     <textarea rows="1" placeholder="Atk Bonus" class="attack-bonus" oninput="autoSizeTextarea(this)">${bonus}</textarea>
+                                                                                                     <textarea rows="1" placeholder="Damage/Type" class="attack-damage" oninput="autoSizeTextarea(this)">${damage}</textarea>
                                                                                                      <button class="remove-attack" type="button" onclick="if(confirm('Are you sure you want to delete this attack?'))this.parentElement.remove()">✖</button>
                                                                                                      `;
             attacksList.appendChild(row);
+            // Pre-sized textareas start collapsed to their default 1-row
+            // height even when restored with long saved text — expand them
+            // immediately instead of waiting for the next edit.
+            row.querySelectorAll('textarea').forEach(ta => autoSizeTextarea(ta));
         }
 
         function addAttunement() {
@@ -2782,6 +3275,27 @@
             // Coins carried loose (not assigned to any container) still add to
             // the total weight the character is hauling around.
             globalTotal += looseCoinWeight;
+
+            // Potions (and any other loose, non-container inventory rows
+            // added via addItem/addPotion) each show their own "Total Wt" =
+            // qty × unit weight. That span was only ever set once at row
+            // creation and never recalculated on edit — fix that here, and
+            // count these rows toward Total Inventory Weight the same way
+            // container contents already are (they weren't counted at all
+            // before, despite having their own weight fields).
+            document.querySelectorAll('.inventory-row').forEach(row => {
+                const qtyEl = row.querySelector('.eq-qty');
+                const wgtEl = row.querySelector('.eq-weight');
+                const totalDisplay = row.querySelector('.eq-total-row-weight');
+                if (!qtyEl || !wgtEl) return;
+
+                const qty = parseFloat(qtyEl.value) || 0;
+                const wgt = parseFloat(wgtEl.value) || 0;
+                const rowTotal = qty * wgt;
+
+                if (totalDisplay) totalDisplay.textContent = rowTotal.toFixed(2);
+                globalTotal += rowTotal;
+            });
 
             // 2. "Total Inventory Weight" = just the containers + coins above.
             const inventoryDisplay = document.getElementById('totalWeightInventory');
@@ -3067,13 +3581,30 @@
                 dynamicContainers: [],
                 dynamicMounts: [],
                 craftingProjects: [],
-                portrait: document.getElementById('portraitImg').src
+                recipeCards: [],
+                portrait: document.getElementById('portraitImg').src,
+                // Campaign & Character Notes used to live in their own
+                // standalone localStorage key, completely outside this
+                // object — which meant they were invisible to Save/Save As
+                // New, autosave, Export, and Cloud Backup alike. Folding it
+                // in here is what makes notes travel with the character
+                // everywhere else already does, including syncing to other
+                // devices via Cloud Backup.
+                notes: document.getElementById('characterNotes').innerHTML,
+                // Exactly which stat boxes are still flagged as unconfirmed
+                // "New Character" defaults, so reloading never has to guess
+                // from the number alone whether 10 was left untouched or
+                // genuinely chosen — see .needs-attention.
+                needsAttentionFields: NEEDS_ATTENTION_FIELDS.filter(id => {
+                    const el = document.getElementById(id);
+                    return el && el.classList.contains('needs-attention');
+                })
             };
 
             document.querySelectorAll('input, textarea, select').forEach(el => {
                 if (el.id && !['characterList', 'characterName', 'importFile', 'portraitInput'].includes(el.id)) {
                     // Skip dynamic list items to handle them separately
-                    if (el.closest('#attunementList') || el.closest('#attacksList') || el.closest('#spellsList') || el.closest('#cantripsList') || el.closest('#bonusActionsList') || el.closest('#craftingList') || el.closest('#list-potions') || el.closest('#coinStacksList')) return;
+                    if (el.closest('#attunementList') || el.closest('#attacksList') || el.closest('#spellsList') || el.closest('#cantripsList') || el.closest('#bonusActionsList') || el.closest('#craftingList') || el.closest('#list-potions') || el.closest('#coinStacksList') || el.closest('#recipeCardsList')) return;
                     data[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
                 }
             });
@@ -3109,8 +3640,12 @@
             });
 
             document.querySelectorAll('#attacksList .attack-row').forEach(row => {
-                const inputs = row.querySelectorAll('input');
-                data.attacks.push({ name: inputs[0].value, bonus: inputs[1].value, damage: inputs[2].value });
+                data.attacks.push({
+                    name: row.querySelector('.attack-name').value,
+                    bonus: row.querySelector('.attack-bonus').value,
+                    damage: row.querySelector('.attack-damage').value,
+                    equipped: row.querySelector('.attack-equipped').checked
+                });
             });
 
             document.querySelectorAll('#spellsList .spell-row').forEach(row => {
@@ -3161,6 +3696,23 @@
                     name: inputs[0].value, rarity: inputs[1].value, totalGp: inputs[2].value,
                     tools: inputs[3].value, rules: inputs[4].value, invested: inputs[5].value,
                     notes: inputs[6].value, components: ingredients
+                });
+            });
+
+            // Capture Recipe Cards
+            document.querySelectorAll('#recipeCardsList > .recipe-card').forEach(card => {
+                const ingredients = [];
+                card.querySelectorAll('.recipe-ingredient-row').forEach(row => {
+                    ingredients.push({
+                        collected: row.querySelector('input[type="checkbox"]').checked,
+                        name: row.querySelector('input[type="text"]').value
+                    });
+                });
+                data.recipeCards.push({
+                    name: card.querySelector('.recipe-card-title').value,
+                    yields: card.querySelector('.recipe-yields').value,
+                    instructions: card.querySelector('.recipe-instructions').value,
+                    ingredients: ingredients
                 });
             });
 
@@ -3253,7 +3805,7 @@
 
             // 1. Clear existing dynamic content
             document.getElementById('attunementList').innerHTML = '';
-            document.getElementById('attacksList').innerHTML = '';
+            document.getElementById('attacksList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 2fr 1fr 2fr 40px; gap: 10px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; text-align: center;"><div>Equip</div><div style="text-align: left;">Weapon/Attack</div><div>Attack Bonus</div><div>Damage/Type</div><div></div></div>';
             document.getElementById('list-potions').innerHTML = '<div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;"><div>Qty</div><div style="text-align: left;">Potion Name</div><div>Price</div><div>Unit Wt</div><div>Total Wt</div><div></div></div>';
             document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
             document.getElementById('cantripsList').innerHTML = '<div style="display: grid; grid-template-columns: 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666;"><div>Cantrip Name</div><div></div></div>';
@@ -3262,11 +3814,12 @@
             document.getElementById('dynamicContainerList').innerHTML = '';
             document.getElementById('dynamicMountList').innerHTML = '';
             document.getElementById('craftingList').innerHTML = '';
+            document.getElementById('recipeCardsList').innerHTML = '';
 
             // 2. Restore Standard Fields (including Backstory and Bonds)
             Object.entries(data).forEach(([id, value]) => {
                 const el = document.getElementById(id);
-                if (!el || ['attunement', 'attacks', 'spells', 'cantrips', 'bonusActions', 'potions', 'coinStacks', 'dynamicContainers', 'dynamicMounts', 'craftingProjects', 'portrait'].includes(id)) return;
+                if (!el || ['attunement', 'attacks', 'spells', 'cantrips', 'bonusActions', 'potions', 'coinStacks', 'dynamicContainers', 'dynamicMounts', 'craftingProjects', 'portrait', 'notes'].includes(id)) return;
                 if (el.type === 'checkbox') el.checked = value; else el.value = value;
             });
 
@@ -3279,6 +3832,14 @@
                 document.getElementById('removePortraitBtn').style.display = 'block';
             }
 
+            // 3b. Restore Campaign & Character Notes (contenteditable, so it
+            // can't go through the generic input/select/textarea loop above)
+            const notesEditor = document.getElementById('characterNotes');
+            if (notesEditor) {
+                notesEditor.innerHTML = data.notes || '';
+                updateNotesPlaceholder();
+            }
+
             // 4. Restore Potions
             if (data.potions) {
                 data.potions.forEach(p => {
@@ -3288,7 +3849,7 @@
 
             // 5. Rebuild specialized lists
             if (data.attunement) data.attunement.forEach(a => { addAttunement(); const last = document.getElementById('attunementList').lastElementChild; last.querySelector('input[type="checkbox"]').checked = a.checked; last.querySelector('input[type="text"]').value = a.item; });
-            if (data.attacks) data.attacks.forEach(atk => { addAttack(); const inputs = document.getElementById('attacksList').lastElementChild.querySelectorAll('input'); inputs[0].value = atk.name; inputs[1].value = atk.bonus; inputs[2].value = atk.damage; });
+            if (data.attacks) data.attacks.forEach(atk => addAttack(atk.name, atk.bonus, atk.damage, atk.equipped));
             if (data.spells) data.spells.forEach(s => { addSpell(); const last = document.getElementById('spellsList').lastElementChild; last.querySelector('.spell-prepared').checked = s.prepared; last.querySelector('.spell-used').checked = s.used; last.querySelector('.spell-level-select').value = s.level; last.querySelector('.spell-name').value = s.name; last.querySelector('.spell-casting-time').value = s.castingTime || ''; last.querySelector('.spell-duration').value = s.duration || ''; last.querySelector('.spell-description').value = s.description; });
             if (data.cantrips) data.cantrips.forEach(c => { addCantrip(); const last = document.getElementById('cantripsList').lastElementChild; last.querySelector('.cantrip-name').value = c.name; last.querySelector('.cantrip-description').value = c.description; });
             if (data.bonusActions) data.bonusActions.forEach(b => { addBonusAction(); const last = document.getElementById('bonusActionsList').lastElementChild; last.querySelector('.bonus-action-name').value = b.name; last.querySelector('.bonus-action-description').value = b.description; });
@@ -3387,6 +3948,7 @@
             }
 
             if (data.craftingProjects) data.craftingProjects.forEach(proj => rebuildCraftingProject(proj));
+            if (data.recipeCards) data.recipeCards.forEach(r => addRecipeCard(r.name, r.yields, r.instructions, r.ingredients));
 
             updateModifiers();
             updateTotalWeight();
@@ -3410,6 +3972,15 @@
             setTimeout(() => {
                 document.querySelectorAll('textarea').forEach(tx => autoSizeTextarea(tx));
             }, 50);
+
+            // The synthetic 'input' events dispatched above (the "final poke")
+            // would otherwise trip the unsaved-changes flag on a sheet that
+            // was just loaded/restored and hasn't actually been touched yet.
+            hasUnsavedChanges = false;
+
+            // Restore exactly which fields were still flagged, rather than
+            // re-guessing from the loaded numbers.
+            clearFreshDefaultFlags(data);
         }
 
         function addNewTracker(name = "", current = 0, max = 6) {
@@ -3462,6 +4033,20 @@
             list.appendChild(row);
         }
 
+        // Keeps the Save/Load name box from ever being blank while you've
+        // actually named your character, so autosave/Save always has
+        // somewhere to write to. Only fills the gap — never overwrites a
+        // save name you (or a loaded character) already set, so it can't
+        // silently rename an existing save slot out from under you.
+        function syncSaveNameFromCharName() {
+            const saveNameInput = document.getElementById('characterName');
+            const charNameInput = document.getElementById('charName');
+            if (!saveNameInput || !charNameInput) return;
+            if (saveNameInput.value.trim() === '') {
+                saveNameInput.value = charNameInput.value;
+            }
+        }
+
         function saveCharacter() {
             if (!restrictedFeature('Saving')) return;
 
@@ -3488,6 +4073,9 @@
                 }
 
                 activeCharacterName = saveName;
+                currentCharacterKey = saveName;
+                hasUnsavedChanges = false;
+                localStorage.setItem('lastActiveCharacter', saveName);
                 document.getElementById('characterList').value = saveName;
                 alert(`${saveName} has been saved successfully`);
             } catch (e) {
@@ -3522,6 +4110,9 @@
             // 3. Force the dropdown UI to rebuild
             updateCharacterList();
             document.getElementById('characterList').value = charName;
+            currentCharacterKey = charName;
+            hasUnsavedChanges = false;
+            localStorage.setItem('lastActiveCharacter', charName);
 
             alert(`New character "${charName}" created and added to the menu!`);
         }
@@ -3529,6 +4120,20 @@
         function loadSelectedCharacter() {
             const charName = document.getElementById('characterList').value;
             if (!charName) return;
+
+            // Selecting a character here immediately overwrites the whole
+            // sheet with whatever was last saved for it. Warn first if the
+            // current screen has edits that haven't been saved anywhere yet,
+            // so switching characters can't silently wipe out work in
+            // progress.
+            if (hasUnsavedChanges) {
+                const proceed = confirm(`You have unsaved changes on the current sheet. Loading "${charName}" will discard them. Continue?`);
+                if (!proceed) {
+                    // Put the dropdown back to whatever is actually loaded.
+                    document.getElementById('characterList').value = currentCharacterKey || '';
+                    return;
+                }
+            }
 
             // Clear the "autosave" memory temporarily so it doesn't
             // overwrite the new character with the old one's data during the swap
@@ -3546,13 +4151,10 @@
                 // Update the save name input to match the loaded character
                 document.getElementById('characterName').value = charName;
                 currentCharacterKey = charName;
+                hasUnsavedChanges = false;
+                localStorage.setItem('lastActiveCharacter', charName);
 
                 updateModifiers();
-
-                setTimeout(() => {
-                    saveCharacter();
-                    console.log("Auto-saved after dropdown selection.");
-                }, 100);
             }
         }
 
@@ -3575,8 +4177,9 @@
                 document.getElementById('dynamicContainerList').innerHTML = '';
                 document.getElementById('dynamicMountList').innerHTML = '';
                 document.getElementById('craftingList').innerHTML = '';
+                document.getElementById('recipeCardsList').innerHTML = '';
                 document.getElementById('attunementList').innerHTML = '';
-                document.getElementById('attacksList').innerHTML = '';
+                document.getElementById('attacksList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 2fr 1fr 2fr 40px; gap: 10px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; text-align: center;"><div>Equip</div><div style="text-align: left;">Weapon/Attack</div><div>Attack Bonus</div><div>Damage/Type</div><div></div></div>';
                 document.getElementById('list-potions').innerHTML = '<div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;"><div>Qty</div><div style="text-align: left;">Potion Name</div><div>Price</div><div>Unit Wt</div><div>Total Wt</div><div></div></div>';
                 document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
                 document.getElementById('cantripsList').innerHTML = '<div style="display: grid; grid-template-columns: 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666;"><div>Cantrip Name</div><div></div></div>';
@@ -3616,6 +4219,11 @@
                 // 6. Reset Save Selection
                 document.getElementById('characterList').value = '';
                 currentCharacterKey = null;
+                hasUnsavedChanges = false;
+
+                // Flag the stock stat defaults so it's obvious which boxes
+                // still need real numbers instead of looking pre-filled.
+                flagFreshDefaults();
 
                 // 7. Refresh UI math and reset box heights
                 updateModifiers();
@@ -3641,6 +4249,10 @@
                 let characters = JSON.parse(localStorage.getItem('characterList') || '[]');
                 characters = characters.filter(name => name !== charName);
                 localStorage.setItem('characterList', JSON.stringify(characters));
+
+                if (localStorage.getItem('lastActiveCharacter') === charName) {
+                    localStorage.removeItem('lastActiveCharacter');
+                }
 
                 updateCharacterList();
                 newCharacter();
@@ -3985,6 +4597,50 @@
             list.appendChild(row);
         }
 
+        // --- RECIPE CARDS ---
+        // Simpler than the formal crafting-project tracker above: no GP
+        // cost/progress math, just a card that looks like a real recipe
+        // card with a checkable ingredient list ("have I collected this
+        // yet?") and space for instructions.
+        function addRecipeCard(name = '', yields = '', instructions = '', ingredients = []) {
+            const list = document.getElementById('recipeCardsList');
+            const card = document.createElement('div');
+            card.className = 'recipe-card';
+            card.innerHTML = `
+                                                                                                     <button class="remove-attack" type="button" style="position: absolute; top: 12px; right: 12px;" onclick="if(confirm('Are you sure you want to delete this recipe card?'))this.parentElement.remove()">✖</button>
+                                                                                                     <input type="text" class="recipe-card-title" placeholder="Recipe Name" value="${name}">
+                                                                                                     <label>Yields</label>
+                                                                                                     <input type="text" class="recipe-yields" placeholder="e.g. 3 Potions of Healing" value="${yields}" style="margin-top: 4px; margin-bottom: 4px;">
+                                                                                                     <h4>Ingredients</h4>
+                                                                                                     <div class="recipe-ingredients-list"></div>
+                                                                                                     <button class="btn" type="button" style="padding: 4px 10px; font-size: 11px;" onclick="addRecipeIngredient(this)">+ Add Ingredient</button>
+                                                                                                     <h4>Instructions</h4>
+                                                                                                     <textarea class="recipe-instructions" placeholder="Preparation steps, DC checks, crafting time..." oninput="autoSizeTextarea(this)">${instructions}</textarea>
+                                                                                                     `;
+            list.appendChild(card);
+
+            const ingredientsList = card.querySelector('.recipe-ingredients-list');
+            ingredients.forEach(ing => addRecipeIngredientToList(ingredientsList, ing.name, ing.collected));
+
+            card.querySelectorAll('textarea').forEach(ta => autoSizeTextarea(ta));
+        }
+
+        function addRecipeIngredient(button) {
+            const list = button.closest('.recipe-card').querySelector('.recipe-ingredients-list');
+            addRecipeIngredientToList(list);
+        }
+
+        function addRecipeIngredientToList(list, name = '', collected = false) {
+            const row = document.createElement('div');
+            row.className = 'recipe-ingredient-row';
+            row.innerHTML = `
+                                                                                                     <input type="checkbox" title="Collected" ${collected ? 'checked' : ''}>
+                                                                                                     <input type="text" placeholder="Ingredient (e.g. 2oz powdered silver)" value="${name}">
+                                                                                                     <button class="remove-attack" type="button" style="padding: 2px 6px; font-size: 10px;" onclick="this.parentElement.remove()">✖</button>
+                                                                                                     `;
+            list.appendChild(row);
+        }
+
         function calculateCrafting(element) {
             const card = element.closest('.text-box');
             if (!card) return;
@@ -4025,39 +4681,103 @@
         function handlePortraitUpload(input) {
             const file = input.files[0];
             if (file) {
-                // 1. Check if the file is an image
-                if (!file.type.startsWith('image/')) return;
+                // HEIC/HEIF (the default photo format on iPhone/Mac) has no
+                // reliable browser decode support outside iOS Safari's own
+                // photo picker, which silently transcodes it to JPEG before
+                // the page ever sees it. Picking the same file via a Mac's
+                // Finder dialog (or most non-Safari desktop browsers) hands
+                // over the raw HEIC file instead, which then fails to decode
+                // with zero feedback below — this catches that case early
+                // with an actionable message instead of doing nothing.
+                if (/\.hei[cf]$/i.test(file.name) || /heic|heif/i.test(file.type)) {
+                    alert("This looks like a HEIC/HEIF photo, which most browsers (including Mac desktop browsers) can't read directly. In Photos, use File > Export > Export Photo... and choose JPEG, then upload that instead.");
+                    input.value = "";
+                    return;
+                }
+
+                // 1. Check if the file is an image. Browsers determine
+                // file.type from the OS's file-extension registry rather
+                // than the actual bytes, and macOS/Chrome can report an
+                // EMPTY type for a perfectly valid image if that lookup
+                // fails — which used to silently reject a real photo here
+                // with zero feedback. Fall back to the file extension so a
+                // good image still uploads even when the browser's own type
+                // detection comes back blank or wrong.
+                const looksLikeImageByExtension = /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+                if (!file.type.startsWith('image/') && !looksLikeImageByExtension) {
+                    alert("That file doesn't look like a supported image. Please use JPEG, PNG, GIF, or WebP.");
+                    input.value = "";
+                    return;
+                }
+
+                // Safety net for anything that just hangs instead of firing
+                // an error — e.g. a Mac file that's actually an unsynced
+                // iCloud placeholder still downloading, or any other stall.
+                // Without this, a stuck upload looks EXACTLY like "won't
+                // respond" with no way to tell what's wrong.
+                let settled = false;
+                const stallTimer = setTimeout(() => {
+                    if (settled) return;
+                    settled = true;
+                    alert("This image is taking too long to load and may be stuck (for example, an iCloud photo that hasn't finished downloading to this Mac yet). Please make sure the file is fully downloaded locally, then try again.");
+                    input.value = "";
+                }, 15000);
+                function settle(fn) {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(stallTimer);
+                    fn();
+                }
 
                 const reader = new FileReader();
+                reader.onerror = function () {
+                    settle(() => {
+                        alert("Couldn't read that file. Please try a different image.");
+                        input.value = "";
+                    });
+                };
                 reader.onload = function (e) {
                     const img = new Image();
+                    img.onerror = function () {
+                        settle(() => {
+                            alert("That image couldn't be loaded — it may be corrupted or in an unsupported format. Try a JPEG or PNG instead.");
+                            input.value = "";
+                        });
+                    };
                     img.onload = function () {
-                        // 2. Setup a Canvas to resize/compress the image
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 400; // Shrink to a reasonable size for a sheet
-                        const scaleSize = MAX_WIDTH / img.width;
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
+                        settle(() => {
+                            try {
+                                // 2. Setup a Canvas to resize/compress the image
+                                const canvas = document.createElement('canvas');
+                                const MAX_WIDTH = 400; // Shrink to a reasonable size for a sheet
+                                const scaleSize = MAX_WIDTH / img.width;
+                                canvas.width = MAX_WIDTH;
+                                canvas.height = img.height * scaleSize;
 
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                        // 3. Convert to a COMPRESSED JPEG (0.7 quality)
-                        // This turns a 5MB image into roughly 50KB-100KB
-                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                                // 3. Convert to a COMPRESSED JPEG (0.7 quality)
+                                // This turns a 5MB image into roughly 50KB-100KB
+                                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
-                        // 4. Update the UI
-                        const imgElement = document.getElementById('portraitImg');
-                        const placeholder = document.getElementById('portraitPlaceholder');
-                        const removeBtn = document.getElementById('removePortraitBtn');
+                                // 4. Update the UI
+                                const imgElement = document.getElementById('portraitImg');
+                                const placeholder = document.getElementById('portraitPlaceholder');
+                                const removeBtn = document.getElementById('removePortraitBtn');
 
-                        imgElement.src = compressedDataUrl;
-                        imgElement.style.display = 'block';
-                        placeholder.style.display = 'none';
-                        removeBtn.style.display = 'block';
+                                imgElement.src = compressedDataUrl;
+                                imgElement.style.display = 'block';
+                                placeholder.style.display = 'none';
+                                removeBtn.style.display = 'block';
 
-                        // 5. Trigger the auto-save now that the small version is ready
-                        if (window.autoSave) autoSave();
+                                // 5. Trigger the auto-save now that the small version is ready
+                                if (window.autoSave) autoSave();
+                            } catch (err) {
+                                alert("Something went wrong processing that image: " + err.message + ". Please try a different file.");
+                                input.value = "";
+                            }
+                        });
                     };
                     img.src = e.target.result;
                 };
@@ -4430,6 +5150,78 @@
             window.scrollTo(0, 0);
         }
 
+        // --- TOUCH SWIPE PAGE NAVIGATION ---
+        // Swipe right-to-left -> next tab (to the right). Swipe left-to-right
+        // -> previous tab. Mirrors the nav bar's left-to-right order exactly,
+        // so it behaves like flipping forward/back through the tabs.
+        function initSwipeNavigation() {
+            const PAGE_ORDER = ['mainPage', 'infoPage', 'spellsPage', 'containersPage', 'mountsPage', 'WorkshopPage', 'notes-tab'];
+            // Pulled in DOM order so this always matches the nav bar even if
+            // tabs are ever reordered/added — only real showPage() tabs, not
+            // the "Help & Credits" button (which opens a modal, not a page).
+            const navItems = Array.from(document.querySelectorAll('.nav-item[onclick^="showPage"]'));
+
+            const MODAL_IDS = ['logoSplash', 'license-lock', 'cloudModal', 'helpModal', 'privacyModal', 'tosModal', 'howtoModal'];
+            function isAnyModalOpen() {
+                return MODAL_IDS.some(id => {
+                    const el = document.getElementById(id);
+                    return el && getComputedStyle(el).display !== 'none';
+                });
+            }
+
+            // Don't hijack swipes meant for a horizontally-scrollable element
+            // (the bottom nav bar, a wide table) — let those scroll normally.
+            function hasHorizontalScrollAncestor(el) {
+                while (el && el !== document.body) {
+                    if (el.scrollWidth > el.clientWidth + 2) {
+                        const overflowX = getComputedStyle(el).overflowX;
+                        if (overflowX === 'auto' || overflowX === 'scroll') return true;
+                    }
+                    el = el.parentElement;
+                }
+                return false;
+            }
+
+            let startX = 0, startY = 0, tracking = false;
+            const MIN_SWIPE_DISTANCE = 70; // px — deliberate swipe, not an accidental brush
+            const MAX_VERTICAL_RATIO = 0.6; // must be mostly horizontal, not a scroll
+
+            document.addEventListener('touchstart', (e) => {
+                tracking = false;
+                if (e.touches.length !== 1) return; // ignore pinch/multi-touch
+                const target = e.touches[0].target;
+                if (!target || (target.closest && target.closest('input, textarea, select'))) return;
+                if (isAnyModalOpen()) return;
+                if (hasHorizontalScrollAncestor(target)) return;
+
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                tracking = true;
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                if (!tracking) return;
+                tracking = false;
+
+                const touch = e.changedTouches[0];
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+
+                if (Math.abs(dx) < MIN_SWIPE_DISTANCE) return;
+                if (Math.abs(dy) > Math.abs(dx) * MAX_VERTICAL_RATIO) return;
+
+                const currentPage = document.querySelector('.page.active');
+                if (!currentPage) return;
+                const currentIndex = PAGE_ORDER.indexOf(currentPage.id);
+                if (currentIndex === -1) return;
+
+                const newIndex = currentIndex + (dx < 0 ? 1 : -1);
+                if (newIndex < 0 || newIndex >= PAGE_ORDER.length) return; // no wraparound
+
+                showPage(PAGE_ORDER[newIndex], navItems[newIndex]);
+            }, { passive: true });
+        }
+
         function logoutLicense() {
             if (confirm("Are you sure you want to log out? This will lock premium features on this device until you activate again.")) {
                 // Removes the "paid" flag from your browser's memory
@@ -4633,34 +5425,187 @@
                 restoreSelection();
             }
 
+            // Capture this before execCommand runs: a collapsed cursor
+            // (nothing selected) is the "about to type" case — foreColor
+            // there just arms the browser's internal pending typing style
+            // and doesn't touch the DOM at all until a character is
+            // actually typed, so there's nothing yet for the normal
+            // computed-style toolbar detection to see.
+            const sel = window.getSelection();
+            const wasCollapsed = sel.rangeCount > 0 && sel.getRangeAt(0).collapsed;
+
+            // Commands like insertUnorderedList restructure the selection
+            // into a brand-new <ul><li> block, and browsers are
+            // inconsistent about whether Bold/Italic/Underline that was
+            // active going in survives that restructuring — it can get
+            // silently dropped. Snapshot it first (skip when the command
+            // being run *is* one of these three — that's a deliberate
+            // toggle, not something to protect against) so it can be put
+            // back if it disappears.
+            const trackedStyles = ['bold', 'italic', 'underline'];
+            let stylesBefore = null;
+            if (!trackedStyles.includes(cmd)) {
+                stylesBefore = {};
+                trackedStyles.forEach(s => { stylesBefore[s] = document.queryCommandState(s); });
+            }
+
             // 2. Apply the formatting
             document.execCommand(cmd, false, value);
+
+            if (stylesBefore) {
+                trackedStyles.forEach(s => {
+                    if (stylesBefore[s] && !document.queryCommandState(s)) {
+                        document.execCommand(s, false, null);
+                    }
+                });
+            }
 
             // 3. Put focus back in the editor and clear the saved selection
             editor.focus();
             lastSelection = null;
 
-            saveNotes();
-        }
+            // Toolbar clicks (mousedown, not typing) don't reliably bubble
+            // an 'input' event the way typing does, so schedule the same
+            // debounced autosave directly here too — otherwise formatting
+            // text and then walking away without typing another keystroke
+            // could leave that formatting unsaved.
+            hasUnsavedChanges = true;
+            clearTimeout(window.saveTimeout);
+            window.saveTimeout = setTimeout(autoSave, 1000);
 
-        // Function to save notes to LocalStorage so they don't disappear
-        function saveNotes() {
-            const content = document.getElementById('characterNotes').innerHTML;
-            localStorage.setItem('rpg_character_notes', content);
-        }
-
-        // Function to load notes when the page opens
-        function loadNotes() {
-            const saved = localStorage.getItem('rpg_character_notes');
-            if (saved) {
-                document.getElementById('characterNotes').innerHTML = saved;
+            if (cmd === 'foreColor' && wasCollapsed && value) {
+                // Nothing was wrapped in the DOM to detect yet, so light up
+                // the picked swatch directly — otherwise it stayed dark
+                // until after the first character was typed, leaving no
+                // way to tell a color was actually armed.
+                const hex = value.toLowerCase();
+                document.querySelectorAll('.color-swatch').forEach(sw => {
+                    sw.classList.toggle('selected', sw.dataset.color === hex);
+                });
+            } else {
+                updateNotesToolbarState();
             }
         }
 
-        // Make sure to call loadNotes() inside your window.onload function!
-        window.addEventListener('load', loadNotes);
+        // Notes used to be saved/loaded here via their own standalone
+        // 'rpg_character_notes' localStorage key, entirely separate from
+        // the rest of the character sheet — which is why notes never made
+        // it into Save/Save As New/autosave/Export/Cloud Backup, and never
+        // showed up on a different device. Notes now travel as data.notes
+        // inside getCharacterData()/setCharacterData() like everything
+        // else on the sheet, so those two functions aren't needed anymore.
+
+        // One-time recovery for anyone who already had notes sitting in
+        // that old standalone key before this fix — without this, that
+        // content would just be silently orphaned (never read by anything
+        // ever again) the moment the character sheet reloads. Since notes
+        // used to be shared globally across every character rather than
+        // per-character, there's no way to know which character they
+        // "belong" to — so this folds them into whichever character ends
+        // up active on this first post-update load, which beats losing
+        // them. Runs once: the old key is removed right after, so this
+        // can't keep re-injecting stale content on every future load.
+        function migrateLegacyNotes() {
+            const legacy = localStorage.getItem('rpg_character_notes');
+            if (!legacy) return;
+
+            const editor = document.getElementById('characterNotes');
+            if (editor) {
+                const isEmpty = editor.textContent.trim() === '' && !editor.querySelector('img, ul, ol');
+                // Only fill in if the active character doesn't already have
+                // its own notes — don't clobber real data just in case.
+                if (isEmpty) {
+                    editor.innerHTML = legacy;
+                    updateNotesPlaceholder();
+                    hasUnsavedChanges = true;
+                    autoSave();
+                }
+            }
+
+            localStorage.removeItem('rpg_character_notes');
+        }
+
+        // Real placeholder behavior for the contenteditable editor — without
+        // this, "Start typing..." was hardcoded directly into the content
+        // and became permanent saved text the moment someone typed without
+        // deleting it first.
+        function updateNotesPlaceholder() {
+            const editor = document.getElementById('characterNotes');
+            if (!editor) return;
+            const isEmpty = editor.textContent.trim() === '' && !editor.querySelector('img, ul, ol');
+            editor.classList.toggle('is-empty', isEmpty);
+        }
+
+        // execCommand reports colors back as "rgb(r, g, b)", but the swatch
+        // buttons are keyed by hex — normalize so they can be compared.
+        function rgbStringToHex(rgbStr) {
+            const match = rgbStr && rgbStr.match(/\d+/g);
+            if (!match || match.length < 3) return null;
+            return '#' + match.slice(0, 3).map(n => parseInt(n, 10).toString(16).padStart(2, '0')).join('');
+        }
+
+        // Highlights Bold/Italic/Underline, and whichever color swatch
+        // matches the text color, in the toolbar to match whatever's active
+        // at the cursor/selection — the way Google Docs shows which styles
+        // are "on" as you move around the document.
+        //
+        // Color detection deliberately does NOT use document.queryCommandValue
+        // ('foreColor') — that API is deprecated and proved unreliable in
+        // testing (e.g. it can keep reporting the last-applied color for a
+        // plain, uncolored cursor position). Instead this walks up from the
+        // actual selection to the nearest element and asks getComputedStyle
+        // for the real rendered color, which always matches what's on
+        // screen in both light and dark mode regardless of how deeply the
+        // <font> tags are nested.
+        function updateNotesToolbarState() {
+            const editor = document.getElementById('characterNotes');
+            if (!editor || document.activeElement !== editor) return;
+
+            // A real, fresh selection now exists directly in the editor, so
+            // any range stashed earlier by saveSelection() (e.g. the user
+            // opened the font-size dropdown or the custom color picker,
+            // then clicked back into the editor without actually picking
+            // anything) is obsolete. Leaving it behind meant the *next*
+            // plain color-swatch click — which doesn't call saveSelection()
+            // itself — could silently restore that stale/detached range
+            // instead of the selection the user can actually see, making
+            // color changes and the toolbar highlight seem to randomly not
+            // apply to the right text.
+            lastSelection = null;
+
+            ['bold', 'italic', 'underline', 'insertUnorderedList'].forEach(cmd => {
+                const btn = document.querySelector(`.btn-tool[data-cmd="${cmd}"]`);
+                if (btn) btn.classList.toggle('active', document.queryCommandState(cmd));
+            });
+
+            let currentHex = null;
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                let node = sel.getRangeAt(0).startContainer;
+                if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+                if (node && editor.contains(node)) {
+                    currentHex = rgbStringToHex(getComputedStyle(node).color);
+                }
+            }
+            document.querySelectorAll('.color-swatch').forEach(sw => {
+                sw.classList.toggle('selected', !!currentHex && sw.dataset.color === currentHex);
+            });
+        }
+        document.addEventListener('selectionchange', updateNotesToolbarState);
+        // Toolbar controls that can't safely preventDefault their mousedown
+        // (the font-size <select>, the native custom-color <input>) briefly
+        // steal focus away from the editor, which made the toolbar state
+        // freeze stale until the *next* selection change. Refreshing again
+        // the moment focus lands back on the editor makes it self-heal
+        // immediately instead of staying stuck.
+        document.addEventListener('DOMContentLoaded', () => {
+            const editor = document.getElementById('characterNotes');
+            if (editor) editor.addEventListener('focus', updateNotesToolbarState);
+        });
 
         document.addEventListener("DOMContentLoaded", () => {
+            initSwipeNavigation();
+
             // --- 0. PERMANENT THEME & BACKGROUND LOGIC ---
             const bgInput1 = document.getElementById('bgColor1');
             const bgInput2 = document.getElementById('bgColor2');
@@ -4707,39 +5652,9 @@
             }
 
             // --- 2. TRIAL & LICENSE RESTRICTION LOGIC ---
-            // Globally accessible restrictedFeature function
-            window.restrictedFeature = function (featureName) {
-                const email = localStorage.getItem('licenseEmail');
-
-                // 1. If licensed, everything is unlocked.
-                if (email) return true;
-
-                // 2. Manage 30-day Timer
-                let installDate = localStorage.getItem('app_install_date');
-                if (!installDate) {
-                    installDate = Date.now();
-                    localStorage.setItem('app_install_date', installDate);
-                }
-
-                const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
-                const isTrialExpired = (Date.now() - installDate) > thirtyDaysInMs;
-
-                // 3. HARD LOCK AFTER 30 DAYS
-                if (isTrialExpired) {
-                    alert("Your 30-day trial has expired. All features are locked. Please activate a license.");
-                    document.getElementById('license-lock').style.display = 'flex';
-                    return false;
-                }
-
-                // 4. DURING TRIAL: ONLY "Save As New" WORKS
-                if (featureName === 'Save As New') {
-                    return true;
-                } else {
-                    alert(`${featureName} is locked during trial. Only 'Save As New' is available.`);
-                    document.getElementById('license-lock').style.display = 'flex';
-                    return false;
-                }
-            };
+            // (restrictedFeature is defined once, top-level, near saveCharacter —
+            // this used to be duplicated here as a second, drifting definition
+            // that silently overrode the real one at runtime.)
 
             // --- 3. STATUS EFFECTS TRACKER LOGIC ---
             const statusGrid = document.getElementById('statusGrid');
@@ -4829,8 +5744,14 @@
                 // Auto-Size text areas
                 if (target.tagName === 'TEXTAREA') autoSizeTextarea(target);
 
-                // Update Modifiers and Bars
-                if (target.type === "number" || target.type === "checkbox" || target.id === "spellAbility") {
+                // Update Modifiers and Bars. Skip this for fields that
+                // updateModifiers() itself derives (Passive Wisdom,
+                // Initiative) when THEY are the one being typed into —
+                // otherwise editing them directly would immediately
+                // recalculate and snap the manual edit right back to the
+                // formula value, making them look impossible to override.
+                const isDerivedOutputField = ['passiveWis', 'initiative'].includes(target.id);
+                if ((target.type === "number" && !isDerivedOutputField) || target.type === "checkbox" || target.id === "spellAbility") {
                     updateModifiers();
                     if (target.id === "xp" || target.id === "xpMax") updateXPBar();
                     if (target.id === "currentHp" || target.id === "maxHp") updateHealthBar();
@@ -4842,10 +5763,26 @@
                     }
                 }
 
-                // Auto-Save Trigger
-                if (target.closest('input, select, textarea')) {
+                // Auto-Save Trigger — also covers #characterNotes, which is
+                // a contenteditable div (not an input/select/textarea) and
+                // was previously falling through this check entirely, so
+                // typing notes never scheduled an autosave at all.
+                if (target.closest('input, select, textarea') || target.closest('#characterNotes')) {
                     clearTimeout(window.saveTimeout);
                     window.saveTimeout = setTimeout(autoSave, 1000);
+                }
+
+                // As soon as a flagged stat box is actually typed into, it's
+                // an intentional value now — stop flagging it, whatever the
+                // new number is.
+                if (NEEDS_ATTENTION_FIELDS.includes(target.id)) {
+                    target.classList.remove('needs-attention');
+                }
+
+                // Editing anything (other than the load dropdown itself)
+                // means the screen no longer matches what's saved.
+                if (target.id !== 'characterList') {
+                    hasUnsavedChanges = true;
                 }
             });
 
@@ -4859,13 +5796,39 @@
                 if (e.target.closest('.container')) {
                     clearTimeout(window.saveTimeout);
                     window.saveTimeout = setTimeout(autoSave, 300);
+                    hasUnsavedChanges = true;
                 }
             });
 
             // --- 7. AUTO-SAVE / AUTO-LOAD ---
             window.autoSave = function () {
                 const data = getCharacterData();
+
+                // Generic safety-net backup, kept for anyone mid-edit with no
+                // name entered yet and as a fallback for older saves.
                 localStorage.setItem('autosave_char', JSON.stringify(data));
+
+                // The real fix: as soon as there's a name in the Save box,
+                // every autosave tick writes straight into THAT character's
+                // actual save slot too — not just the anonymous blob above.
+                // This is what makes editing "just work" without a manual
+                // Save click, and what lets us reopen the same character by
+                // name next time instead of an untied pile of edits.
+                const saveName = document.getElementById('characterName').value.trim();
+                if (saveName) {
+                    localStorage.setItem(`character_${saveName}`, JSON.stringify(data));
+
+                    let characters = JSON.parse(localStorage.getItem('characterList') || '[]');
+                    if (!characters.includes(saveName)) {
+                        characters.push(saveName);
+                        localStorage.setItem('characterList', JSON.stringify(characters));
+                        updateCharacterList();
+                    }
+                    document.getElementById('characterList').value = saveName;
+
+                    currentCharacterKey = saveName;
+                    localStorage.setItem('lastActiveCharacter', saveName);
+                }
             };
 
             // Mobile browsers (Android especially) throttle or kill timers
@@ -4883,11 +5846,37 @@
             window.addEventListener('pagehide', flushSave);
 
             window.autoLoad = function () {
+                // Prefer reopening the actual last-active NAMED character, so
+                // the sheet you see on open is always tied to a real save
+                // slot (and the Save box is never blank/mismatched).
+                const lastActive = localStorage.getItem('lastActiveCharacter');
+                const lastActiveData = lastActive ? localStorage.getItem(`character_${lastActive}`) : null;
+
+                if (lastActive && lastActiveData) {
+                    setCharacterData(JSON.parse(lastActiveData));
+                    document.getElementById('characterList').value = lastActive;
+                    document.getElementById('characterName').value = lastActive;
+                    currentCharacterKey = lastActive;
+                    hasUnsavedChanges = false;
+                    return;
+                }
+
+                // Fallback for anyone whose in-progress work only exists in
+                // the old generic blob (no named character saved yet).
                 const savedData = localStorage.getItem('autosave_char');
-                if (savedData) setCharacterData(JSON.parse(savedData));
+                if (savedData) {
+                    setCharacterData(JSON.parse(savedData));
+                    // If that old data already has a character name on it,
+                    // seed the Save box immediately so autosave can start
+                    // writing to a real slot right away instead of waiting
+                    // for the user to type something first.
+                    syncSaveNameFromCharName();
+                    hasUnsavedChanges = false;
+                }
             };
 
             autoLoad();
+            migrateLegacyNotes();
 
             // --- 8. HEARTBEAT & INSTALL ---
             async function runHeartbeat() {
@@ -5014,6 +6003,7 @@
                 alert("Backup failed: " + error.message);
             } else {
                 refreshCloudList();
+                alert(`"${charName}" has been backed up to the cloud.`);
             }
         }
 
