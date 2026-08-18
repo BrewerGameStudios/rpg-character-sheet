@@ -1612,6 +1612,16 @@
                 style="position: absolute; bottom: 24px; right: 24px; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.4); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 13px; backdrop-filter: blur(4px);">
             Skip ▶
         </button>
+        <!-- Browsers only allow a video to autoplay with no clicks at all if
+             it's muted — that's why the video itself starts silent. Tapping
+             this, though, IS a direct user gesture, which browsers do allow
+             to turn sound on, so this is the one reliable way to offer sound
+             without breaking autoplay in the browsers that block it. -->
+        <button id="logoSplashUnmuteBtn" onclick="toggleLogoSplashSound()"
+                style="position: absolute; bottom: 24px; left: 24px; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.4); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;"
+                title="Turn sound on">
+            🔇
+        </button>
     </div>
     <script>
         function dismissLogoSplash() {
@@ -1622,8 +1632,29 @@
             splash.style.opacity = '0';
             setTimeout(() => splash.remove(), 400);
         }
-        // Safety net: never let a failed/blocked autoplay trap the user on the splash screen.
-        setTimeout(dismissLogoSplash, 10000);
+        function toggleLogoSplashSound() {
+            const video = document.getElementById('logoSplashVideo');
+            const btn = document.getElementById('logoSplashUnmuteBtn');
+            if (!video || !btn) return;
+            video.muted = !video.muted;
+            btn.textContent = video.muted ? '🔇' : '🔊';
+            btn.title = video.muted ? 'Turn sound on' : 'Mute';
+        }
+        // Tried remembering this choice across visits (unmuting
+        // automatically on load based on last time), but real Chrome
+        // blocks the autoplay entirely the moment it detects the video
+        // won't stay muted — even when set right after playback starts
+        // with no fresh click behind it. That's Chrome's autoplay policy
+        // working as intended, not a bug, and there's no reliable way
+        // around it — so every load starts muted, same as the very first
+        // visit, and sound is only ever a deliberate tap away.
+        // Safety net: never let a failed/blocked autoplay trap the user on the
+        // splash screen. The video itself is ~14.6s (dismissLogoSplash already
+        // fires on its own via onended right when it finishes) — this timeout
+        // only needs to fire if autoplay never starts at all, so it's set
+        // comfortably past the video's real length rather than cutting a
+        // normal playthrough off early.
+        setTimeout(dismissLogoSplash, 17000);
     </script>
     <div id="license-lock" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; color: white; text-align: center;">
         <div style="background: #222; padding: 2rem; border-radius: 10px; border: 1px solid #444; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 400px; width: 90%; position: relative;">
