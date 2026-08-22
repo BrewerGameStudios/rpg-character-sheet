@@ -53,10 +53,22 @@
             --bg-color-1: #667eea;
             --bg-color-2: #764ba2;
             --dark-overlay: rgba(0, 0, 0, 0); /* Invisible by default */
+            /* Matches .notes-editor's own default (unstyled) text color —
+               see the "Normal" color swatch below. Unlike the fixed Black/
+               White swatches, text colored this way keeps tracking the
+               live value of this variable, so it actually flips when dark
+               mode toggles instead of staying stuck at whatever it was
+               when applied. Written as full 6-digit hex on purpose, not
+               the #222 shorthand — updateNotesToolbarState() compares
+               this raw string against rgbStringToHex()'s output, which is
+               always 6 digits, so a shorthand value here would silently
+               never match in light mode (caught live — see commit). */
+            --notes-normal-color: #222222;
         }
 
         body.dark-mode {
             --dark-overlay: rgba(0, 0, 0, 0.5); /* Darkens the custom colors */
+            --notes-normal-color: #e0e0e0;
             background-color: #1a1a1a; /* Fallback */
         }
 
@@ -1329,6 +1341,28 @@
                 border-color: #8b9bea;
                 box-shadow: 0 0 0 2px #8b9bea;
             }
+
+        /* "Automatic" text color — same "A" glyph convention as Word/
+           Google Docs' own font-color tool, deliberately NOT a filled
+           color circle like its siblings (a solid var(--notes-normal-
+           color) fill read as near-identical to the plain Black swatch
+           in light mode). The glyph's own color IS that live variable,
+           so it shows what it currently does rather than needing a
+           swatch to stand in for it — same neutral surface as the
+           adjacent B/I/U/font-size controls (.btn-tool) underneath it. */
+        .normal-color-swatch {
+            background: #f0f0f0;
+            color: var(--notes-normal-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+            line-height: 1;
+        }
+        body.dark-mode .normal-color-swatch {
+            background: #2a2a3e;
+        }
 
         .notes-editor {
             max-width: 850px;
@@ -2632,6 +2666,17 @@
                     </select>
 
                     <div class="color-swatch-row" title="Text Color">
+                        <!-- "Automatic" text color, same idea (and same "A"
+                             glyph convention) as Word/Google Docs' own font-
+                             color tool — first in the row since it's the
+                             default/no-override choice, not just another
+                             color. No background fill: the "A" itself is
+                             colored via the live --notes-normal-color
+                             variable, so the icon literally shows what it
+                             currently does (a dark A in light mode, a light
+                             A in dark mode) rather than needing a swatch
+                             color to stand in for it. -->
+                        <button type="button" class="color-swatch normal-color-swatch" data-color="normal" title="Normal — follows light/dark mode" onmousedown="event.preventDefault(); formatDoc('foreColor', 'var(--notes-normal-color)')">A</button>
                         <button type="button" class="color-swatch" data-color="#e74c3c" style="background:#e74c3c" onmousedown="event.preventDefault(); formatDoc('foreColor', '#e74c3c')"></button>
                         <button type="button" class="color-swatch" data-color="#e67e22" style="background:#e67e22" onmousedown="event.preventDefault(); formatDoc('foreColor', '#e67e22')"></button>
                         <button type="button" class="color-swatch" data-color="#f1c40f" style="background:#f1c40f" onmousedown="event.preventDefault(); formatDoc('foreColor', '#f1c40f')"></button>
@@ -5447,6 +5492,20 @@
             }
         }
 
+        // A real, otherwise-never-used hex used only as a throwaway
+        // marker — see formatDoc's isNormalColor branch below for why
+        // execCommand needs a real color here rather than the
+        // var(--notes-normal-color) reference this is standing in for.
+        const NOTES_NORMAL_COLOR_SENTINEL = '#010203';
+        function convertNormalColorSentinels(editor) {
+            editor.querySelectorAll('font[color="' + NOTES_NORMAL_COLOR_SENTINEL + '"]').forEach(font => {
+                const span = document.createElement('span');
+                span.style.color = 'var(--notes-normal-color)';
+                while (font.firstChild) span.appendChild(font.firstChild);
+                font.replaceWith(span);
+            });
+        }
+
         // Updated formatDoc to handle selection restoration
         function formatDoc(cmd, value = null) {
             const editor = document.getElementById('characterNotes');
@@ -5481,7 +5540,24 @@
             }
 
             // 2. Apply the formatting
-            document.execCommand(cmd, false, value);
+            //
+            // The "Normal" swatch is special-cased: this browser's
+            // execCommand('foreColor', ...) wraps the selection in a
+            // legacy <font color="..."> tag, and that color ATTRIBUTE
+            // (not a CSS style) can't hold a var(...) reference at all —
+            // passed one directly, it silently produces garbage
+            // (confirmed live: rgba(0,0,0,0), fully transparent). So a
+            // real, throwaway sentinel hex goes to execCommand instead
+            // (just to get the browser to wrap the selection in
+            // something at all), then every <font> that used it gets
+            // swapped for a <span style="color: var(--notes-normal-
+            // color)"> right after — that's the part that actually makes
+            // the color track light/dark mode live, since it's a real
+            // CSS variable reference on a real style property this time,
+            // not a font tag attribute.
+            const isNormalColor = cmd === 'foreColor' && value === 'var(--notes-normal-color)';
+            document.execCommand(cmd, false, isNormalColor ? NOTES_NORMAL_COLOR_SENTINEL : value);
+            if (isNormalColor) convertNormalColorSentinels(editor);
 
             if (stylesBefore) {
                 trackedStyles.forEach(s => {
@@ -5508,10 +5584,13 @@
                 // Nothing was wrapped in the DOM to detect yet, so light up
                 // the picked swatch directly — otherwise it stayed dark
                 // until after the first character was typed, leaving no
-                // way to tell a color was actually armed.
+                // way to tell a color was actually armed. The "Normal"
+                // swatch passes a var(...) reference rather than a hex, so
+                // it's matched by that instead of by dataset.color === hex.
+                const isNormal = value.indexOf('var(') === 0;
                 const hex = value.toLowerCase();
                 document.querySelectorAll('.color-swatch').forEach(sw => {
-                    sw.classList.toggle('selected', sw.dataset.color === hex);
+                    sw.classList.toggle('selected', isNormal ? sw.dataset.color === 'normal' : sw.dataset.color === hex);
                 });
             } else {
                 updateNotesToolbarState();
@@ -5618,8 +5697,16 @@
                     currentHex = rgbStringToHex(getComputedStyle(node).color);
                 }
             }
+            // getComputedStyle(node).color above already resolves
+            // color:var(--notes-normal-color) down to its real rendered
+            // rgb() for whichever theme is active right now — so text
+            // colored via the "Normal" swatch is detected by comparing
+            // currentHex against that same variable's CURRENT value
+            // (read fresh each time, not cached), rather than a fixed hex.
+            const normalHex = getComputedStyle(editor).getPropertyValue('--notes-normal-color').trim().toLowerCase();
             document.querySelectorAll('.color-swatch').forEach(sw => {
-                sw.classList.toggle('selected', !!currentHex && sw.dataset.color === currentHex);
+                const isNormalSwatch = sw.dataset.color === 'normal';
+                sw.classList.toggle('selected', !!currentHex && (isNormalSwatch ? currentHex === normalHex : sw.dataset.color === currentHex));
             });
         }
         document.addEventListener('selectionchange', updateNotesToolbarState);
@@ -5801,6 +5888,18 @@
                 if (target.closest('input, select, textarea') || target.closest('#characterNotes')) {
                     clearTimeout(window.saveTimeout);
                     window.saveTimeout = setTimeout(autoSave, 1000);
+
+                    // Covers clicking the "Normal" color swatch with a
+                    // collapsed cursor (nothing selected) then typing —
+                    // execCommand arms its pending style for the next
+                    // character using the same sentinel hex formatDoc's
+                    // isNormalColor branch used, so the freshly-typed
+                    // character lands wrapped in a real <font
+                    // color="sentinel">. Same conversion sweep as the
+                    // immediate-selection case, just triggered by typing
+                    // instead of by the swatch click itself.
+                    const notesEditor = target.closest('#characterNotes');
+                    if (notesEditor) convertNormalColorSentinels(notesEditor);
                 }
 
                 // As soon as a flagged stat box is actually typed into, it's
