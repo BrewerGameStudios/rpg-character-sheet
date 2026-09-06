@@ -5213,10 +5213,28 @@
             const targetPage = document.getElementById(pageId);
             if (targetPage) {
                 targetPage.classList.add('active');
-                // Small delay ensures the page is visible before calculating heights
-                setTimeout(() => {
-                    targetPage.querySelectorAll('textarea').forEach(tx => autoSizeTextarea(tx));
-                }, 20);
+                // BUG FIX (2026-09-02, "Mac: Attacks boxes render messed
+                // up... after changing tabs") — this used to be a fixed
+                // setTimeout(20), a guess that the browser will have
+                // finished reflowing the now-visible page within 20ms so
+                // autoSizeTextarea's scrollHeight read is trustworthy. On
+                // a slow reflow or a differently-timed rendering pipeline
+                // (e.g. Electron's on Mac) that guess can lose, reading a
+                // stale/collapsed height and leaving every textarea on
+                // that page visibly wrong-sized until something else
+                // happens to resize them again — matching "repeatable,
+                // but clears on a full app restart" exactly (a restart
+                // just wipes out whatever bad inline heights got stuck).
+                // Double requestAnimationFrame is the standard way to
+                // wait for an actual completed layout pass instead of
+                // guessing a duration — the browser is guaranteed to have
+                // reflowed by the second callback, on any platform,
+                // regardless of how long that first pass happened to take.
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        targetPage.querySelectorAll('textarea').forEach(tx => autoSizeTextarea(tx));
+                    });
+                });
             }
 
             // 4. Set current nav item to active
