@@ -1,0 +1,447 @@
+/* shared.css — the CSS counterpart to shared.js. Loaded by index.html and
+   dm.html (menu.html only needs the :root/dark-mode section below, so it
+   loads this too rather than keeping its own third copy of those tokens).
+
+   Same rule as shared.js: only things that are genuinely identical (or
+   safe to merge with a small page-specific addition layered on top after
+   this file loads) belong here. Real per-page differences — different
+   spacing, different max-widths, a design that hasn't been unified yet —
+   stay in each page's own <style> block rather than being forced together.
+   Where a page needs to ADD something on top of a rule defined here (e.g.
+   .container's overflow, .notes-editor's max-width), that addition lives
+   in the page's own <style> block, loaded after this file so it wins.
+
+   Extracted 2026-08-19 after repeatedly having to make the same CSS edit
+   twice by hand while building the notes-page tab strip — see
+   rpg-character-sheet-repos memory for the full history of what that CSS
+   actually does and why it looks the way it does. */
+
+/* --- Theme tokens --- used by every page for the background gradient and
+   the dark-mode overlay that darkens it. */
+:root {
+    --bg-color-1: #667eea;
+    --bg-color-2: #764ba2;
+    --dark-overlay: rgba(0, 0, 0, 0);
+    /* Matches .notes-editor's own default (unstyled) text color — see
+       the "A" (Automatic) swatch below. Written as full 6-digit hex on
+       purpose, not #222 shorthand: updateNotesToolbarState() compares
+       this raw string against rgbStringToHex()'s always-6-digit output,
+       so a shorthand value here would silently never match in light mode. */
+    --notes-normal-color: #222222;
+
+    /* --- Theme Color (2026-09-07, DM-Tester only for now) ---
+       One hue, picked on the Menu page's 20-color wheel, generates every
+       value below via HSL math (see deriveThemeShades() — index.html/
+       dm.html/menu.html each keep their own copy, see its comment for
+       why). Named for what each slot replaces, not a fixed hue family:
+       --theme-blue is "the main accent" (tabs, primary buttons) whatever
+       color that ends up being, --theme-white/--theme-grey are light
+       mode's "box"/"lighter panel" surfaces, --theme-dark-white/
+       --theme-dark-grey are dark mode's equivalents. The main accent
+       itself is mode-independent (used as-is in both), which is why
+       there's only one --theme-blue slot, not a light+dark pair.
+       Every value below is the exact color already hardcoded everywhere
+       these vars now apply, so picking no theme (no theme_hue in
+       localStorage) changes nothing — applySavedLightTheme() only
+       touches these when a hue has actually been picked. */
+    --theme-white: #ffffff;
+    --theme-grey: #f9f9f9;
+    --theme-blue: #667eea;
+    --theme-blue-dark: #4a4ba2;
+    --theme-blue-hover: #5568d3;
+    --theme-dark-white: #2a2a3e;
+    --theme-dark-grey: #1e1e2e;
+}
+body.dark-mode {
+    --dark-overlay: rgba(0, 0, 0, 0.5);
+    --notes-normal-color: #e0e0e0;
+    background-color: #1a1a1a;
+}
+
+/* --- Bottom nav --- index.html and dm.html only; identical in both. */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--theme-blue);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 5px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+    z-index: 2000;
+    overflow-x: auto;
+}
+/* No dark-mode override here on purpose — the main accent is the same
+   color in both modes (see the --theme-* comment above), so .bottom-nav
+   just keeps using --theme-blue regardless of body.dark-mode. */
+/* Folder-tab look, same visual language as the Notes page-tab strip
+   (rounded top corners, active tab "lifted" — bright + shadowed — inactive
+   tabs sitting flatter/muted) — recolored for the bottom nav's own purple
+   bar rather than the notes strip's light-blue/white paper palette, which
+   would clash here. No Chrome-style flare notch: that trick only makes
+   sense for tabs sitting directly above their own content panel (like
+   Notes); this bar is a fixed floating toolbar with nothing structurally
+   below it to flow into. */
+.nav-item {
+    color: white;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    white-space: nowrap;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    font-family: inherit;
+    transition: background 0.15s ease;
+}
+.nav-item:hover { background: rgba(255, 255, 255, 0.18); }
+.nav-item.active {
+    background: var(--theme-white);
+    color: var(--theme-blue-dark);
+    box-shadow: 0 -3px 6px rgba(0,0,0,0.15);
+}
+/* Dark mode gets its own coordinated look here (a dark "box" instead of a
+   plain white tab, with the accent itself as the text) rather than just
+   reusing the light-mode values — matches the exact literals that were
+   always hardcoded here until a theme is actually picked. */
+body.dark-mode .nav-item.active { background: var(--theme-dark-white); color: var(--theme-blue); }
+
+/* Mobile: wrap into rows of 4 instead of one side-scrolling row — a full
+   8-item nav (index.html) becomes 2 rows of 4; dm.html's 5 becomes 4 + 1.
+   CSS Grid's default row-first auto-flow handles the wrap on its own, no
+   JS needed. Desktop keeps the single scrollable row (plenty of width
+   there for 8 items, and turning it into two rows would waste vertical
+   space no PC/tablet screen needs to reclaim). */
+@media (max-width: 600px) {
+    .bottom-nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        overflow-x: visible;
+        padding: 6px 4px;
+    }
+    .nav-item {
+        text-align: center;
+        padding: 8px 4px;
+        font-size: 10px;
+        white-space: normal;
+    }
+    /* Opt-in: only index.html's Campaign & Character Notes uses this today.
+       Takes 2 of the 4 grid columns — see the nav's own HTML comment for
+       why it's placed first in document order (packs its row exactly full,
+       no gap). */
+    .nav-item-wide {
+        grid-column: span 2;
+    }
+}
+
+/* --- Container card --- index.html and dm.html only. Common properties
+   only — index.html adds its own overflow:hidden on top of this (needed
+   there to clip grid-row overflow elsewhere on that page; dm.html doesn't
+   need it and doesn't add it). */
+.container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    background: var(--theme-white);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    box-sizing: border-box;
+}
+body.dark-mode .container {
+    background: var(--theme-dark-white);
+    color: #e0e0e0;
+}
+
+/* ============================================================
+   NOTES EDITOR ENGINE — index.html's Campaign & Character Notes
+   and dm.html's Story Tracker are the same editor (see the
+   "NOTES PAGES" / "COLLAPSIBLE TITLES" comments in shared.js for
+   the JS half of this). Everything below is byte-identical
+   between the two pages except sizing, which each page still
+   sets for itself: index.html adds max-width/margin to
+   .notes-sticky-header and max-width/margin/min-height/padding
+   to .notes-editor (that page's notes are meant to feel like a
+   full sheet of paper); dm.html's Story Tracker sits in a
+   narrower context and doesn't need either.
+   ============================================================ */
+
+.notes-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+}
+
+.rich-text-toolbar {
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    background: #fff;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+body.dark-mode .rich-text-toolbar {
+    background: #1e1e2e;
+    border-color: #4a4a5e;
+}
+
+.btn-tool {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    color: #333;
+    min-width: 32px;
+    text-align: center;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-tool:hover { background: #e2e2e2; }
+.btn-tool.active { background: #667eea; color: #fff; border-color: #667eea; }
+body.dark-mode .btn-tool { background: #2a2a3e; border-color: #4a4a5e; color: #e0e0e0; }
+body.dark-mode .btn-tool:hover { background: #34344a; }
+body.dark-mode .btn-tool.active { background: #667eea; color: #fff; border-color: #667eea; }
+select.btn-tool { padding: 5px 6px; }
+input[type="color"].btn-tool { padding: 2px; width: 34px; height: 30px; cursor: pointer; }
+
+.color-swatch-row { display: flex; gap: 4px; align-items: center; padding: 0 4px; border-left: 1px solid #ddd; margin-left: 2px; }
+body.dark-mode .color-swatch-row { border-left-color: #4a4a5e; }
+.color-swatch { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(0, 0, 0, 0.15); cursor: pointer; padding: 0; }
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.selected { border-color: #667eea; box-shadow: 0 0 0 2px #667eea; transform: scale(1.1); }
+body.dark-mode .color-swatch { border-color: rgba(255, 255, 255, 0.3); }
+body.dark-mode .color-swatch.selected { border-color: #8b9bea; box-shadow: 0 0 0 2px #8b9bea; }
+
+/* "Automatic" text color — Word/Google Docs' own "A" glyph convention,
+   not a filled circle like its siblings (a solid var(--notes-normal-
+   color) fill reads as near-identical to the plain Black swatch in
+   light mode). The glyph's own color is the live variable, so it shows
+   what it currently does; same neutral surface as the adjacent
+   B/I/U/font-size controls (.btn-tool) underneath it. */
+.normal-color-swatch { background: #f0f0f0; color: var(--notes-normal-color); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; line-height: 1; }
+body.dark-mode .normal-color-swatch { background: #2a2a3e; }
+
+.notes-editor {
+    background: #fff;
+    color: #222;
+    caret-color: #667eea;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    font-size: 15px;
+    line-height: 1.6;
+    outline: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+.notes-editor.is-empty::before { content: attr(data-placeholder); color: #999; pointer-events: none; }
+body.dark-mode .notes-editor { background: #16162e; color: #e0e0e0; caret-color: #8b9bea; border-color: #4a4a5e; }
+body.dark-mode .notes-editor.is-empty::before { color: #777; }
+
+/* --- Collapsible Titles --- see the "COLLAPSIBLE TITLES" comment in
+   shared.js for how the caret/collapse mechanics work.
+
+   One interleaved 8-step type scale, smallest to biggest:
+   Small(12) < Title4(14) < Normal(16) < Title3(19)
+     < Large(23) < Title2(28) < Huge(34) < Title1(42)
+   Each Title level sits directly above the plain size it's paired with
+   in shared.js's TITLE_TO_FONT_SIZE (Title1~Huge, Title2~Large,
+   Title3~Normal, Title4~Small) — always strictly bigger than that
+   pairing. The Small/Normal/Large/Huge side is pinned explicitly below,
+   overriding the browser's own legacy <font size> defaults. */
+.notes-editor font[size="1"] { font-size: 12px; }
+.notes-editor font[size="3"] { font-size: 16px; }
+.notes-editor font[size="5"] { font-size: 23px; }
+.notes-editor font[size="7"] { font-size: 34px; }
+
+.notes-editor h1, .notes-editor h2, .notes-editor h3, .notes-editor h4 {
+    font-weight: bold;
+    cursor: text;
+}
+.notes-editor h1 { font-size: 42px; margin: 26px 0 12px; }
+.notes-editor h2 { font-size: 28px; margin: 22px 0 10px; }
+.notes-editor h3 { font-size: 19px; margin: 16px 0 6px; }
+.notes-editor h4 { font-size: 14px; margin: 14px 0 6px; }
+.notes-editor h1:first-child, .notes-editor h2:first-child,
+.notes-editor h3:first-child, .notes-editor h4:first-child { margin-top: 0; }
+
+/* A real element (see shared.js), not a CSS ::before — gives it a real,
+   precise click target instead of a hardcoded pixel guess. */
+.notes-editor .notes-collapse-toggle {
+    display: inline-block;
+    width: 18px;
+    text-align: center;
+    font-size: 0.6em;
+    color: #aaa;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    vertical-align: middle;
+}
+.notes-editor .notes-collapse-toggle::before { content: '▾'; }
+body.dark-mode .notes-editor .notes-collapse-toggle { color: #777; }
+.notes-editor h1.collapsed .notes-collapse-toggle::before,
+.notes-editor h2.collapsed .notes-collapse-toggle::before,
+.notes-editor h3.collapsed .notes-collapse-toggle::before,
+.notes-editor h4.collapsed .notes-collapse-toggle::before { content: '▸'; }
+.notes-editor .notes-collapsed-content { display: none; }
+@media print {
+    /* Never let a collapsed section vanish from a printed copy — collapse
+       is a screen convenience, not a real omission. */
+    .notes-editor .notes-collapsed-content { display: block !important; }
+    .notes-editor .notes-collapse-toggle { display: none; }
+}
+
+/* Nested bullets (Tab/Shift+Tab — see handleNotesEditorTab in shared.js).
+   Each page's own global reset can flatten the browser's default list
+   indentation, so it's restored explicitly here — each nested <ul>
+   (what execCommand('indent') produces) stacks its own padding-left on
+   top of its parent's, which is what makes each Tab level step in
+   visually. */
+.notes-editor ul { margin: 6px 0; padding-left: 28px; list-style-type: disc; }
+.notes-editor ul ul { margin: 2px 0; list-style-type: circle; }
+.notes-editor ul ul ul { list-style-type: square; }
+.notes-editor li { margin: 2px 0; }
+
+/* --- Notes Pages (file-folder tab strip) ---
+   Sits below the toolbar, right above the page content. Built/populated
+   by shared.js's renderNotesPageTabs(); see the "NOTES PAGES" comment
+   there for the add/switch/close/label mechanics. */
+.notes-page-tabs { display: flex; }
+.notes-page-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    padding: 9px 6px 9px 14px;
+    margin-right: -1px;
+    background: #eef0fd;
+    color: #667eea;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 10px 10px 0 0;
+    font-size: 12.5px;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+}
+.notes-page-tab-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* Pinned to the tab's far right with margin-left:auto (not just flex
+   order) so it always reads as "placed there on purpose", not merely
+   trailing after a short label. */
+.notes-page-tab-close {
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: 18px;
+    height: 18px;
+    line-height: 16px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #c25454;
+    font-size: 15px;
+    font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
+}
+.notes-page-tab-close:hover { background: rgba(194, 84, 84, 0.15); }
+/* Inactive tabs keep their bottom border — reads as "closed", stacked
+   behind, the way a folder tab you're not currently looking at shows a
+   flat edge across its top. The active/open one drops that line so it
+   flows straight into the page below. */
+.notes-page-tab.active {
+    background: #fff;
+    color: #333;
+    z-index: 2;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.06);
+}
+/* The Chrome-tab flare: only the active tab gets it. Quarter-circle
+   "notch" cut into a small square sitting just outside the tab's own
+   bottom corner — border-radius alone can only do convex curves, not
+   this concave one. See rpg-character-sheet-repos memory for the full
+   trial-and-error history of every property below (anchor point, box
+   height, rotation, color-stop order, hover sync all went through
+   several wrong attempts before landing here — nothing here is
+   arbitrary even though it may look like it). */
+.notes-page-tab.active::before,
+.notes-page-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle at bottom right,
+        #eef0fd calc(10px - 1px), #ddd calc(10px - 1px), #ddd 10px, #fff 10px);
+    pointer-events: none;
+    transform: rotate(180deg);
+}
+.notes-page-tab.active::before { left: -10px; }
+.notes-page-tab.active::after { right: -10px; transform: rotate(180deg) scaleX(-1); }
+.notes-page-tab.active:first-of-type::before { display: none; }
+.notes-page-tab.active:last-of-type::after { display: none; }
+.notes-page-tab:not(.active):hover { background: #e2e6fb; }
+/* The curve's NEAR stop is a hardcoded match for the neighboring inactive
+   tab's *resting* background — hovering that neighbor can't reach into a
+   different element's gradient on its own, so + and :has() target only
+   the actual adjacent tab to keep the curve's fill in sync with it. */
+.notes-page-tab:not(.active):hover + .notes-page-tab.active::before {
+    background: radial-gradient(circle at bottom right,
+        #e2e6fb calc(10px - 1px), #ddd calc(10px - 1px), #ddd 10px, #fff 10px);
+}
+.notes-page-tab.active:has(+ .notes-page-tab:not(.active):hover)::after {
+    background: radial-gradient(circle at bottom right,
+        #e2e6fb calc(10px - 1px), #ddd calc(10px - 1px), #ddd 10px, #fff 10px);
+}
+body.dark-mode .notes-page-tab { background: #1e1e2e; border-color: #4a4a5e; color: #8b9bf5; }
+body.dark-mode .notes-page-tab.active { background: #16162e; color: #e0e0e0; }
+body.dark-mode .notes-page-tab.active::before,
+body.dark-mode .notes-page-tab.active::after {
+    background: radial-gradient(circle at bottom right,
+        #1e1e2e calc(10px - 1px), #4a4a5e calc(10px - 1px), #4a4a5e 10px, #16162e 10px);
+}
+body.dark-mode .notes-page-tab:not(.active):hover { background: #2a2a44; }
+body.dark-mode .notes-page-tab:not(.active):hover + .notes-page-tab.active::before {
+    background: radial-gradient(circle at bottom right,
+        #2a2a44 calc(10px - 1px), #4a4a5e calc(10px - 1px), #4a4a5e 10px, #16162e 10px);
+}
+body.dark-mode .notes-page-tab.active:has(+ .notes-page-tab:not(.active):hover)::after {
+    background: radial-gradient(circle at bottom right,
+        #2a2a44 calc(10px - 1px), #4a4a5e calc(10px - 1px), #4a4a5e 10px, #16162e 10px);
+}
+body.dark-mode .notes-page-tab-close:hover { background: rgba(194, 84, 84, 0.3); }
+.notes-page-add {
+    flex: 0 0 auto;
+    width: 34px;
+    margin-right: -1px;
+    background: #f0f0f0;
+    color: #667eea;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 10px 10px 0 0;
+    font-size: 15px;
+    font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
+}
+.notes-page-add:hover { background: #e6e6e6; }
+body.dark-mode .notes-page-add { background: #2a2a3e; border-color: #4a4a5e; color: #8b9bf5; }
+body.dark-mode .notes-page-add:hover { background: #34344a; }

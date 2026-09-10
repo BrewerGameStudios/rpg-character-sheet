@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#667eea">
+<!-- BUG FIX (2026-08-30): "Add to Home Screen" icon wasn't showing on
+     iOS. index.html has always carried these tags, but menu.html is the
+     actual entry point a fresh visitor lands on (see index.html's own
+     redirect comment) — exactly when someone follows the "Install
+     (iOS/iPhone)" instructions from the How-To popup. Without an
+     apple-touch-icon link on THIS page, Safari had nothing to use and
+     fell back to a blank/screenshot icon regardless of what index.html
+     declared. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RPG Character Sheet">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon192.png">
+<title>Brewer Game Studios</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+    /* :root tokens + body.dark-mode's --dark-overlay/background-color now
+       live in shared.css — identical across all three pages. */
+    * { box-sizing: border-box; }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        background: linear-gradient(var(--dark-overlay), var(--dark-overlay)), linear-gradient(135deg, var(--bg-color-1) 0%, var(--bg-color-2) 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        transition: background 0.3s ease;
+    }
+
+    .menu-card {
+        max-width: 460px;
+        width: 100%;
+        background: var(--theme-white);
+        padding: 40px 32px;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        text-align: center;
+    }
+    body.dark-mode .menu-card { background: var(--theme-dark-white); color: #e0e0e0; }
+
+    .menu-eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 12px;
+        font-weight: bold;
+        color: #888;
+        margin: 0 0 6px;
+    }
+    body.dark-mode .menu-eyebrow { color: #9a9ab4; }
+    .menu-title {
+        margin: 0 0 30px;
+        font-size: 24px;
+        color: #4a4ba2;
+    }
+    body.dark-mode .menu-title { color: #8b9bf5; }
+
+    .menu-options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .menu-btn {
+        display: block;
+        text-decoration: none;
+        background: var(--theme-blue);
+        color: #fff;
+        padding: 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    .menu-btn:hover { background: var(--theme-blue-hover); }
+    .menu-secondary-row {
+        display: flex;
+        gap: 10px;
+    }
+    .menu-btn.secondary {
+        flex: 1;
+        background: var(--theme-grey);
+        color: #333;
+        font-size: 13px;
+        padding: 14px 10px;
+    }
+    body.dark-mode .menu-btn.secondary { background: var(--theme-dark-grey); color: #e0e0e0; }
+
+    .dark-mode-toggle {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        background: #fff;
+        border: 2px solid #667eea;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        font-size: 19px;
+        cursor: pointer;
+        z-index: 2100;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    body.dark-mode .dark-mode-toggle { background: #2a2a3e; border-color: #8b9bf5; }
+
+    /* ---------- Splash (unchanged from the sheet's own version) ---------- */
+    #logoSplash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: none; align-items: center; justify-content: center; overflow: hidden; }
+    #logoSplashVideo { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    .theme-setting {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #eee;
+    }
+    body.dark-mode .theme-setting { border-top-color: #3a3a52; }
+    .theme-setting label {
+        font-size: 12px;
+        font-weight: bold;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    body.dark-mode .theme-setting label { color: #9a9ab4; }
+    .theme-swatches { display: flex; gap: 8px; }
+    .theme-swatches input[type="color"] {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .theme-color-setting {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .theme-wheel {
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 6px;
+        width: 100%;
+    }
+    .theme-wheel-swatch {
+        width: 100%;
+        aspect-ratio: 1;
+        padding: 0;
+        border: 2px solid transparent;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .theme-wheel-swatch.selected { border-color: #333; transform: scale(1.15); }
+    body.dark-mode .theme-wheel-swatch.selected { border-color: #e0e0e0; }
+    .theme-color-reset {
+        background: none;
+        border: none;
+        padding: 0;
+        font-size: 12px;
+        color: #667eea;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+    body.dark-mode .theme-color-reset { color: #8b9bf5; }
+
+    /* ---------- How-To / Help / Privacy / ToS modals (unchanged) ---------- */
+    #howtoModal, #helpModal, #privacyModal, #tosModal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; }
+    #howtoModal > div { background-color: white; padding: 20px; border-radius: 10px; max-width: 1000px; width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.3); color: #333; max-height: 90vh; overflow-y: auto; }
+
+    /* ---------- Email preferences ---------- */
+    .email-pref-setting {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #eee;
+        text-align: left;
+    }
+    body.dark-mode .email-pref-setting { border-top-color: #3a3a52; }
+    .email-pref-label {
+        font-size: 12px;
+        font-weight: bold;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0 0 10px;
+    }
+    body.dark-mode .email-pref-label { color: #9a9ab4; }
+    .email-pref-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .email-pref-row input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; flex-shrink: 0; }
+    .email-pref-row label { font-size: 14px; cursor: pointer; }
+    .email-pref-row input[type="checkbox"]:disabled,
+    .email-pref-row input[type="checkbox"]:disabled + label { cursor: not-allowed; opacity: 0.6; }
+    .email-pref-note {
+        margin: 8px 0 0;
+        font-size: 12px;
+        color: #888;
+        line-height: 1.4;
+    }
+    body.dark-mode .email-pref-note { color: #9a9ab4; }
+
+    /* ---------- License (Unlock / Log Out) ---------- */
+    .license-setting {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #eee;
+    }
+    body.dark-mode .license-setting { border-top-color: #3a3a52; }
+    .license-setting button, .license-setting a {
+        display: none; /* shown/hidden by syncMenuLicenseUI() — never both at once */
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: bold;
+        box-sizing: border-box;
+        color: #fff;
+        cursor: pointer;
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared.js"></script>
+</head>
+<body>
+
+    <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
+
+    <div class="menu-card">
+        <p class="menu-eyebrow">Brewer Game Studios</p>
+        <h1 class="menu-title">RPG Character Sheet</h1>
+
+        <div class="menu-options">
+            <!-- onclick prefers a real history.back() over the plain href
+                 whenever you actually got to Menu FROM that exact page in
+                 this same tab (2026-09-01, "the last placement we were at
+                 on that tab would be nice too... on all tabs including
+                 when in the character sheet") — lands back on it exactly
+                 as it was left (scroll position, in-progress typing, open
+                 tool, etc., typically straight from the browser's
+                 bfcache) instead of a fresh reload. See goBackOrTo below;
+                 same pattern as mapgen.html's own "← DM Tools" link. -->
+            <a class="menu-btn" href="index.html" onclick="return goBackOrTo(event, 'index.html')">Character Sheet</a>
+            <a class="menu-btn" href="dm.html" onclick="return goBackOrTo(event, 'dm.html')">DM Tools</a>
+        </div>
+
+        <div class="menu-secondary-row">
+            <button class="menu-btn secondary" onclick="toggleHowtoModal()">How to Use the Sheet</button>
+            <button class="menu-btn secondary" onclick="toggleHelpModal()">Help &amp; Credits</button>
+        </div>
+
+        <div class="theme-setting">
+            <label for="bgColor1">Theme Gradient</label>
+            <div class="theme-swatches">
+                <input type="color" id="bgColor1" value="#667eea" title="Start Color">
+                <input type="color" id="bgColor2" value="#764ba2" title="End Color">
+            </div>
+        </div>
+
+        <!-- Theme Color (2026-09-07) — DM-Tester only for now, not synced
+             to the public v3 repo yet. One picked hue generates the whole
+             sheet's box/panel/button colors — see shared.css's --theme-*
+             tokens and deriveThemeShades() below. Deliberately its own row
+             rather than replacing the gradient pickers above — two
+             independent settings, not one. -->
+        <div class="theme-setting theme-color-setting">
+            <label>Theme Color</label>
+            <div class="theme-wheel" id="themeColorWheel"></div>
+            <button type="button" class="theme-color-reset" onclick="resetThemeColor()">Reset to Default</button>
+        </div>
+
+        <div class="email-pref-setting">
+            <p class="email-pref-label">Email Updates</p>
+            <div class="email-pref-row">
+                <input type="checkbox" id="emailOptOutCheckbox">
+                <label for="emailOptOutCheckbox">Don't send me email updates</label>
+            </div>
+            <p id="emailOptOutNote" class="email-pref-note">We'll only ever email you about a major bug fix or update — never sold, never spammed.</p>
+        </div>
+
+        <!-- Moved here from index.html's save-controls bar (2026-08-20) —
+             never both visible at once, syncMenuLicenseUI() below decides
+             which. Opens the same #license-lock modal both index.html and
+             dm.html also have their own copy of (can't share raw HTML
+             across these pages without a build step); Log Out calls
+             logoutLicense() from shared.js. -->
+        <div class="license-setting">
+            <!-- Password auth bridge notice (2026-09-09) — every existing
+                 customer's password was set to their own email address as
+                 a stopgap (Supabase's email rate limit made inviting
+                 everyone individually impractical). This tells them that
+                 right where they'd otherwise just be confused by a "Log
+                 In" screen with no password they know. Safe to remove
+                 once existing customers have had a chance to see it and
+                 change their password. -->
+            <button id="unlock-btn" onclick="alert('New login system! If you haven\'t set a password yet, your temporary password is your email address — log in with your email in both fields, then use \'Change password\' to set your own.'); document.getElementById('license-lock').style.display='flex'" style="background:#ffa726;">Login</button>
+            <button id="logout-btn" onclick="logoutLicense()" style="background:#607d8b;">Log Out</button>
+            <!-- License tier split (2026-09-08, DM-Tester only for now) —
+                 shown only for an activated Character-Sheet owner who
+                 hasn't also bought DM Tools (see syncMenuLicenseUI()). -->
+            <a id="dm-upgrade-link" href="https://buy.stripe.com/00w7sD33m38CcYb7u9dQQ02" target="_blank" style="display:none; background:#667eea; color:#fff; text-decoration:none; text-align:center;">Upgrade to DM Tools — $20</a>
+        </div>
+    </div>
+
+    <!-- ================= LICENSE LOCK ================= -->
+    <div id="license-lock" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; color: white; text-align: center;">
+        <div style="background: #222; padding: 2rem; border-radius: 10px; border: 1px solid #444; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 440px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative;">
+
+            <button onclick="document.getElementById('license-lock').style.display='none'; resetPricingOptions();"
+                    id="close-lock-btn"
+                    style="position: absolute; top: 10px; right: 10px; background: none; border: none; color: #888; cursor: pointer; font-size: 20px;">
+                ✖
+            </button>
+
+            <h2 style="color: #667eea; margin-bottom: 10px;">Brewer Game Studios</h2>
+            <p id="lock-message" style="margin-bottom: 10px; line-height: 1.4;">
+                Please enter your email to activate full features (Save/Export) and remove the 30-day trial limit.
+            </p>
+            <div id="trial-counter" style="margin: 10px 0; font-weight: bold; color: #ffa726; font-size: 14px;"></div>
+
+            <!-- Password auth (2026-09-09) — login-fields/set-password-fields
+                 are toggled by shared.js (showLoginFields()/
+                 showSetPasswordFields()): normal visits show the former,
+                 an invite/recovery link's session (initPasswordRecoveryDetection())
+                 swaps in the latter. -->
+            <div id="login-fields">
+                <input type="email" id="license-email" placeholder="email@example.com" style="padding: 10px; width: 80%; border-radius: 5px; border: none; margin: 15px 0 8px;">
+                <!-- Show/Hide toggle (2026-09-09) — togglePasswordVisibility()
+                     in shared.js, shared by every password field in this
+                     modal. -->
+                <div style="position: relative; width: 80%; margin: 0 auto 15px;">
+                    <input type="password" id="license-password" placeholder="Password" style="padding: 10px 54px 10px 10px; width: 100%; border-radius: 5px; border: none; box-sizing: border-box;">
+                    <button type="button" onclick="togglePasswordVisibility('license-password', this)" style="position: absolute; right: 4px; top: 4px; bottom: 4px; background: none; border: none; color: #667eea; font-size: 11px; font-weight: bold; cursor: pointer; padding: 0 8px;">Show</button>
+                </div>
+                <div style="width: 80%; margin: 0 auto 15px; text-align: left; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" id="remember-password-checkbox" style="cursor: pointer; margin: 0;">
+                    <label for="remember-password-checkbox" style="cursor: pointer;">Remember password</label>
+                </div>
+                <button id="activate-btn" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Log In</button>
+                <p style="margin: 10px 0 0; font-size: 12px;">
+                    <a href="#" id="forgot-password-link" style="color: #8b9bf5;">Forgot password?</a>
+                </p>
+                <p style="margin: 6px 0 0; font-size: 12px;">
+                    <a href="#" id="login-change-password-link" style="color: #8b9bf5;">Change password</a>
+                </p>
+                <p style="margin: 6px 0 0; font-size: 12px;">
+                    <a href="#" id="login-issue-link" style="color: #8b9bf5;">Login issue?</a>
+                </p>
+            </div>
+            <div id="set-password-fields" style="display: none;">
+                <div style="position: relative; width: 80%; margin: 15px auto 8px;">
+                    <input type="password" id="new-password" placeholder="New password" style="padding: 10px 54px 10px 10px; width: 100%; border-radius: 5px; border: none; box-sizing: border-box;">
+                    <button type="button" onclick="togglePasswordVisibility('new-password', this)" style="position: absolute; right: 4px; top: 4px; bottom: 4px; background: none; border: none; color: #667eea; font-size: 11px; font-weight: bold; cursor: pointer; padding: 0 8px;">Show</button>
+                </div>
+                <div style="position: relative; width: 80%; margin: 0 auto 15px;">
+                    <input type="password" id="new-password-confirm" placeholder="Confirm password" style="padding: 10px 54px 10px 10px; width: 100%; border-radius: 5px; border: none; box-sizing: border-box;">
+                    <button type="button" onclick="togglePasswordVisibility('new-password-confirm', this)" style="position: absolute; right: 4px; top: 4px; bottom: 4px; background: none; border: none; color: #667eea; font-size: 11px; font-weight: bold; cursor: pointer; padding: 0 8px;">Show</button>
+                </div>
+                <button id="set-password-btn" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Set Password</button>
+            </div>
+
+            <!-- Mutually-exclusive pricing picker (2026-09-08, license tier
+                 split) — see index.html's copy of this same block for the
+                 full reasoning. Fresh code, duplicated across
+                 index.html/dm.html/menu.html rather than promoted to
+                 shared.js/shared.css yet. -->
+            <style>
+                #license-lock .pricing-options { display: flex; flex-direction: column; gap: 8px; }
+                #license-lock .pricing-option { display: flex; align-items: flex-start; gap: 8px; padding: 10px; border: 1px solid #444; border-radius: 6px; cursor: pointer; transition: opacity 0.15s, border-color 0.15s, background 0.15s; }
+                #license-lock .pricing-option.selected { border-color: #667eea; background: rgba(102,126,234,0.15); }
+                #license-lock .pricing-option.disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+                #license-lock .pricing-option input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+                #license-lock .pricing-option-body { display: flex; flex-direction: column; gap: 2px; }
+                #license-lock .pricing-option-title { font-weight: bold; font-size: 13px; color: #fff; }
+                #license-lock .pricing-option-desc { font-size: 11px; color: #aaa; line-height: 1.3; }
+            </style>
+            <div id="pricing-picker-wrap" style="margin-top: 18px; text-align: left;">
+                <p style="text-align: center; font-size: 14px; margin: 0 0 10px;">Don't have a license? Pick one:</p>
+                <div class="pricing-options">
+                    <label class="pricing-option">
+                        <input type="radio" name="pricing-plan" data-link="https://buy.stripe.com/6oU00bdI08sW2jxcOtdQQ03" data-price="$10" onclick="togglePricingPlan(this)">
+                        <span class="pricing-option-body">
+                            <span class="pricing-option-title">Character Sheet — $10</span>
+                            <span class="pricing-option-desc">Unlimited characters, cloud sync, PDF export.</span>
+                        </span>
+                    </label>
+                    <label class="pricing-option">
+                        <input type="radio" name="pricing-plan" data-link="https://buy.stripe.com/00w7sD33m38CcYb7u9dQQ02" data-price="$20" onclick="togglePricingPlan(this)">
+                        <span class="pricing-option-body">
+                            <span class="pricing-option-title">DM Tools Upgrade — $20</span>
+                            <span class="pricing-option-desc">Adds the DM Toolkit on top of an existing Character Sheet license.</span>
+                        </span>
+                    </label>
+                    <label class="pricing-option">
+                        <input type="radio" name="pricing-plan" data-link="https://buy.stripe.com/bJecMX6fy5gK7DRdSxdQQ01" data-price="$25" onclick="togglePricingPlan(this)">
+                        <span class="pricing-option-body">
+                            <span class="pricing-option-title">Character Sheet + DM Tools — $25</span>
+                            <span class="pricing-option-desc">Everything in one purchase. Best value if you play and run games.</span>
+                        </span>
+                    </label>
+                </div>
+                <a id="pricing-buy-link" href="#" target="_blank" style="display:none; margin-top:12px; background: #2e7d32; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; text-align:center;">
+                    Continue to Checkout
+                </a>
+            </div>
+            <p id="dm-upgrade-only-wrap" style="display:none; margin-top: 15px; font-size: 14px;">
+                <a id="dm-upgrade-only-link" href="https://buy.stripe.com/00w7sD33m38CcYb7u9dQQ02" target="_blank"
+                   style="background: #2e7d32; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                    Upgrade to DM Tools — $20
+                </a>
+            </p>
+            <div id="lock-status" style="margin-top: 10px; font-weight: bold; color: #f44336;"></div>
+        </div>
+    </div>
+
+    <!-- ================= SPLASH ================= -->
+    <div id="logoSplash">
+        <video id="logoSplashVideo" muted playsinline
+               style="max-width: 100%; max-height: 100%; object-fit: contain;"
+               onended="dismissLogoSplash()" onerror="dismissLogoSplash()">
+            <source src="BrewerGameStudioLogoAnimation.mp4" type="video/mp4">
+        </video>
+        <button onclick="dismissLogoSplash()"
+                style="position: absolute; bottom: 24px; right: 24px; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.4); padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 13px; backdrop-filter: blur(4px);">
+            Skip ▶
+        </button>
+        <button id="logoSplashUnmuteBtn" onclick="toggleLogoSplashSound()"
+                style="position: absolute; bottom: 24px; left: 24px; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.4); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 16px; backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center;"
+                title="Turn sound on">
+            🔇
+        </button>
+    </div>
+
+    <!-- ================= HOW-TO POPUP ================= -->
+    <div id="howtoModal" onclick="if(event.target===this) toggleHowtoModal()">
+        <div>
+            <h2 style="margin-bottom:15px; color:#667eea;">How to Use the Sheet</h2>
+            <ul style="margin-bottom:20px; padding-left:20px; line-height:1.6;">
+                <li><strong>Editing:</strong> Click on any field to enter character details.</li>
+                <li><strong>Trial Access:</strong> During your first 30 days, you can use <strong>Save As New</strong> to create character slots. All other features require a license.</li>
+                <li><strong>Flexibility:</strong> Although the sheet is strongly written around the 5e rule set, every field is customizable to fit those custom games.</li>
+                <li><strong>Auto-Save:</strong> Your changes are saved locally to your hard drive.</li>
+                <li><strong>Dark Mode:</strong> Use the toggle to switch between themes.</li>
+                <li><strong>Install (Android):</strong> Tap the <strong>three dots (⋮)</strong> in Chrome and select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
+                <li><strong>Install (iOS/iPhone):</strong> Open in <strong>Safari (you must use Safari)</strong>, tap the <strong>Share icon</strong> (square with arrow), scroll down and tap <strong>"Add to Home Screen"</strong> for best view use in horizontal mode as iOS isnt optimized yet.</li>
+                <li><strong>Exporting:</strong> Click <strong>Export Character</strong> to create a backup file. These files are ultra-lightweight, making them easy to share with your DM or party via <strong>email, text, Discord, or any chat app that allows file sharing.</strong></li>
+                <li><strong>Importing:</strong> Use <strong>Import Character</strong> to load a file sent to you by another player or to restore a character from a backup file.</li>
+                <li><strong>Cloud Saving:</strong> Click <strong>Cloud Backups</strong> to import, export, or remove saved characters from the cloud. Files are accessible by your unique user-Id only.</li>
+                <li><strong>Your Email:</strong> We will never sell your email address. It's only ever used to send the occasional email when there's a major bug fix or update — and you can opt out of that anytime with the checkbox further down this menu.</li>
+            </ul>
+
+            <div style="margin-bottom:20px; display:flex; align-items:center;">
+                <input type="checkbox" id="dontShowAgain" style="margin-right:10px; cursor:pointer;">
+                <label for="dontShowAgain" style="cursor:pointer; font-size:0.9em;">Don't show this message again</label>
+            </div>
+
+            <button id="closeHowto" style="background:#667eea; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; width:100%; font-weight:bold;">Got it!</button>
+        </div>
+    </div>
+
+    <!-- ================= HELP & CREDITS ================= -->
+    <div id="helpModal" onclick="if(event.target===this) toggleHelpModal()">
+        <div class="text-box" style="max-width: 500px; width: 90%; max-height: 90vh; background: white; padding: 25px; position: relative; border: 3px solid #667eea; overflow-y: auto;">
+            <button onclick="toggleHelpModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
+
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">RPG Character Sheet vBeta 3.0.0</h2>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <p style="font-style: italic; font-size: 17px; color: #555;">
+                    “Fate may provide the dice, but you provide the fire. Level up, stand tall, and remember: the most powerful feature on this sheet is your imagination.”
+                </p>
+                <hr style="width: 50px; border: 1px solid #667eea; margin: 10px auto;">
+                <small style="text-transform: uppercase; color: #888;">Jeff Brewer</small>
+            </div>
+
+            <div style="margin-top: 20px; background: #f0f0f0; padding: 15px; border-radius: 5px;">
+                <h4 style="margin-bottom: 5px; color: #333;">Bug Reports & Suggestions</h4>
+                <p style="font-size: 13px; color: #333; line-height: 1.4;">
+                    Found an issue? Click the link below to open a bug report or send a Suggestion in your email client:
+                    <a href="mailto:BrewerGameStudios@Gmail.com?subject=Bug%20Report%3A%20RPG%20Character%20Sheet%20vBeta%203.0.0&body=---%20BUG%20REPORT%20---%0ADescription%20of%20Issue%3A%0A%0ASteps%20to%20Reproduce%3A%0A%0AExpected%20Result%3A%0A%0AActual%20Result%3A%0A%0A---%20Questions%20or%20Comments%20---%0A%0A---%20System%20Info%20---%0APlatform%3A%20Windows%20or%20Android?%0AVersion%3A%20vBeta%203.0.0"
+                       style="color: #667eea; font-weight: bold; text-decoration: none;">
+                        Email Us
+                    </a>
+                </p>
+                <div style="font-size: 13px; color: #333; line-height: 1.4; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
+                    Want to keep up with all of the projects we're working on?
+                    <p style="font-size: 13px; color: #333; line-height: 1.4;">
+                        Follow us at:
+                        <a href="https://www.instagram.com/brewer_game_studios/"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           style="color: #667eea; font-weight: bold; text-decoration: none;">
+                            @brewer_game_studios
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; font-size: 12px; color: #666;">
+                <p>Built with HTML5, JavaScript, and Electron. All character data is saved locally, only to your device, with cloud save available.</p>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.02); border-top: 1px solid #eee; font-size: 10px; color: #777; line-height: 1.5; text-align: justify;">
+                <strong>LEGAL NOTICE:</strong> Wizards of the Coast, Dungeons & Dragons, and their logos are trademarks of Wizards of the Coast LLC in the United States and other countries. <strong>© 2026 Wizards.</strong> All Rights Reserved. This character sheet project is not affiliated with, endorsed, sponsored, or specifically approved by Wizards of the Coast LLC. This project may use the trademarks and other intellectual property of Wizards of the Coast LLC, which is permitted under Wizards' Fan Site Policy. For more information about Wizards of the Coast or any of Wizards' trademarks or other intellectual property, please visit their website at <a href="https://www.wizards.com" target="_blank" style="color: #667eea; text-decoration: none;">www.wizards.com</a>.
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn" style="flex: 1; background: #555; font-size: 12px; color: #fff; padding: 10px; border: none; border-radius: 4px; cursor: pointer;" onclick="togglePrivacyModal()">Privacy Policy</button>
+                <button class="btn" style="flex: 1; background: #555; font-size: 12px; color: #fff; padding: 10px; border: none; border-radius: 4px; cursor: pointer;" onclick="toggleTOSModal()">Terms of Service</button>
+            </div>
+
+            <button style="width: 100%; margin-top: 10px; background: #667eea; color: #fff; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="toggleHelpModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- ================= PRIVACY POLICY ================= -->
+    <div id="privacyModal" onclick="if(event.target===this) togglePrivacyModal()" style="z-index: 4000; background: rgba(0,0,0,0.8);">
+        <div class="text-box" style="max-width: 500px; width: 90%; max-height: 85vh; background: white; padding: 25px; position: relative; border: 3px solid #667eea; overflow-y: auto;">
+            <button onclick="togglePrivacyModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">Privacy Policy</h2>
+            <div style="font-size: 13px; color: #333; line-height: 1.7;">
+                <p style="margin-bottom: 12px;"><strong>Last Updated: August 16, 2026</strong></p>
+                <p style="margin-bottom: 12px;">Your privacy is highly important to us. This Privacy Policy explains what information we collect, how we use it, and how we protect your personal data when you purchase or use our TTRPG Character Sheet.</p>
+
+                <p style="margin-bottom: 12px; padding: 10px 12px; background: #eef0fc; border-left: 4px solid #667eea; border-radius: 4px;"><strong>In short about your email:</strong> We will never sell your email address. It's only ever used to send the occasional email when there's a major bug fix or update.</p>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">1. Information We Collect</h4>
+                <p style="margin-bottom: 6px;">We collect minimal personal data to fulfill your order and provide product updates:</p>
+                <ul style="padding-left: 18px; margin-bottom: 10px;">
+                    <li style="margin-bottom: 5px;"><strong>Character Data (Local):</strong> All character sheet data is saved directly to your device using your browser's local storage. This data never leaves your device unless you choose to use the optional Cloud Backup feature.</li>
+                    <li style="margin-bottom: 5px;"><strong>Cloud Backup Data:</strong> If you use the Cloud Backup feature, your character data and email address are stored securely via Supabase. This is used solely to provide save/load functionality across devices.</li>
+                    <li style="margin-bottom: 5px;"><strong>License Activation:</strong> When activating your license, your email address is used to verify ownership and manage device authorizations. It is not used for marketing purposes.</li>
+                    <li style="margin-bottom: 5px;"><strong>Customer Information:</strong> When you make a purchase, we collect your name and email address.</li>
+                    <li style="margin-bottom: 5px;"><strong>Payment Data:</strong> Payment processing is handled entirely by Stripe. We do not see, store, or have access to your raw credit card numbers or billing credentials. Stripe provides us with transaction confirmations and basic customer contact details required to deliver the Product.</li>
+                </ul>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">2. How We Use Your Information</h4>
+                <p style="margin-bottom: 6px;">We use the collected information strictly for the following purposes:</p>
+                <ul style="padding-left: 18px; margin-bottom: 10px;">
+                    <li style="margin-bottom: 5px;">To save your character sheet data locally on your device for seamless offline use.</li>
+                    <li style="margin-bottom: 5px;">To sync and restore your character data across devices via the optional Cloud Backup feature.</li>
+                    <li style="margin-bottom: 5px;">To verify your license and manage authorized devices.</li>
+                    <li style="margin-bottom: 5px;">To deliver the digital character sheet files and any automated purchase receipts.</li>
+                    <li style="margin-bottom: 5px;">To provide technical support or answer questions regarding your purchase.</li>
+                    <li style="margin-bottom: 5px;">To send critical product updates or bug fixes related to the character sheet.</li>
+                </ul>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">3. Data Sharing and Third Parties</h4>
+                <p style="margin-bottom: 6px;">We do not sell, trade, or rent your personal information to third parties. Your data is shared only with trusted service providers necessary to operate the app:</p>
+                <ul style="padding-left: 18px; margin-bottom: 10px;">
+                    <li style="margin-bottom: 5px;"><strong>Stripe:</strong> For secure payment processing and automated transaction management.</li>
+                    <li style="margin-bottom: 5px;"><strong>Supabase:</strong> For optional cloud save and license verification. Only your email and character data are stored. No advertising networks or analytics trackers are used in this app.</li>
+                </ul>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">4. Data Retention</h4>
+                <p style="margin-bottom: 10px;">We will retain your email and purchase history for as long as necessary to maintain your access to digital downloads, provide support, or comply with financial bookkeeping obligations.</p>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">5. Your Rights</h4>
+                <p style="margin-bottom: 10px;">Depending on your location, you may have the right to access, correct, or request the deletion of the personal information we hold about you. You can opt out of email updates at any time yourself using the checkbox on this menu page — or, to update your contact information or for anything else, reach out to us at <a href="mailto:BrewerGameStudios@Gmail.com" style="color: #667eea; text-decoration: none;">BrewerGameStudios@Gmail.com</a>.</p>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">6. Security</h4>
+                <p>We take reasonable technical and administrative measures to protect your personal information against unauthorized access, loss, or alteration. However, no transmission over the internet is completely secure, and we cannot guarantee absolute security.</p>
+            </div>
+            <button style="width: 100%; margin-top: 20px; background: #667eea; color: #fff; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="togglePrivacyModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- ================= TERMS OF SERVICE ================= -->
+    <div id="tosModal" onclick="if(event.target===this) toggleTOSModal()" style="z-index: 4000; background: rgba(0,0,0,0.8);">
+        <div class="text-box" style="max-width: 500px; width: 90%; max-height: 85vh; background: white; padding: 25px; position: relative; border: 3px solid #667eea; overflow-y: auto;">
+            <button onclick="toggleTOSModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">Terms of Service</h2>
+            <div style="font-size: 13px; color: #333; line-height: 1.7;">
+                <p style="margin-bottom: 12px;"><strong>Last Updated: August 16, 2026</strong></p>
+                <p style="margin-bottom: 12px;">Welcome Adventurer. By purchasing, downloading, or using our TTRPG Character Sheet (the "Product"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use or purchase the Product.</p>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">1. License and Permitted Use</h4>
+                <p style="margin-bottom: 6px;">Upon purchase, you are granted a non-exclusive, non-transferable, revocable license to use the character sheet for personal, non-commercial tabletop gaming use.</p>
+                <ul style="padding-left: 18px; margin-bottom: 10px;">
+                    <li style="margin-bottom: 5px;"><strong>You may:</strong> Print copies for yourself and your personal gaming group, fill out the digital file, and use it during live-streamed or recorded games (with appropriate credit to Brewer Game Studios).</li>
+                    <li style="margin-bottom: 5px;"><strong>You may not:</strong> Redistribute, resell, modify for re-sale, or sub-license the blank digital templates or assets to third parties without explicit written permission.</li>
+                </ul>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">2. Payments and Billing</h4>
+                <p style="margin-bottom: 10px;">All payments are securely processed through Stripe. By providing your payment information, you authorize us to charge the specified amount for your purchase. All sales of digital products are final. Refunds are handled on a case-by-case basis at our sole discretion.</p>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">3. Intellectual Property</h4>
+                <p style="margin-bottom: 10px;">All artwork, layout design, branding, logos, and mechanics associated with this character sheet remain the exclusive intellectual property of the creators. The app's original code and design are © 2026 Brewer Game Studios. Your purchase grants you a license to use the Product, not ownership of the underlying intellectual property.</p>
+                <p style="margin-bottom: 10px;">Dungeons &amp; Dragons and related trademarks are property of Wizards of the Coast LLC. This app is a fan project and is not affiliated with or endorsed by Wizards of the Coast.</p>
+                <p style="font-size: 11px; color: #666; background: rgba(0,0,0,0.03); border: 1px solid #eee; border-radius: 5px; padding: 10px; line-height: 1.6;"><strong>LEGAL NOTICE:</strong> Wizards of the Coast, Dungeons &amp; Dragons, and their logos are trademarks of Wizards of the Coast LLC in the United States and other countries. <strong>© 2026 Wizards of the Coast.</strong> All Rights Reserved. This character sheet project is not affiliated with, endorsed, sponsored, or specifically approved by Wizards of the Coast LLC. This project may use the trademarks and other intellectual property of Wizards of the Coast LLC, which is permitted under Wizards' Fan Site Policy. For more information about Wizards of the Coast or any of Wizards' trademarks or other intellectual property, please visit their website at <a href="https://www.wizards.com" target="_blank" style="color: #667eea; text-decoration: none;">www.wizards.com</a>.</p>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">4. Limitation of Liability</h4>
+                <p style="margin-bottom: 10px;">The Product is provided "as is" without warranties of any kind, either express or implied. We do not guarantee that the digital files will be compatible with all devices or future software updates. In no event shall the creators be liable for any indirect, incidental, or consequential damages arising out of your use or inability to use the Product.</p>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">5. Changes to Terms</h4>
+                <p style="margin-bottom: 10px;">We reserve the right to modify these Terms at any time. Any updates will be posted on this page with an updated revision date.</p>
+
+                <h4 style="color: #4a4ba2; margin: 15px 0 6px;">6. Contact Information</h4>
+                <p>If you have any questions or require support regarding your purchase, please contact us at <a href="mailto:BrewerGameStudios@Gmail.com" style="color: #667eea; text-decoration: none;">BrewerGameStudios@Gmail.com</a>.</p>
+            </div>
+            <button style="width: 100%; margin-top: 20px; background: #667eea; color: #fff; padding: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" onclick="toggleTOSModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Shared with index.html/dm.html via localStorage (same origin) ---
+        function applySavedTheme() {
+            const saved = JSON.parse(localStorage.getItem('theme_colors') || 'null');
+            if (saved) {
+                document.documentElement.style.setProperty('--bg-color-1', saved.color1);
+                document.documentElement.style.setProperty('--bg-color-2', saved.color2);
+                const bgInput1 = document.getElementById('bgColor1');
+                const bgInput2 = document.getElementById('bgColor2');
+                if (bgInput1) bgInput1.value = saved.color1;
+                if (bgInput2) bgInput2.value = saved.color2;
+            }
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+                const btn = document.querySelector('.dark-mode-toggle');
+                if (btn) btn.textContent = '☀️';
+            }
+        }
+        applySavedTheme();
+
+        // The picker itself lives only here now — index.html and dm.html
+        // just read 'theme_colors' back out via their own applySavedTheme()
+        // calls, same as they already do for darkMode. Same-origin
+        // localStorage, no extra plumbing needed.
+        function saveThemeColors() {
+            const bgInput1 = document.getElementById('bgColor1');
+            const bgInput2 = document.getElementById('bgColor2');
+            if (!bgInput1 || !bgInput2) return;
+            const c1 = bgInput1.value;
+            const c2 = bgInput2.value;
+            document.documentElement.style.setProperty('--bg-color-1', c1);
+            document.documentElement.style.setProperty('--bg-color-2', c2);
+            localStorage.setItem('theme_colors', JSON.stringify({ color1: c1, color2: c2 }));
+        }
+        document.getElementById('bgColor1').addEventListener('input', saveThemeColors);
+        document.getElementById('bgColor2').addEventListener('input', saveThemeColors);
+
+        // --- Theme Color (2026-09-07, DM-Tester only for now) ---
+        // A different, independent setting from the gradient above — one
+        // hue, picked on a 20-color wheel, generates the sheet's box/panel
+        // colors (light AND dark mode both) plus the tab bar/dropdown-menu
+        // button color, via HSL math (see shared.css's --theme-* tokens
+        // and index.html/dm.html's own copies of these same three
+        // functions). Only the hue itself is stored — index.html/dm.html
+        // re-derive the same shades from it rather than reading them back
+        // out, so there's only ever one source of truth per pick.
+        function hslToHex(h, s, l) {
+            s /= 100; l /= 100;
+            const k = n => (n + h / 30) % 12;
+            const a = s * Math.min(l, 1 - l);
+            const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+            const toHex = x => Math.round(255 * x).toString(16).padStart(2, '0');
+            return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+        }
+        function deriveThemeShades(hue) {
+            return {
+                white: hslToHex(hue, 35, 96),
+                grey: hslToHex(hue, 28, 90),
+                blue: hslToHex(hue, 55, 56),
+                blueDark: hslToHex(hue, 55, 33),
+                blueHover: hslToHex(hue, 55, 45),
+                darkWhite: hslToHex(hue, 22, 17),
+                darkGrey: hslToHex(hue, 20, 23)
+            };
+        }
+        function applySavedLightTheme() {
+            const hueStr = localStorage.getItem('theme_hue');
+            if (hueStr === null) return;
+            const hue = parseInt(hueStr, 10);
+            if (isNaN(hue)) return;
+            const shades = deriveThemeShades(hue);
+            const root = document.documentElement.style;
+            root.setProperty('--theme-white', shades.white);
+            root.setProperty('--theme-grey', shades.grey);
+            root.setProperty('--theme-blue', shades.blue);
+            root.setProperty('--theme-blue-dark', shades.blueDark);
+            root.setProperty('--theme-blue-hover', shades.blueHover);
+            root.setProperty('--theme-dark-white', shades.darkWhite);
+            root.setProperty('--theme-dark-grey', shades.darkGrey);
+        }
+        applySavedLightTheme();
+
+        // 20 hues, evenly spaced (18° apart) around the wheel. Each
+        // swatch previews its hue at a fixed, representative saturation/
+        // lightness — not the exact derived --theme-blue shade — purely
+        // so all 20 read clearly as distinct colors next to each other.
+        function renderThemeWheel() {
+            const container = document.getElementById('themeColorWheel');
+            if (!container) return;
+            const savedHue = localStorage.getItem('theme_hue');
+            const hues = Array.from({ length: 20 }, (_, i) => i * 18);
+            container.innerHTML = hues.map(h => `
+                <button type="button" class="theme-wheel-swatch${savedHue !== null && parseInt(savedHue, 10) === h ? ' selected' : ''}"
+                    style="background: hsl(${h}, 65%, 55%);"
+                    title="Hue ${h}°" onclick="setThemeHue(${h})"></button>
+            `).join('');
+        }
+        renderThemeWheel();
+
+        function setThemeHue(hue) {
+            localStorage.setItem('theme_hue', hue);
+            applySavedLightTheme();
+            renderThemeWheel();
+        }
+
+        function resetThemeColor() {
+            localStorage.removeItem('theme_hue');
+            location.reload(); // simplest way back to shared.css's literal defaults on every var at once
+        }
+
+        // The "Character Sheet"/"DM Tools" buttons' own onclick (2026-09-01,
+        // "the last placement we were at on that tab would be nice too" —
+        // see their own HTML comment). A real history.back() lands back on
+        // whichever of those pages you actually just came from, exactly as
+        // it was left, instead of a fresh reload — only used when there's
+        // real history to go back to; otherwise falls through to the plain
+        // href navigation by returning true. Same pattern as mapgen.html's
+        // own goBackToDmTools, kept as its own inline copy here (not moved
+        // into shared.js) since shared.js is reserved for code already
+        // proven stable in the player sheet, not new cross-cutting logic.
+        function goBackOrTo(evt, page) {
+            try {
+                if (history.length > 1 && document.referrer && new URL(document.referrer).pathname.endsWith(page)) {
+                    evt.preventDefault();
+                    history.back();
+                    return false;
+                }
+            } catch (e) { /* malformed referrer, e.g. — just fall through to the normal link below */ }
+            return true;
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+
+            const btn = document.querySelector('.dark-mode-toggle');
+            btn.textContent = isDark ? '☀️' : '🌙';
+
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // --- Email opt-out ---
+        // license_accounts (shared.js's _supabase, same table admin.html and
+        // the license-directory migrations use) is the one-row-per-licensed-
+        // email directory this ties into — see
+        // supabase/migrations/20260820_email_opt_out.sql for the column
+        // itself and the reasoning. Every account defaults to opted-in
+        // (email_opt_out = false); checking this box is the only way to
+        // become opted-out.
+        //
+        // Only a licensed/activated user (one with a real licenseEmail in
+        // localStorage — see loginLicense() in shared.js) has an identity to
+        // attach this to, so a trial user who hasn't activated yet sees the
+        // checkbox disabled with an explanation instead of silently doing
+        // nothing when clicked.
+        async function loadEmailOptOutState() {
+            const checkbox = document.getElementById('emailOptOutCheckbox');
+            const note = document.getElementById('emailOptOutNote');
+            if (!checkbox) return;
+
+            const email = localStorage.getItem('licenseEmail');
+            if (!email) {
+                checkbox.disabled = true;
+                if (note) note.textContent = 'Activate your license to manage this — see the "Character Sheet" page.';
+                return;
+            }
+
+            const { data, error } = await _supabase
+                .from('license_accounts')
+                .select('email_opt_out')
+                .eq('email', email)
+                .maybeSingle();
+
+            if (error) {
+                // Fails open (silent) rather than blocking the rest of the
+                // menu page over a preference toggle — the checkbox just
+                // stays at its default unchecked (opted-in) state, and
+                // saving still works normally on the next attempt.
+                console.error('Could not load email preference:', error);
+                return;
+            }
+            checkbox.checked = !!(data && data.email_opt_out);
+        }
+
+        async function setEmailOptOut(optedOut) {
+            const note = document.getElementById('emailOptOutNote');
+            const email = localStorage.getItem('licenseEmail');
+            if (!email) return;
+
+            if (note) note.textContent = 'Saving...';
+            // upsert (not update): a licensed account that's never saved a
+            // campaign/monster/library book/character yet may not have a
+            // license_accounts row at all until now — this creates it in
+            // that case instead of silently no-op'ing on a missing row.
+            const { error } = await _supabase
+                .from('license_accounts')
+                .upsert({ email, email_opt_out: optedOut }, { onConflict: 'email' });
+
+            if (note) {
+                note.textContent = error
+                    ? 'Could not save — try again.'
+                    : (optedOut
+                        ? "You're opted out — we won't email you."
+                        : "You're opted in. We'll only ever email you about a major bug fix or update — never sold, never spammed.");
+            }
+        }
+
+        const emailOptOutCheckbox = document.getElementById('emailOptOutCheckbox');
+        if (emailOptOutCheckbox) {
+            emailOptOutCheckbox.addEventListener('change', (e) => setEmailOptOut(e.target.checked));
+        }
+        loadEmailOptOutState();
+
+        // --- License: Unlock / Log Out ---
+        // Mirrors just the slice of index.html's checkLicenseStatus() that
+        // decides which of these two buttons to show and keeps the
+        // #license-lock modal's trial counter readable if opened manually
+        // here. Deliberately does NOT replicate the 30-day hard-lock popup
+        // — that enforcement stays on index.html/dm.html, where the actual
+        // gated features (Save, Export, Cloud Backups, DM Tools, etc.) live;
+        // menu.html has none of its own to gate, so there's nothing here
+        // that needs to force this modal open on load.
+        const TRIAL_PERIOD_DAYS = 30;
+        function syncMenuLicenseUI() {
+            const isActivated = localStorage.getItem('isActivated') === 'true';
+            const unlockBtn = document.getElementById('unlock-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            if (unlockBtn) unlockBtn.style.display = isActivated ? 'none' : 'block';
+            if (logoutBtn) logoutBtn.style.display = isActivated ? 'block' : 'none';
+
+            // License tier split (2026-09-08) — offer the $20 DM Tools
+            // upgrade only to someone who already has Character Sheet
+            // access but not DM Tools yet; already-bundled/upgraded users
+            // and never-activated users both see nothing here.
+            const dmUpgradeLink = document.getElementById('dm-upgrade-link');
+            if (dmUpgradeLink) {
+                const hasCharacter = localStorage.getItem('licenseHasCharacter') === 'true';
+                const hasDM = localStorage.getItem('licenseHasDM') === 'true';
+                dmUpgradeLink.style.display = (isActivated && hasCharacter && !hasDM) ? 'block' : 'none';
+            }
+
+            const counterDiv = document.getElementById('trial-counter');
+            if (!counterDiv) return;
+            if (isActivated) {
+                counterDiv.innerText = 'Status: Full Version Activated';
+                counterDiv.style.color = '#4caf50';
+            } else {
+                // Falls back to "just installed" if this is somehow the
+                // first page ever opened on this device — index.html's own
+                // copy of this same logic is what actually stamps
+                // installDate for real, this is read-only here.
+                const installDate = localStorage.getItem('installDate') || Date.now();
+                const daysPassed = Math.floor((Date.now() - parseInt(installDate)) / (1000 * 60 * 60 * 24));
+                const daysLeft = Math.max(0, TRIAL_PERIOD_DAYS - daysPassed);
+                counterDiv.innerText = `Trial Status: ${daysLeft} Days Remaining`;
+                counterDiv.style.color = daysLeft <= 5 ? '#f44336' : '#ffa726';
+            }
+        }
+        syncMenuLicenseUI();
+        initActivateButton(); // shared.js — wires up #activate-btn inside the modal above
+        initForgotPasswordLink();
+        initSetPasswordButton();
+        initPasswordRecoveryDetection();
+        prefillRememberedCredentials();
+        initLoginIssueLink();
+
+        // Mutually-exclusive pricing picker for #license-lock (2026-09-08,
+        // license tier split) — see index.html's copy for the reasoning.
+        function togglePricingPlan(radio) {
+            const alreadySelected = radio.dataset.wasChecked === 'true';
+            if (alreadySelected) { resetPricingOptions(); return; }
+            document.querySelectorAll('#license-lock input[name="pricing-plan"]').forEach(r => {
+                const option = r.closest('.pricing-option');
+                if (r === radio) {
+                    r.dataset.wasChecked = 'true';
+                    r.disabled = false;
+                    option.classList.add('selected');
+                    option.classList.remove('disabled');
+                } else {
+                    r.dataset.wasChecked = 'false';
+                    r.disabled = true;
+                    option.classList.add('disabled');
+                    option.classList.remove('selected');
+                }
+            });
+            const buyLink = document.getElementById('pricing-buy-link');
+            buyLink.href = radio.dataset.link;
+            buyLink.textContent = `Continue to Checkout — ${radio.dataset.price}`;
+            buyLink.style.display = 'inline-block';
+        }
+        function resetPricingOptions() {
+            document.querySelectorAll('#license-lock input[name="pricing-plan"]').forEach(r => {
+                r.checked = false;
+                r.disabled = false;
+                r.dataset.wasChecked = 'false';
+                r.closest('.pricing-option').classList.remove('selected', 'disabled');
+            });
+            const buyLink = document.getElementById('pricing-buy-link');
+            if (buyLink) buyLink.style.display = 'none';
+            const pricingWrap = document.getElementById('pricing-picker-wrap');
+            if (pricingWrap) pricingWrap.style.display = 'block';
+            const upgradeWrap = document.getElementById('dm-upgrade-only-wrap');
+            if (upgradeWrap) upgradeWrap.style.display = 'none';
+            const lockMsg = document.getElementById('lock-message');
+            if (lockMsg) lockMsg.innerHTML = 'Please enter your email to activate full features (Save/Export) and remove the 30-day trial limit.';
+            if (typeof showLoginFields === 'function') showLoginFields();
+        }
+
+        function togglePrivacyModal() {
+            const modal = document.getElementById('privacyModal');
+            modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'flex' : 'none';
+        }
+        function toggleTOSModal() {
+            const modal = document.getElementById('tosModal');
+            modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'flex' : 'none';
+        }
+        function toggleHelpModal() {
+            const modal = document.getElementById('helpModal');
+            modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'flex' : 'none';
+        }
+        function toggleHowtoModal() {
+            const modal = document.getElementById('howtoModal');
+            modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'flex' : 'none';
+        }
+
+        // --- Splash: plays once per browser tab/session, not on every return
+        // trip to the menu. This is the entire point of having a menu page —
+        // going Sheet -> Menu -> DM Tools -> Menu should never replay a
+        // 14-second video or the how-to popup more than once. ---
+        function dismissLogoSplash() {
+            const splash = document.getElementById('logoSplash');
+            if (!splash || splash.dataset.dismissed) return;
+            splash.dataset.dismissed = 'true';
+            splash.style.transition = 'opacity 0.4s ease';
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.display = 'none'; maybeShowHowto(); }, 400);
+        }
+        function toggleLogoSplashSound() {
+            const video = document.getElementById('logoSplashVideo');
+            const btn = document.getElementById('logoSplashUnmuteBtn');
+            if (!video || !btn) return;
+            video.muted = !video.muted;
+            btn.textContent = video.muted ? '🔇' : '🔊';
+            btn.title = video.muted ? 'Turn sound on' : 'Mute';
+        }
+
+        function maybeShowHowto() {
+            const hidePopup = localStorage.getItem('hideHowto');
+            if (!hidePopup) toggleHowtoModal();
+        }
+
+        const closeHowtoBtn = document.getElementById('closeHowto');
+        if (closeHowtoBtn) {
+            closeHowtoBtn.addEventListener('click', () => {
+                const checkbox = document.getElementById('dontShowAgain');
+                if (checkbox && checkbox.checked) localStorage.setItem('hideHowto', 'true');
+                document.getElementById('howtoModal').style.display = 'none';
+            });
+        }
+
+        if (!sessionStorage.getItem('introShown')) {
+            sessionStorage.setItem('introShown', 'true');
+            const splash = document.getElementById('logoSplash');
+            splash.style.display = 'flex';
+            document.getElementById('logoSplashVideo').play().catch(() => {});
+            setTimeout(dismissLogoSplash, 17000); // safety net — see the original comment in index.html's history
+        }
+        // Returning to the menu later in the same tab/session: both modals
+        // already default to display:none in CSS, so there's nothing else
+        // to do here — the menu card underneath is simply what's visible.
+    </script>
+
+</body>
+</html>

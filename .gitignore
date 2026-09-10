@@ -1,8 +1,34 @@
+# admin.html is a deliberately unlinked internal tool (see its own header
+# comment) that embeds a live Supabase service_role key — full read/write
+# access to every table, bypassing RLS entirely. It must NEVER be committed,
+# pushed, or hosted anywhere. Keep it as a local-only file.
+admin.html
+
+# One-time password-auth backfill script (2026-09-09) — contains a live
+# service_role key once filled in, plus every existing customer's email.
+# Local-only, never committed. Safe to delete this whole folder once the
+# backfill has been run.
+planning/password functions/
+
+# Editor / IDE
+.vs/
+.vscode/
+.claude/
+
+# Node / Electron build tooling
 node_modules/
 dist*/
-.vs/
-.claude/
+Dist files/
 *.exe
 *.zip
 *.msi
 *.lnk
+
+# Supabase CLI local state (also covered by supabase/.gitignore, kept here
+# too in case that nested file is ever removed)
+supabase/.temp/
+supabase/.branches/
+
+# OS cruft
+.DS_Store
+Thumbs.db

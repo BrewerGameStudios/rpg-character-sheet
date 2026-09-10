@@ -1,0 +1,2686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Map Generator - Brewer Game Studios</title>
+<style>
+    /* Palette/typography intentionally match dm.html/shared.css so this
+       drops in visually consistent whenever it gets wired into the app
+       proper — same gradient header tokens, pill-btn shape, dark-mode
+       toggle convention, monospace seed styling. This file has no
+       Supabase/campaign dependency at all on purpose (see chat) — it's a
+       standalone generator today, wiring into a real map is a later step. */
+    :root {
+        --bg-color-1: #667eea;
+        --bg-color-2: #764ba2;
+        --dark-overlay: rgba(0, 0, 0, 0);
+        --panel-border: #eee;
+        --text: #222;
+        --text-dim: #777;
+        /* Canvas floor/gridline colors match dm.html's own .map-cell /
+           .map-grid exactly (#fff floor, #ddd gap) so a Dungeon/Cave
+           render reads as literally the same visual language as the DM
+           Map tab, not a lookalike. */
+        --floor: #ffffff;
+        --grid-line: #dddddd;
+
+        /* Theme Color (2026-09-07, DM-Tester only for now) — same one-hue-
+           generates-everything system as index.html/dm.html/menu.html (see
+           applySavedLightTheme() below for the full reasoning); --card-bg/
+           --panel-bg just point at these instead of their own literals now,
+           same shades as before by default. This page has no shared.css/
+           shared.js of its own (standalone generator, no Supabase
+           dependency) so, same as those three pages, it keeps its own copy
+           of these tokens/functions rather than importing them. */
+        --theme-white: #fff;
+        --theme-grey: #f9f9f9;
+        --theme-blue: #667eea;
+        --theme-blue-dark: #4a4ba2;
+        --theme-blue-hover: #5568d3;
+        --theme-dark-white: #2a2a3e;
+        --theme-dark-grey: #1e1e2e;
+        --panel-bg: var(--theme-grey);
+        --card-bg: var(--theme-white);
+    }
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+            --dark-overlay: rgba(0, 0, 0, 0.5);
+            --panel-border: #3a3a50;
+            --text: #e0e0e0;
+            --text-dim: #aaa;
+            --floor: #2a2a3e;
+            --grid-line: #3a3a52;
+            --panel-bg: var(--theme-dark-grey);
+            --card-bg: var(--theme-dark-white);
+        }
+    }
+    body.dark-mode {
+        --dark-overlay: rgba(0, 0, 0, 0.5);
+        --panel-border: #3a3a50;
+        --text: #e0e0e0;
+        --text-dim: #aaa;
+        --floor: #2a2a3e;
+        --grid-line: #3a3a52;
+        --panel-bg: var(--theme-dark-grey);
+        --card-bg: var(--theme-dark-white);
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        color: var(--text);
+        background: linear-gradient(var(--dark-overlay), var(--dark-overlay)), linear-gradient(135deg, var(--bg-color-1) 0%, var(--bg-color-2) 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+        padding: 20px;
+    }
+    .page { max-width: 1100px; margin: 0 auto; }
+    .top-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 16px; color: #fff;
+    }
+    .top-bar h1 { font-size: 20px; margin: 0; display: flex; align-items: center; gap: 8px; }
+    /* Box Help "?" (2026-09-07, "lets do the same for the dm tools and
+       generator") — same idea as dm.html/index.html's .help-btn, but this
+       page has only one real "title" (the mode-tabs below are buttons, not
+       headings), so there's just the one on the page's own h1. White/
+       translucent instead of the usual accent-purple since this sits on
+       the purple gradient header, not a --card-bg panel. */
+    .help-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 18px; height: 18px; border-radius: 50%;
+        border: 1.5px solid rgba(255,255,255,0.7); background: rgba(255,255,255,0.12); color: #fff;
+        font-size: 11px; font-weight: bold; line-height: 1; cursor: pointer;
+        flex-shrink: 0; padding: 0;
+    }
+    .help-btn:hover { background: rgba(255,255,255,0.3); }
+    .help-modal-backdrop {
+        display: none; position: fixed; inset: 0; background: rgba(10,10,20,0.6);
+        align-items: center; justify-content: center; z-index: 3000; padding: 20px;
+    }
+    .help-modal-backdrop.open { display: flex; }
+    .help-modal {
+        background: var(--card-bg); border: 1px solid var(--panel-border); color: var(--text);
+        border-radius: 10px; padding: 22px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
+    }
+    .help-modal h3 { margin: 0 0 4px; font-size: 17px; }
+    .help-modal-section { margin-top: 16px; }
+    .help-modal-section:first-of-type { margin-top: 14px; }
+    .help-modal-section h4 { font-size: 12.5px; margin: 0 0 4px; }
+    .help-modal-section p { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; margin: 0 0 6px; }
+    .help-modal-close { display: block; text-align: center; margin-top: 14px; font-size: 12.5px; color: var(--text-dim); cursor: pointer; }
+    .top-bar .sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+    .dark-toggle {
+        width: 38px; height: 38px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.4);
+        background: rgba(255,255,255,0.15); color: #fff; font-size: 16px; cursor: pointer;
+    }
+
+    .layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+    .panel {
+        background: var(--card-bg); border: 1px solid var(--panel-border); border-radius: 10px;
+        padding: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 11.5px; font-weight: bold; text-transform: uppercase;
+        letter-spacing: 0.03em; color: var(--text-dim); margin-bottom: 5px; }
+    .field .row { display: flex; gap: 8px; align-items: center; }
+    .field input[type="text"], .field input[type="number"] {
+        width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--panel-border);
+        background: var(--panel-bg); color: var(--text); font-family: inherit; font-size: 13.5px;
+    }
+    .seed-input { font-family: ui-monospace, monospace; font-weight: bold; letter-spacing: 0.02em; }
+    .field input[type="range"] { width: 100%; }
+    .range-value { font-size: 11.5px; color: var(--text-dim); float: right; }
+    .field .hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+    .check-row { display: flex; align-items: center; gap: 7px; font-size: 13px; margin-bottom: 8px; }
+
+    .mode-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+    .mode-tabs .pill-btn { flex: 1; padding: 8px 6px; text-align: center; }
+
+    .pill-btn {
+        font-size: 12px; font-weight: bold; padding: 7px 12px; border-radius: 100px;
+        border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text); cursor: pointer;
+    }
+    .pill-btn.active { background: var(--theme-blue); border-color: var(--theme-blue); color: #fff; }
+    .pill-btn.wide { width: 100%; }
+    .pill-btn.primary { background: var(--theme-blue); border-color: var(--theme-blue); color: #fff; padding: 10px 12px; font-size: 13px; }
+    .btn-row { display: flex; gap: 8px; margin-top: 4px; }
+
+    .mode-section { display: none; }
+    .mode-section.active { display: block; }
+
+    .canvas-panel { text-align: center; }
+    #mapCanvas { max-width: 100%; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); background: var(--floor); }
+    .summary-line {
+        font-size: 12.5px; color: var(--text-dim); margin-bottom: 10px; display: flex;
+        flex-wrap: wrap; gap: 6px 14px; justify-content: center;
+    }
+    .summary-line b { color: var(--text); }
+    .compat-note { font-size: 12px; margin-top: 12px; padding: 8px 10px; border-radius: 6px; text-align: left; }
+    .compat-note.ok { background: rgba(102,187,106,0.15); color: #2e7d32; }
+    body.dark-mode .compat-note.ok { color: #81c784; }
+    .compat-note.warn { background: rgba(255,167,38,0.15); color: #8a5300; }
+    body.dark-mode .compat-note.warn { color: #ffb74d; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: center; margin-top: 14px; font-size: 12px; }
+    .legend .swatch { display: inline-flex; align-items: center; gap: 6px; }
+    .legend .dot { width: 13px; height: 13px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+
+    .export-box { margin-top: 16px; text-align: left; }
+    .export-box textarea {
+        width: 100%; height: 90px; font-family: ui-monospace, monospace; font-size: 11px;
+        border-radius: 6px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text);
+        padding: 8px; resize: vertical;
+    }
+    .copy-status { font-size: 11.5px; color: var(--text-dim); margin-left: 8px; }
+</style>
+</head>
+<body>
+<!-- ================= BOX HELP (2026-09-07) ================= -->
+<div class="help-modal-backdrop" id="boxHelpModal" onclick="if(event.target===this) closeBoxHelp()">
+    <div class="help-modal">
+        <h3 id="boxHelpTitle"></h3>
+        <div id="boxHelpBody"></div>
+        <span class="help-modal-close" onclick="closeBoxHelp()">Close</span>
+    </div>
+</div>
+<div class="page">
+    <div class="top-bar">
+        <div>
+            <h1>🗺️ Map Generator <button type="button" class="help-btn" onclick="showHelpPopup('generator')" title="What is this?" aria-label="Help: Map Generator">?</button></h1>
+            <div class="sub">Seed-based, no AI — same seed + settings always rebuilds the same map</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <!-- dm.html opens this page via its own "Map Generator" button
+                 (2026-08-31, "we can get to the generator from dm tools,
+                 but we cant get back to dm tools from generator"). Both
+                 links are now plain same-tab navigation, not target="_blank"
+                 (2026-09-01, "insted of going to the page it will open a
+                 new tab") — so onclick prefers a real history.back() over
+                 the plain href, which lands back on dm.html exactly as it
+                 was (scroll position, open tool, etc., often straight from
+                 bfcache) instead of a fresh reload. Falls through to the
+                 normal href navigation below if this page wasn't actually
+                 reached from dm.html (bookmarked, typed directly, refreshed
+                 — see goBackToDmTools). -->
+            <a class="pill-btn" href="dm.html" onclick="return goBackToDmTools(event)" style="text-decoration:none; display:inline-flex; align-items:center;" title="Back to the DM Tools' Map tab">← DM Tools</a>
+            <button type="button" class="dark-toggle" id="darkToggleBtn" onclick="toggleDark()" title="Toggle dark mode">🌙</button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="panel">
+            <div class="mode-tabs">
+                <button type="button" class="pill-btn active" data-mode="dungeon" onclick="setMode('dungeon')">Dungeon</button>
+                <button type="button" class="pill-btn" data-mode="tavern" onclick="setMode('tavern')">Tavern</button>
+                <button type="button" class="pill-btn" data-mode="cave" onclick="setMode('cave')">Caves</button>
+                <button type="button" class="pill-btn" data-mode="wild" onclick="setMode('wild')">Wilderness</button>
+            </div>
+
+            <div class="field">
+                <label>Seed</label>
+                <div class="row">
+                    <input type="text" id="seedInput" class="seed-input" value="" oninput="scheduleRegen()">
+                    <button type="button" class="pill-btn" onclick="randomizeSeed()" title="New random seed">🎲</button>
+                </div>
+                <div class="hint">Write this down (with the mode + settings) to rebuild the exact same map later.</div>
+            </div>
+
+            <div class="field">
+                <div class="row">
+                    <div style="flex:1;">
+                        <label>Width (cols)</label>
+                        <input type="number" id="colsInput" min="10" max="26" value="20" oninput="scheduleRegen()">
+                    </div>
+                    <div style="flex:1;">
+                        <label>Height (rows)</label>
+                        <input type="number" id="rowsInput" min="10" max="60" value="20" oninput="scheduleRegen()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floor texture — shared by Dungeon/Cave (an indoor-material
+                 concept; Wilderness has no "floor" as such), hidden for
+                 Wilderness by setMode(). Purely cosmetic — drawn straight
+                 onto the canvas, no effect on the grid/export data. -->
+            <div class="field" id="floorTextureField">
+                <label>Floor Texture</label>
+                <div class="row" style="flex-wrap:wrap; gap:6px;">
+                    <button type="button" class="pill-btn active" data-texture="none" onclick="setFloorTexture('none')">None</button>
+                    <button type="button" class="pill-btn" data-texture="stone" onclick="setFloorTexture('stone')">Stone</button>
+                    <button type="button" class="pill-btn" data-texture="tile" onclick="setFloorTexture('tile')">Tile</button>
+                    <button type="button" class="pill-btn" data-texture="wood" onclick="setFloorTexture('wood')">Wood</button>
+                    <button type="button" class="pill-btn" data-texture="mixed" id="floorTextureMixedBtn" onclick="setFloorTexture('mixed')" title="Each room gets its own texture at random">Mixed</button>
+                </div>
+            </div>
+
+            <!-- Dungeon controls -->
+            <div class="mode-section active" data-mode-section="dungeon">
+                <div class="field">
+                    <label>Room Density<span class="range-value" id="densityVal"></span></label>
+                    <input type="range" id="densityInput" min="1" max="5" value="3" oninput="scheduleRegen()">
+                    <div class="hint">Sparse, big rooms &larr;&rarr; many small rooms</div>
+                </div>
+                <div class="field">
+                    <label>Min Room Size<span class="range-value" id="minRoomVal"></span></label>
+                    <input type="range" id="minRoomInput" min="3" max="8" value="4" oninput="scheduleRegen()">
+                </div>
+                <div class="check-row">
+                    <input type="checkbox" id="doorsInput" checked onchange="scheduleRegen()">
+                    <label for="doorsInput" style="margin:0; text-transform:none; font-weight:normal; font-size:13px;">Add doors at room entrances</label>
+                </div>
+                <div class="check-row">
+                    <input type="checkbox" id="dungeonWaterInput" onchange="scheduleRegen()">
+                    <label for="dungeonWaterInput" style="margin:0; text-transform:none; font-weight:normal; font-size:13px;">Scatter water pools in larger rooms</label>
+                </div>
+            </div>
+
+            <!-- Tavern controls -->
+            <div class="mode-section" data-mode-section="tavern">
+                <div class="field">
+                    <label>Room Count<span class="range-value" id="tavernRoomsVal"></span></label>
+                    <input type="range" id="tavernRoomsInput" min="3" max="6" value="4" oninput="scheduleRegen()">
+                    <div class="hint">The whole building is one footprint — rooms share real walls instead of sitting apart down a corridor.</div>
+                </div>
+                <div class="check-row">
+                    <input type="checkbox" id="tavernFurnitureInput" checked onchange="scheduleRegen()">
+                    <label for="tavernFurnitureInput" style="margin:0; text-transform:none; font-weight:normal; font-size:13px;">Furnish rooms (bar, tables, stove, beds)</label>
+                </div>
+            </div>
+
+            <!-- Cave controls -->
+            <div class="mode-section" data-mode-section="cave">
+                <div class="field">
+                    <label>Wall Density<span class="range-value" id="fillVal"></span></label>
+                    <input type="range" id="fillInput" min="35" max="55" value="45" oninput="scheduleRegen()">
+                </div>
+                <div class="field">
+                    <label>Smoothing Passes<span class="range-value" id="stepsVal"></span></label>
+                    <input type="range" id="stepsInput" min="2" max="6" value="4" oninput="scheduleRegen()">
+                    <div class="hint">More passes = smoother, rounder cave walls</div>
+                </div>
+                <div class="check-row">
+                    <input type="checkbox" id="caveWaterInput" onchange="scheduleRegen()">
+                    <label for="caveWaterInput" style="margin:0; text-transform:none; font-weight:normal; font-size:13px;">Scatter underground pools</label>
+                </div>
+            </div>
+
+            <!-- Wilderness controls -->
+            <div class="mode-section" data-mode-section="wild">
+                <div class="field">
+                    <label>Region Size<span class="range-value" id="scaleVal"></span></label>
+                    <input type="range" id="scaleInput" min="4" max="16" value="8" oninput="scheduleRegen()">
+                    <div class="hint">Bigger = larger, smoother biome regions</div>
+                </div>
+                <div class="field">
+                    <label>Water Level<span class="range-value" id="waterLevelVal"></span></label>
+                    <input type="range" id="waterLevelInput" min="15" max="55" value="36" oninput="scheduleRegen()">
+                </div>
+                <div class="field">
+                    <label>Mountain Level<span class="range-value" id="mountainLevelVal"></span></label>
+                    <input type="range" id="mountainLevelInput" min="55" max="85" value="72" oninput="scheduleRegen()">
+                </div>
+                <div class="check-row">
+                    <input type="checkbox" id="wildBuildingsInput" checked onchange="scheduleRegen()">
+                    <label for="wildBuildingsInput" style="margin:0; text-transform:none; font-weight:normal; font-size:13px;">Scatter buildings, a castle &amp; cave entrances</label>
+                </div>
+                <div class="check-row">
+                    <input type="checkbox" id="wildGridInput" onchange="render()">
+                    <label for="wildGridInput" style="margin:0; text-transform:none; font-weight:normal; font-size:13px;">Show grid</label>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button type="button" class="pill-btn primary wide" onclick="regenerate()">Generate</button>
+            </div>
+        </div>
+
+        <div class="panel canvas-panel">
+            <div class="summary-line" id="summaryLine"></div>
+
+            <!-- No manual wall/door editing here (removed 2026-08-29) — this
+                 generator is view-only: roll a seed for a general layout,
+                 then use dm.html's "Import Generated Layout" to bring it
+                 into the real Map Builder, where it's a normal, fully
+                 editable map from that point on. Hover the map below for a
+                 tooltip naming whatever's under the cursor. -->
+            <canvas id="mapCanvas"></canvas>
+            <div class="legend" id="legendBox"></div>
+            <div id="compatNote"></div>
+
+            <div class="btn-row" style="justify-content:center;">
+                <button type="button" class="pill-btn" onclick="downloadPng()">⬇ Download PNG</button>
+                <button type="button" class="pill-btn" id="exportToggleBtn" onclick="toggleExport()">Export Map Data</button>
+            </div>
+
+            <div class="export-box" id="exportBox" style="display:none;">
+                <div class="hint" id="exportHint" style="margin-bottom:6px;"></div>
+                <textarea id="exportArea" readonly onclick="this.select()"></textarea>
+                <div class="btn-row">
+                    <button type="button" class="pill-btn" onclick="copyExport()">Copy to Clipboard</button>
+                    <span class="copy-status" id="copyStatus"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===================== Seeded RNG =====================
+// Standard, widely-used public-domain hash+PRNG pair (xmur3 seed hash into
+// mulberry32) — a string seed always produces the exact same sequence, so
+// "same seed + same settings = same map" holds across sessions/browsers.
+function xmur3(str) {
+    let h = 1779033703 ^ str.length;
+    for (let i = 0; i < str.length; i++) {
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+    }
+    return function () {
+        h = Math.imul(h ^ (h >>> 16), 2246822507);
+        h = Math.imul(h ^ (h >>> 13), 3266489909);
+        h ^= h >>> 16;
+        return h >>> 0;
+    };
+}
+function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+function makeRng(seedStr) { return mulberry32(xmur3(String(seedStr))()); }
+// Fast deterministic per-cell hash for decorative texture (tree/rock
+// glyph jitter) — independent of the sequential rng so it doesn't shift
+// every other draw when only a texture tweak changes.
+function cellHash(x, y, salt) {
+    let h = Math.imul(x, 374761393) ^ Math.imul(y, 668265263) ^ salt;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+}
+
+// Scans one straight run of cells along a room's own wall (top row,
+// bottom row, left column, or right column) and turns AT MOST ONE cell
+// per contiguous stretch of floor into a door, at that stretch's midpoint
+// — never a whole run of them. Without this, a wide gap where a corridor
+// meets a room let every ring cell in the gap roll independently, so 2-3
+// adjacent cells could each become their own door — a doorway is one
+// door, not a row of them (confirmed live on seed "b7ui2").
+function placeDoorsAlongRun(grid, cols, rows, cells, rng, isBlocked) {
+    // isBlocked (optional) marks a ring cell as "not a valid gap here" without
+    // it needing to actually be a wall cell — used so a ring cell that's really
+    // another room's own floor (two rooms sitting flush against each other)
+    // doesn't get treated as an open run belonging to THIS room. Passed as a
+    // predicate rather than pre-filtering the cells array so index-adjacency
+    // (which this run-detection relies on) still matches real grid-adjacency.
+    const isFloor = ([x, y]) => x >= 0 && y >= 0 && x < cols && y < rows && grid[y][x] === 'floor' && !(isBlocked && isBlocked(x, y));
+    let i = 0;
+    while (i < cells.length) {
+        if (!isFloor(cells[i])) { i++; continue; }
+        let j = i;
+        while (j < cells.length && isFloor(cells[j])) j++;
+        if (rng() < 0.4) {
+            const mid = cells[i + Math.floor((j - i) / 2)];
+            grid[mid[1]][mid[0]] = 'door';
+        }
+        i = j;
+    }
+}
+
+// ===================== Dungeon (BSP rooms + corridors) =====================
+function generateDungeon(rng, cols, rows, opts) {
+    const grid = Array.from({ length: rows }, () => Array(cols).fill('wall'));
+    const rooms = [];
+    // Interior partition walls (two rooms sitting flush against each other)
+    // are edges, not cells — same model dm.html's Map Builder uses. Only
+    // BACKGROUND rock (never carved to floor at all) stays a whole-cell
+    // 'wall'; that's real "unexcavated stone," not a partition, and the
+    // existing floor/rock boundary trace (drawWallOutline) already draws a
+    // clean line along it with no extra bookkeeping needed. See the
+    // merge-prevention pass below for where these get populated.
+    const edgeWalls = new Set();
+    const edgeDoors = new Set();
+
+    function Leaf(x, y, w, h) { this.x = x; this.y = y; this.w = w; this.h = h; this.left = null; this.right = null; this.room = null; }
+    Leaf.prototype.split = function (minLeaf) {
+        if (this.left || this.right) return false;
+        let splitH = rng() < 0.5;
+        if (this.w > this.h && this.w / this.h >= 1.25) splitH = false;
+        else if (this.h > this.w && this.h / this.w >= 1.25) splitH = true;
+        const size = splitH ? this.h : this.w;
+        if (size - minLeaf <= minLeaf) return false;
+        const split = minLeaf + Math.floor(rng() * (size - minLeaf * 2));
+        if (splitH) {
+            this.left = new Leaf(this.x, this.y, this.w, split);
+            this.right = new Leaf(this.x, this.y + split, this.w, this.h - split);
+        } else {
+            this.left = new Leaf(this.x, this.y, split, this.h);
+            this.right = new Leaf(this.x + split, this.y, this.w - split, this.h);
+        }
+        return true;
+    };
+
+    const root = new Leaf(1, 1, cols - 2, rows - 2);
+    // Guarantee at least one split so a lucky/unlucky roll on the root
+    // leaf can never leave the whole map as a single giant room with no
+    // corridors at all — confirmed live that this happened on a real
+    // seed before this fix (maxLeaf being looser than the root size made
+    // the very first split purely a 70% coin flip).
+    root.split(opts.minLeaf);
+    let leaves = (root.left && root.right) ? [root.left, root.right] : [root];
+    let didSplit = true, guard = 0;
+    while (didSplit && guard++ < 500) {
+        didSplit = false;
+        const next = [];
+        for (const leaf of leaves) {
+            if (leaf.left || leaf.right) { next.push(leaf); continue; }
+            const tooBig = leaf.w > opts.maxLeaf || leaf.h > opts.maxLeaf;
+            if (tooBig || rng() < 0.7) {
+                if (leaf.split(opts.minLeaf)) { didSplit = true; next.push(leaf.left, leaf.right); continue; }
+            }
+            next.push(leaf);
+        }
+        leaves = next;
+    }
+
+    const allLeaves = [];
+    (function collect(leaf) {
+        if (leaf.left || leaf.right) { if (leaf.left) collect(leaf.left); if (leaf.right) collect(leaf.right); }
+        else allLeaves.push(leaf);
+    })(root);
+
+    for (const leaf of allLeaves) {
+        // No reserved padding against the leaf's own boundary (was 1 cell
+        // on every side) — since adjacent leaves tile with zero gap
+        // between them, that padding was the direct cause of rooms always
+        // sitting at least ~2 cells (10ft) apart at minimum (confirmed:
+        // each of two neighboring rooms held back 1 cell from its own
+        // shared boundary). A room can now be sized to reach its leaf's
+        // edge, so two rooms in adjacent leaves can end up sharing a
+        // common wall with no gap at all — real room size is still
+        // randomized within the available space, so plenty of rooms still
+        // end up smaller with a natural gap; this just removes the
+        // artificial floor under that gap.
+        const availW = Math.max(3, leaf.w), availH = Math.max(3, leaf.h);
+        const rw = Math.min(availW, opts.minRoom + Math.floor(rng() * Math.max(1, availW - opts.minRoom + 1)));
+        const rh = Math.min(availH, opts.minRoom + Math.floor(rng() * Math.max(1, availH - opts.minRoom + 1)));
+        const rx = leaf.x + Math.floor(rng() * Math.max(1, leaf.w - rw + 1));
+        const ry = leaf.y + Math.floor(rng() * Math.max(1, leaf.h - rh + 1));
+        leaf.room = { x: rx, y: ry, w: rw, h: rh };
+        rooms.push(leaf.room);
+        for (let yy = ry; yy < ry + rh; yy++)
+            for (let xx = rx; xx < rx + rw; xx++)
+                if (xx >= 0 && xx < cols && yy >= 0 && yy < rows) grid[yy][xx] = 'floor';
+    }
+
+    function anyRoom(leaf) {
+        if (leaf.room) return leaf.room;
+        const l = leaf.left ? anyRoom(leaf.left) : null;
+        const r = leaf.right ? anyRoom(leaf.right) : null;
+        return rng() < 0.5 ? (l || r) : (r || l);
+    }
+    function carveCorridor(p1, p2) {
+        let x = p1.x, y = p1.y;
+        const horizontalFirst = rng() < 0.5;
+        function carveAt(cx, cy) {
+            if (cx < 0 || cx >= cols || cy < 0 || cy >= rows) return;
+            if (grid[cy][cx] === 'wall') grid[cy][cx] = 'floor';
+        }
+        if (horizontalFirst) {
+            while (x !== p2.x) { x += x < p2.x ? 1 : -1; carveAt(x, y); }
+            while (y !== p2.y) { y += y < p2.y ? 1 : -1; carveAt(x, y); }
+        } else {
+            while (y !== p2.y) { y += y < p2.y ? 1 : -1; carveAt(x, y); }
+            while (x !== p2.x) { x += x < p2.x ? 1 : -1; carveAt(x, y); }
+        }
+    }
+    (function connect(leaf) {
+        if (!leaf.left || !leaf.right) return;
+        connect(leaf.left); connect(leaf.right);
+        const r1 = anyRoom(leaf.left), r2 = anyRoom(leaf.right);
+        if (!r1 || !r2) return;
+        const p1 = { x: r1.x + Math.floor(rng() * r1.w), y: r1.y + Math.floor(rng() * r1.h) };
+        const p2 = { x: r2.x + Math.floor(rng() * r2.w), y: r2.y + Math.floor(rng() * r2.h) };
+        carveCorridor(p1, p2);
+    })(root);
+
+    // Removing the old fixed 1-cell leaf padding (see the room-carving
+    // comment above) let two rooms in adjacent leaves land flush against
+    // each other with zero gap — but when BOTH happen to reach their
+    // shared leaf boundary at once, the whole shared wall disappears and
+    // the two "rooms" become one indistinguishable open space. Confirmed
+    // live: ~49% of adjacent room pairs were fully merged like this,
+    // which is exactly why Room Density stopped reading as more rooms —
+    // the data said N rooms, but a wall-less shared border made pairs of
+    // them look like one. Wall any FULLY open shared border down to a
+    // single centered doorway gap — as EDGES sitting on the shared
+    // gridline (see the edgeWalls/edgeDoors comment above), not by
+    // consuming a cell of either room's own floor the way this used to
+    // work. That old approach was the exact whole-cell-wall bug already
+    // fixed in the real DM Map Builder — it silently ate a full row/column
+    // of usable floor from whichever room happened to own the border
+    // column, and made two rooms read as farther apart than their actual
+    // footprints.
+    for (let a = 0; a < rooms.length; a++) {
+        for (let b = a + 1; b < rooms.length; b++) {
+            const r1 = rooms[a], r2 = rooms[b];
+            let border = null;
+            if (r1.x + r1.w === r2.x || r2.x + r2.w === r1.x) {
+                const bx = r1.x + r1.w === r2.x ? r2.x : r1.x;
+                const ys = Math.max(r1.y, r2.y), ye = Math.min(r1.y + r1.h, r2.y + r2.h);
+                if (ye > ys) border = { vertical: true, at: bx, s: ys, e: ye };
+            } else if (r1.y + r1.h === r2.y || r2.y + r2.h === r1.y) {
+                const by = r1.y + r1.h === r2.y ? r2.y : r1.y;
+                const xs = Math.max(r1.x, r2.x), xe = Math.min(r1.x + r1.w, r2.x + r2.w);
+                if (xe > xs) border = { vertical: false, at: by, s: xs, e: xe };
+            }
+            if (!border) continue;
+            let allOpen = true;
+            for (let i = border.s; i < border.e; i++) {
+                const cell = border.vertical ? grid[i][border.at] : grid[border.at][i];
+                if (cell === 'wall') { allOpen = false; break; }
+            }
+            if (!allOpen) continue;
+            const gap = border.s + Math.floor((border.e - border.s - 1) / 2);
+            for (let i = border.s; i < border.e; i++) {
+                // border.at is on the SECOND room's side of the shared line
+                // (see the bx/by picks above), so "H:col,border.at"/
+                // "V:border.at,row" is exactly the edge between the two
+                // rooms' own floor cells under the H/V convention (north/
+                // west side of border.at) — both rooms keep every cell of
+                // their own footprint; only the gridline between them
+                // carries the wall (or, at the gap, a door).
+                const key = border.vertical ? edgeKey('V', border.at, i) : edgeKey('H', i, border.at);
+                if (i === gap) edgeDoors.add(key); else edgeWalls.add(key);
+            }
+        }
+    }
+
+    if (opts.doors) {
+        // A ring cell that actually belongs to a DIFFERENT room (the two
+        // rooms sit flush against each other) is handled entirely by the
+        // edge pass above — it must not also be treated as an open corridor
+        // gap here, or a room's own interior floor row could get a random
+        // door-shaped marker stamped on it with no relation to the real
+        // gap the edge pass already placed.
+        const blockedByOtherRoom = (x, y, self) => rooms.some(r => r !== self && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
+        for (const room of rooms) {
+            const topRow = [], bottomRow = [], leftCol = [], rightCol = [];
+            for (let xx = room.x - 1; xx <= room.x + room.w; xx++) { topRow.push([xx, room.y - 1]); bottomRow.push([xx, room.y + room.h]); }
+            for (let yy = room.y - 1; yy <= room.y + room.h; yy++) { leftCol.push([room.x - 1, yy]); rightCol.push([room.x + room.w, yy]); }
+            const blocked = (x, y) => blockedByOtherRoom(x, y, room);
+            [topRow, bottomRow, leftCol, rightCol].forEach(run => placeDoorsAlongRun(grid, cols, rows, run, rng, blocked));
+        }
+        // Two different rooms placed doors independently, one per room —
+        // but when two rooms sit close together their wall rings can
+        // themselves end up touching, so each room's own (otherwise
+        // correct) single door can still land directly next to the
+        // other's (confirmed live). A global sweep afterward catches that
+        // regardless of which rooms were involved: whenever two doors
+        // touch, keep only the first one in reading order.
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                if (grid[y][x] !== 'door') continue;
+                if (x + 1 < cols && grid[y][x + 1] === 'door') grid[y][x + 1] = 'floor';
+                if (y + 1 < rows && grid[y + 1][x] === 'door') grid[y + 1][x] = 'floor';
+            }
+        }
+        // Rooms can now sit close enough (see the padding-removal above)
+        // that a ring cell picked as a doorway ends up with open floor
+        // from a NEIGHBORING room on every side instead of the wall it was
+        // meant to sit in — a door with no wall context isn't marking a
+        // passage through anything, just a random floor tile in open
+        // space (confirmed live on seed "cemqhq"). Demote any door left
+        // with zero wall-adjacent sides back to plain floor.
+        const isSolid = (x, y) => x < 0 || y < 0 || x >= cols || y >= rows || grid[y][x] === 'wall';
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                if (grid[y][x] !== 'door') continue;
+                if (!isSolid(x, y - 1) && !isSolid(x, y + 1) && !isSolid(x - 1, y) && !isSolid(x + 1, y)) grid[y][x] = 'floor';
+            }
+        }
+    }
+
+    if (opts.water) {
+        for (const room of rooms) {
+            if (room.w * room.h < 12 || rng() >= 0.35) continue;
+            const pw = 2 + Math.floor(rng() * Math.min(3, Math.max(1, room.w - 2)));
+            const ph = 2 + Math.floor(rng() * Math.min(3, Math.max(1, room.h - 2)));
+            const px = room.x + Math.floor(rng() * Math.max(1, room.w - pw));
+            const py = room.y + Math.floor(rng() * Math.max(1, room.h - ph));
+            for (let yy = py; yy < py + ph; yy++)
+                for (let xx = px; xx < px + pw; xx++)
+                    if (grid[yy] && grid[yy][xx] === 'floor') grid[yy][xx] = 'water';
+        }
+    }
+
+    return { grid, rooms, edgeWalls, edgeDoors };
+}
+
+// ===================== Tavern (single building, whole footprint) =====================
+// Unlike Dungeon, a tavern is one building — every room shares a real
+// wall with its neighbors (no corridors between them), so rooms are
+// carved to fill their BSP leaf completely rather than randomly sized
+// within it. That guarantees every adjacent pair starts fully merged by
+// construction, so every shared border always gets walled back down to a
+// single doorway gap (same technique as the Dungeon generator's
+// merge-prevention pass, just applied unconditionally here instead of
+// only when it happens to occur).
+function generateTavern(rng, cols, rows, opts) {
+    const grid = Array.from({ length: rows }, () => Array(cols).fill('wall'));
+    const bx = 1, by = 1, bw = cols - 2, bh = rows - 2; // 1-cell margin all around = "outside," same convention as Dungeon's rock
+    // Every internal partition here is an edge, not a cell — see the same
+    // note in generateDungeon. This matters even more for a Tavern: since
+    // EVERY leaf pair shares a full border by construction, the old
+    // whole-cell approach ate a full row/column out of one room in every
+    // single wall in the building. Rooms now keep 100% of their leaf as
+    // real floor.
+    const edgeWalls = new Set();
+    const edgeDoors = new Set();
+
+    function Leaf(x, y, w, h) { this.x = x; this.y = y; this.w = w; this.h = h; this.left = null; this.right = null; }
+    const root = new Leaf(bx, by, bw, bh);
+    let leaves = [root], guard = 0;
+    while (leaves.length < opts.roomCount && guard++ < 200) {
+        leaves.sort((a, b) => (b.w * b.h) - (a.w * a.h)); // always split the largest remaining leaf
+        let splitAny = false;
+        for (const leaf of leaves) {
+            if (leaf.left || leaf.right) continue;
+            const canSplitH = leaf.h >= 7, canSplitW = leaf.w >= 7;
+            if (!canSplitH && !canSplitW) continue;
+            if (canSplitH && (!canSplitW || leaf.h >= leaf.w)) {
+                const s = 3 + Math.floor(rng() * (leaf.h - 6));
+                leaf.left = new Leaf(leaf.x, leaf.y, leaf.w, s);
+                leaf.right = new Leaf(leaf.x, leaf.y + s, leaf.w, leaf.h - s);
+            } else {
+                const s = 3 + Math.floor(rng() * (leaf.w - 6));
+                leaf.left = new Leaf(leaf.x, leaf.y, s, leaf.h);
+                leaf.right = new Leaf(leaf.x + s, leaf.y, leaf.w - s, leaf.h);
+            }
+            splitAny = true;
+            break;
+        }
+        if (!splitAny) break;
+        leaves = [];
+        (function collect(leaf) { if (leaf.left || leaf.right) { collect(leaf.left); collect(leaf.right); } else leaves.push(leaf); })(root);
+    }
+
+    const rooms = leaves.map(l => ({ x: l.x, y: l.y, w: l.w, h: l.h }));
+    rooms.forEach(r => {
+        for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) grid[y][x] = 'floor';
+    });
+
+    // Wall every shared border down to a centered 1-2 cell doorway, then
+    // mark that gap as an actual door — every internal gap in a tavern IS
+    // a real doorway (unlike Dungeon's probabilistic corridor punches).
+    for (let a = 0; a < rooms.length; a++) {
+        for (let b = a + 1; b < rooms.length; b++) {
+            const r1 = rooms[a], r2 = rooms[b];
+            let border = null;
+            if (r1.x + r1.w === r2.x || r2.x + r2.w === r1.x) {
+                const at = r1.x + r1.w === r2.x ? r2.x : r1.x;
+                const s = Math.max(r1.y, r2.y), e = Math.min(r1.y + r1.h, r2.y + r2.h);
+                if (e > s) border = { vertical: true, at, s, e };
+            } else if (r1.y + r1.h === r2.y || r2.y + r2.h === r1.y) {
+                const at = r1.y + r1.h === r2.y ? r2.y : r1.y;
+                const s = Math.max(r1.x, r2.x), e = Math.min(r1.x + r1.w, r2.x + r2.w);
+                if (e > s) border = { vertical: false, at, s, e };
+            }
+            if (!border) continue;
+            // A 1-cell gap always — a 2-cell gap on a 2-long border left
+            // NO wall at all on that border (confirmed live: the whole
+            // shared edge became two doors side by side with nothing
+            // between them, both flagged by the floating/adjacent-door
+            // checks below). A single door is also just more realistic —
+            // real doorways aren't usually a full 10ft opening.
+            const gapStart = border.s + Math.floor((border.e - border.s - 1) / 2);
+            for (let i = border.s; i < border.e; i++) {
+                const isGap = i === gapStart;
+                const key = border.vertical ? edgeKey('V', border.at, i) : edgeKey('H', i, border.at);
+                if (isGap) edgeDoors.add(key); else edgeWalls.add(key);
+            }
+        }
+    }
+
+    // Front entrance: whichever room has a wall segment sitting on the
+    // building's own outer boundary gets one door there — picking the
+    // room a real patron would actually walk into first (largest floor
+    // area, i.e. the common room) rather than a random one.
+    rooms.sort((a, b) => (b.w * b.h) - (a.w * a.h));
+    const common = rooms[0];
+    // "at" is the actual exterior wall row/column (one step past the
+    // building's own interior bounds), not the room's own floor edge.
+    const exteriorSides = [];
+    if (common.y === by) exteriorSides.push({ vertical: false, at: by - 1, s: common.x, e: common.x + common.w });
+    if (common.y + common.h === by + bh) exteriorSides.push({ vertical: false, at: by + bh, s: common.x, e: common.x + common.w });
+    if (common.x === bx) exteriorSides.push({ vertical: true, at: bx - 1, s: common.y, e: common.y + common.h });
+    if (common.x + common.w === bx + bw) exteriorSides.push({ vertical: true, at: bx + bw, s: common.y, e: common.y + common.h });
+    if (exteriorSides.length) {
+        const side = exteriorSides[Math.floor(rng() * exteriorSides.length)];
+        const mid = side.s + Math.floor((side.e - side.s) / 2);
+        if (side.vertical) grid[mid][side.at] = 'door'; else grid[side.at][mid] = 'door';
+    }
+
+    // Same two cleanup passes Dungeon uses, for the same reasons: the
+    // front entrance above could in principle land right next to an
+    // internal doorway, and a door that ends up with no wall on any side
+    // (possible at a building corner) isn't marking an actual passage.
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (grid[y][x] !== 'door') continue;
+            if (x + 1 < cols && grid[y][x + 1] === 'door') grid[y][x + 1] = 'floor';
+            if (y + 1 < rows && grid[y + 1][x] === 'door') grid[y + 1][x] = 'floor';
+        }
+    }
+    const isSolid = (x, y) => x < 0 || y < 0 || x >= cols || y >= rows || grid[y][x] === 'wall';
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (grid[y][x] !== 'door') continue;
+            if (!isSolid(x, y - 1) && !isSolid(x, y + 1) && !isSolid(x - 1, y) && !isSolid(x + 1, y)) grid[y][x] = 'floor';
+        }
+    }
+
+    // Room roles for furniture: common room already picked above; kitchen
+    // is the next-largest (a tavern's second-biggest room is almost
+    // always the kitchen/storage, not another guest room); everything
+    // else is a private room.
+    const kitchen = rooms.length > 1 ? rooms[1] : null;
+    const privateRooms = rooms.slice(kitchen ? 2 : 1);
+
+    return { grid, rooms, tavern: { common, kitchen, privateRooms }, edgeWalls, edgeDoors };
+}
+
+function drawTable(ctx, cx, cy, cellSize) {
+    ctx.fillStyle = '#8a6a45';
+    ctx.beginPath(); ctx.arc(cx, cy, cellSize * 0.32, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#5c4028'; ctx.lineWidth = Math.max(1, cellSize * 0.05); ctx.stroke();
+    ctx.fillStyle = '#6b4423';
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+        ctx.beginPath(); ctx.arc(cx + dx * cellSize * 0.42, cy + dy * cellSize * 0.42, cellSize * 0.12, 0, Math.PI * 2); ctx.fill();
+    });
+}
+
+// Every door — the room-to-room edges generateTavern placed, plus the
+// front entrance (still a plain grid cell — see generateTavern) — keeps
+// its threshold cell(s) reserved so no furniture item can ever be placed
+// somewhere that would block a player from actually walking through it.
+function tavernKeepClearCells(grid, cols, rows, doors) {
+    const keep = new Set();
+    const mark = (x, y) => { if (x >= 0 && y >= 0 && x < cols && y < rows && grid[y][x] === 'floor') keep.add(x + ',' + y); };
+    doors.forEach(key => {
+        const [type, coords] = key.split(':');
+        const [ex, ey] = coords.split(',').map(Number);
+        if (type === 'H') { mark(ex, ey - 1); mark(ex, ey); } else { mark(ex - 1, ey); mark(ex, ey); }
+    });
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        if (grid[y][x] !== 'door') continue;
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => mark(x + dx, y + dy));
+    }
+    return keep;
+}
+
+// The cells that sit flush against one specific side of a room, in order
+// along that wall — the basis for placing anything meant to "sit against
+// the wall" rather than float in the middle of the floor.
+function roomWallLane(room, side) {
+    const cells = [];
+    if (side === 'N') for (let x = room.x; x < room.x + room.w; x++) cells.push([x, room.y]);
+    else if (side === 'S') for (let x = room.x; x < room.x + room.w; x++) cells.push([x, room.y + room.h - 1]);
+    else if (side === 'W') for (let y = room.y; y < room.y + room.h; y++) cells.push([room.x, y]);
+    else for (let y = room.y; y < room.y + room.h; y++) cells.push([room.x + room.w - 1, y]);
+    return cells;
+}
+// Longest stretch of a wall lane that's neither a doorway threshold nor
+// already claimed by another piece of furniture — the corner cells at
+// each end are excluded (insetEnds) so a wall-hugging item never lands
+// exactly in a corner another wall's own furniture might also want.
+function longestFreeRun(lane, keepClear, occupied, insetEnds) {
+    const usable = insetEnds ? lane.slice(1, -1) : lane.slice();
+    let best = [], cur = [];
+    for (let i = 0; i <= usable.length; i++) {
+        const cell = usable[i];
+        const key = cell && (cell[0] + ',' + cell[1]);
+        const free = cell && !keepClear.has(key) && !occupied.has(key);
+        if (free) cur.push(cell);
+        else { if (cur.length > best.length) best = cur; cur = []; }
+    }
+    return best;
+}
+function markOccupied(occupied, cells) { cells.forEach(([x, y]) => occupied.add(x + ',' + y)); }
+// Picks whichever side of a room has the longest free run — used for
+// every wall-hugging item (bar, stove, shelves, bed) so each one lands on
+// whatever wall actually has room for it once doors and earlier furniture
+// are excluded, rather than always assuming a fixed side.
+function bestWallRun(room, sides, keepClear, occupied) {
+    let side = null, run = [];
+    sides.forEach(s => {
+        const candidate = longestFreeRun(roomWallLane(room, s), keepClear, occupied, true);
+        if (candidate.length > run.length) { run = candidate; side = s; }
+    });
+    return { side, run };
+}
+// A flat rectangle hugging whichever wall its cells came from — occupies
+// the outer "depthFrac" slice of those cells (the slice actually touching
+// the wall), not the whole cell, so it reads as built into the wall.
+function wallHuggingRect(cells, side, cellSize, depthFrac) {
+    const [x0, y0] = cells[0], [x1, y1] = cells[cells.length - 1];
+    if (side === 'N' || side === 'S') {
+        const w = (x1 - x0 + 1) * cellSize, h = cellSize * depthFrac;
+        return { px: x0 * cellSize, py: side === 'N' ? y0 * cellSize : (y0 + 1) * cellSize - h, w, h };
+    }
+    const h = (y1 - y0 + 1) * cellSize, w = cellSize * depthFrac;
+    return { px: side === 'W' ? x0 * cellSize : (x0 + 1) * cellSize - w, py: y0 * cellSize, w, h };
+}
+// A bar reads more like a real counter — pushed against one edge of its
+// own lane, patron side open on the other — than a strip centered with an
+// equal gap on both sides. If the lane happens to run right along the
+// room's own wall, the strip pushes to the edge AWAY from that wall: the
+// wall is already the hard boundary right there, so a counter flush
+// against it on top of that just doubles up on the same edge instead of
+// reading as a bar someone could actually walk up to. Off any wall, it
+// still favors one consistent edge (the same one a south-wall or interior
+// placement would use) rather than centering.
+function barRect(cells, room, horizontal, cellSize, depthFrac) {
+    const [x0, y0] = cells[0], [x1, y1] = cells[cells.length - 1];
+    if (horizontal) {
+        const w = (x1 - x0 + 1) * cellSize, h = cellSize * depthFrac;
+        const onNorthWall = y0 === room.y;
+        return { px: x0 * cellSize, py: y0 * cellSize + (onNorthWall ? cellSize - h : 0), w, h };
+    }
+    const h = (y1 - y0 + 1) * cellSize, w = cellSize * depthFrac;
+    const onWestWall = x0 === room.x;
+    return { px: x0 * cellSize + (onWestWall ? cellSize - w : 0), py: y0 * cellSize, w, h };
+}
+// A straight run of cells starting at (ox,oy), all still free (neither a
+// doorway threshold nor already claimed) — null if any cell in the run
+// fails either check, or falls outside the room.
+function findFreeCellRun(room, keepClear, occupied, ox, oy, len, horizontal) {
+    const cells = [];
+    for (let i = 0; i < len; i++) {
+        const x = horizontal ? ox + i : ox, y = horizontal ? oy : oy + i;
+        if (x < room.x || x >= room.x + room.w || y < room.y || y >= room.y + room.h) return null;
+        const key = x + ',' + y;
+        if (keepClear.has(key) || occupied.has(key)) return null;
+        cells.push([x, y]);
+    }
+    return cells;
+}
+// A bar doesn't need a wall behind it — a real tavern bar is as often a
+// freestanding island counter. Tries a bounded number of deterministic
+// random spots/orientations/lengths (shrinking the length on later
+// attempts) anywhere in the room, accepting the first run that's fully
+// clear of doorway thresholds and every other already-placed item.
+function placeFreestandingBar(room, keepClear, occupied) {
+    const maxLen = Math.min(5, Math.max(3, Math.min(room.w, room.h) - 1));
+    for (let attempt = 0; attempt < 80; attempt++) {
+        const horizontal = cellHash(room.x, room.y, 900 + attempt) < 0.5;
+        const len = Math.max(3, maxLen - Math.floor(cellHash(room.x, room.y, 901 + attempt) * (maxLen - 2)));
+        const spanW = horizontal ? len : 1, spanH = horizontal ? 1 : len;
+        if (spanW > room.w || spanH > room.h) continue;
+        const ox = room.x + Math.floor(cellHash(room.x, room.y, 902 + attempt) * (room.w - spanW + 1));
+        const oy = room.y + Math.floor(cellHash(room.x, room.y, 903 + attempt) * (room.h - spanH + 1));
+        const cells = findFreeCellRun(room, keepClear, occupied, ox, oy, len, horizontal);
+        if (cells) return { cells, horizontal };
+    }
+    return null;
+}
+function drawShelfRun(ctx, cells, side, cellSize) {
+    const { px, py, w, h } = wallHuggingRect(cells, side, cellSize, 0.35);
+    ctx.fillStyle = '#5c4028';
+    ctx.fillRect(px, py, w, h);
+    ctx.strokeStyle = '#3a2818'; ctx.lineWidth = Math.max(1, cellSize * 0.04);
+    ctx.strokeRect(px, py, w, h);
+    const horizontal = side === 'N' || side === 'S';
+    const count = Math.max(1, Math.round((horizontal ? w : h) / (cellSize * 0.4)));
+    for (let i = 0; i < count; i++) {
+        const t = (i + 0.5) / count;
+        const gx = horizontal ? px + t * w : px + w * 0.5;
+        const gy = horizontal ? py + h * 0.5 : py + t * h;
+        ctx.fillStyle = cellHash(Math.round(gx), Math.round(gy), 80 + i) < 0.5 ? '#c9a86a' : '#8a9a6a';
+        const s = cellSize * 0.14;
+        ctx.fillRect(gx - s / 2, gy - s / 2, s, s);
+    }
+}
+function drawBedRun(ctx, cells, side, cellSize) {
+    const { px, py, w, h } = wallHuggingRect(cells, side, cellSize, 0.75);
+    ctx.fillStyle = '#7a5a8a';
+    ctx.fillRect(px, py, w, h);
+    ctx.strokeStyle = '#4a3a5a'; ctx.lineWidth = Math.max(1, cellSize * 0.05); ctx.strokeRect(px, py, w, h);
+    const horizontal = side === 'N' || side === 'S';
+    ctx.fillStyle = '#e8ddf0';
+    if (horizontal) ctx.fillRect(px + w * 0.03, py + h * 0.12, w * 0.22, h * 0.76);
+    else ctx.fillRect(px + w * 0.12, py + h * 0.03, w * 0.76, h * 0.22);
+}
+
+// Every item is checked against the doorway-threshold cells AND every
+// previously-placed item before it's allowed to land — nothing here is a
+// blind roll any more (that's what let a table land on the bar, or a bed
+// land on a door, before). Wall-hugging pieces (bar/stove/shelves/beds)
+// each pick whichever of their room's walls actually has space once doors
+// and earlier furniture are excluded; tables get a bounded number of
+// deterministic retries in the open floor instead.
+// Every placed piece (cells + a human label) so the canvas hover tooltip
+// (see canvasHoverLabel) can say what's under the cursor — a canvas has no
+// per-shape DOM nodes to hang a native title on, so this is the record
+// hit-testing reads from instead. Rebuilt from scratch on every call,
+// same lifetime as the occupied/keepClear sets it's built alongside.
+let lastFurniturePlacements = [];
+
+function drawTavernFurniture(ctx, tavern, cellSize, grid, cols, rows, doors) {
+    lastFurniturePlacements = [];
+    if (!tavern) return;
+    const { common, kitchen, privateRooms } = tavern;
+    const keepClear = tavernKeepClearCells(grid, cols, rows, doors);
+    const occupied = new Set();
+
+    if (common && common.w > 3 && common.h > 3) {
+        const bar = placeFreestandingBar(common, keepClear, occupied);
+        if (bar) {
+            markOccupied(occupied, bar.cells);
+            lastFurniturePlacements.push({ cells: bar.cells, label: 'Bar' });
+            const { px, py, w, h } = barRect(bar.cells, common, bar.horizontal, cellSize, 0.32);
+            ctx.fillStyle = '#6b4a2f';
+            ctx.strokeStyle = '#4a3220'; ctx.lineWidth = Math.max(1, cellSize * 0.05);
+            ctx.fillRect(px, py, w, h); ctx.strokeRect(px, py, w, h);
+        }
+        const tableCount = Math.max(1, Math.round((common.w * common.h) / 16));
+        for (let i = 0; i < tableCount; i++) {
+            for (let attempt = 0; attempt < 24; attempt++) {
+                const tx = common.x + 1 + Math.floor(cellHash(common.x, common.y, 700 + i * 11 + attempt) * Math.max(1, common.w - 2));
+                const ty = common.y + 1 + Math.floor(cellHash(common.x, common.y, 701 + i * 11 + attempt) * Math.max(1, common.h - 2));
+                const key = tx + ',' + ty;
+                if (keepClear.has(key) || occupied.has(key)) continue;
+                occupied.add(key);
+                lastFurniturePlacements.push({ cells: [[tx, ty]], label: 'Table' });
+                drawTable(ctx, (tx + 0.5) * cellSize, (ty + 0.5) * cellSize, cellSize);
+                break;
+            }
+        }
+    }
+
+    if (kitchen) {
+        // Stove and shelves are pinned to two DIFFERENT walls (see the
+        // .filter below) so the kitchen reads as a real room layout
+        // instead of every object clustering on the one wall furthest
+        // from the door.
+        const stove = bestWallRun(kitchen, ['N', 'S', 'W', 'E'], keepClear, occupied);
+        if (stove.run.length >= 1) {
+            const mid = stove.run[Math.floor(stove.run.length / 2)];
+            occupied.add(mid[0] + ',' + mid[1]);
+            lastFurniturePlacements.push({ cells: [mid], label: 'Stove' });
+            const cx = (mid[0] + 0.5) * cellSize, cy = (mid[1] + 0.5) * cellSize, s = cellSize * 0.7;
+            ctx.fillStyle = '#3a3a3a';
+            ctx.fillRect(cx - s / 2, cy - s / 2, s, s);
+            ctx.fillStyle = '#e06a2c';
+            [[-0.18, -0.18], [0.18, 0.18]].forEach(([dx, dy]) => {
+                ctx.beginPath(); ctx.arc(cx + dx * s, cy + dy * s, s * 0.12, 0, Math.PI * 2); ctx.fill();
+            });
+        }
+        const shelfSides = ['S', 'N', 'E', 'W'].filter(s => s !== stove.side);
+        const shelf = bestWallRun(kitchen, shelfSides, keepClear, occupied);
+        if (shelf.run.length >= 1) {
+            const cells = shelf.run.slice(0, Math.min(3, shelf.run.length));
+            markOccupied(occupied, cells);
+            lastFurniturePlacements.push({ cells, label: 'Shelf' });
+            drawShelfRun(ctx, cells, shelf.side, cellSize);
+        }
+    }
+
+    (privateRooms || []).forEach(room => {
+        const bed = bestWallRun(room, ['N', 'S', 'W', 'E'], keepClear, occupied);
+        if (bed.run.length < 2) return;
+        const cells = bed.run.slice(0, Math.min(2, bed.run.length));
+        markOccupied(occupied, cells);
+        lastFurniturePlacements.push({ cells, label: 'Bed' });
+        drawBedRun(ctx, cells, bed.side, cellSize);
+    });
+}
+
+// ===================== Caves (cellular automata) =====================
+// Every connected floor region at least minSize cells — not just the
+// largest — so a pocket the smoothing pass carved off on its own can be
+// kept as a real little chamber instead of getting discarded outright.
+function findFloorRegions(grid, cols, rows, minSize) {
+    const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+    const regions = [];
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        if (grid[y][x] !== 'floor' || visited[y][x]) continue;
+        const region = [];
+        const stack = [[x, y]];
+        visited[y][x] = true;
+        while (stack.length) {
+            const [cx, cy] = stack.pop();
+            region.push([cx, cy]);
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                const nx = cx + dx, ny = cy + dy;
+                if (nx >= 0 && ny >= 0 && nx < cols && ny < rows && !visited[ny][nx] && grid[ny][nx] === 'floor') {
+                    visited[ny][nx] = true; stack.push([nx, ny]);
+                }
+            }
+        }
+        if (region.length >= minSize) regions.push(region);
+    }
+    return regions;
+}
+
+// Joins every kept chamber into one walkable network — a straight-ish,
+// 2-wide carved tunnel (thickened by also opening the step's own +1
+// neighbors, so it reads as a real passage rather than a single-file
+// crack) from a Prim's-style minimum spanning tree (each new chamber
+// joins whichever ALREADY-connected chamber is nearest it), plus a
+// couple of extra connections beyond the tree so the cave has an actual
+// loop in it somewhere instead of exactly one route between any two
+// chambers — real cave systems double back on themselves; a strict tree
+// never does.
+function connectCaveRegions(grid, cols, rows, regions, rng) {
+    if (regions.length <= 1) return;
+    function centroid(region) {
+        let sx = 0, sy = 0;
+        region.forEach(([x, y]) => { sx += x; sy += y; });
+        return [sx / region.length, sy / region.length];
+    }
+    // A region's centroid can itself land on a concave region's own hole —
+    // snap to whichever of the region's real cells is actually closest to
+    // it, so the tunnel's endpoint is guaranteed to be real floor.
+    function nearestCellTo(region, cx, cy) {
+        let best = region[0], bestD = Infinity;
+        region.forEach(([x, y]) => { const d = (x - cx) ** 2 + (y - cy) ** 2; if (d < bestD) { bestD = d; best = [x, y]; } });
+        return best;
+    }
+    const anchors = regions.map(region => { const [cx, cy] = centroid(region); return nearestCellTo(region, cx, cy); });
+
+    function carveAt(x, y) { if (x >= 0 && y >= 0 && x < cols && y < rows && grid[y][x] === 'wall') grid[y][x] = 'floor'; }
+    function carveTunnel(a, b) {
+        let [x, y] = a; const [tx, ty] = b;
+        const horizontalFirst = rng() < 0.5;
+        function step(cx, cy) { carveAt(cx, cy); carveAt(cx + 1, cy); carveAt(cx, cy + 1); }
+        if (horizontalFirst) {
+            while (x !== tx) { x += x < tx ? 1 : -1; step(x, y); }
+            while (y !== ty) { y += y < ty ? 1 : -1; step(x, y); }
+        } else {
+            while (y !== ty) { y += y < ty ? 1 : -1; step(x, y); }
+            while (x !== tx) { x += x < tx ? 1 : -1; step(x, y); }
+        }
+    }
+
+    const connected = [0], remaining = regions.map((_, i) => i).filter(i => i !== 0);
+    while (remaining.length) {
+        let bestPair = null, bestDist = Infinity;
+        connected.forEach(ci => {
+            remaining.forEach(ri => {
+                const [ax, ay] = anchors[ci], [bx, by] = anchors[ri];
+                const d = (ax - bx) ** 2 + (ay - by) ** 2;
+                if (d < bestDist) { bestDist = d; bestPair = [ci, ri]; }
+            });
+        });
+        const [ci, ri] = bestPair;
+        carveTunnel(anchors[ci], anchors[ri]);
+        connected.push(ri);
+        remaining.splice(remaining.indexOf(ri), 1);
+    }
+
+    const extraTunnels = Math.min(2, Math.floor(regions.length / 3));
+    for (let i = 0; i < extraTunnels; i++) {
+        const a = Math.floor(rng() * regions.length);
+        let b = Math.floor(rng() * regions.length);
+        if (b === a) b = (b + 1) % regions.length;
+        carveTunnel(anchors[a], anchors[b]);
+    }
+}
+
+// The CA smoothing below usually converges to one dominant blob at typical
+// settings (confirmed: natural fragmentation into multiple keepable
+// regions happened on only ~3% of seeds at default Wall Density/Smoothing
+// Passes) — leaving it to chance doesn't reliably give a cave any real
+// internal structure. Hunting for a pre-existing, genuinely isolated
+// pocket of solid rock big enough for a chamber was tried first and
+// mostly failed outright (confirmed live: real rock islands that size
+// are rare at this map scale/density, so the search came up empty on the
+// large majority of seeds even after fixing two real bugs in it). Actively
+// carving a short branch OUTWARD from the existing cave's own boundary —
+// a winding, randomly-turning tunnel ending in a small round chamber —
+// sidesteps that entirely: it doesn't need to find anything, it just
+// carves new territory into whatever rock happens to be there, so it
+// works regardless of how the CA settled. The branch is connected to the
+// main cave by construction (every carved cell is stepped from one that
+// was already floor), so this needs no separate tunneling/connection step.
+function addExtraCaveChambers(grid, cols, rows, rng) {
+    const boundaryCells = [];
+    for (let y = 1; y < rows - 1; y++) for (let x = 1; x < cols - 1; x++) {
+        if (grid[y][x] !== 'floor') continue;
+        const touchesRock = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => grid[y + dy] && grid[y + dy][x + dx] === 'wall');
+        if (touchesRock) boundaryCells.push([x, y]);
+    }
+    if (!boundaryCells.length) return;
+
+    const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]]; // N, S, W, E
+    const branchCount = Math.max(2, Math.min(6, Math.round((cols * rows) / 130)));
+    for (let i = 0; i < branchCount; i++) {
+        let [x, y] = boundaryCells[Math.floor(rng() * boundaryCells.length)];
+        let dir = Math.floor(rng() * dirs.length);
+        const length = 3 + Math.floor(rng() * 5);
+        function carveAt(cx, cy) { if (cx >= 1 && cy >= 1 && cx < cols - 1 && cy < rows - 1) grid[cy][cx] = 'floor'; }
+        for (let step = 0; step < length; step++) {
+            if (rng() < 0.25) dir = Math.floor(rng() * dirs.length); // occasional turn — a dead-straight shaft reads as a corridor, not a cave passage
+            const [dx, dy] = dirs[dir];
+            x += dx; y += dy;
+            if (x < 2 || y < 2 || x > cols - 3 || y > rows - 3) break; // stop before running off the map rather than wrapping/clamping into a straight wall-hugging line
+            carveAt(x, y);
+            carveAt(x + (dy !== 0 ? 1 : 0), y + (dx !== 0 ? 1 : 0)); // thickened one cell to the side of travel so it reads as a passage, not a single-file crack
+        }
+        const radius = 1.2 + rng();
+        for (let yy = Math.max(1, Math.floor(y - radius)); yy <= Math.min(rows - 2, Math.ceil(y + radius)); yy++) {
+            for (let xx = Math.max(1, Math.floor(x - radius)); xx <= Math.min(cols - 2, Math.ceil(x + radius)); xx++) {
+                if ((xx - x) ** 2 + (yy - y) ** 2 <= radius * radius) grid[yy][xx] = 'floor';
+            }
+        }
+    }
+}
+
+function generateCave(rng, cols, rows, opts) {
+    let grid = Array.from({ length: rows }, (_, y) => Array.from({ length: cols }, (_, x) => {
+        if (x === 0 || y === 0 || x === cols - 1 || y === rows - 1) return 'wall';
+        return rng() < opts.fillProb ? 'wall' : 'floor';
+    }));
+
+    function wallNeighbors(g, x, y) {
+        let count = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= cols || ny >= rows || g[ny][nx] === 'wall') count++;
+        }
+        return count;
+    }
+    for (let step = 0; step < opts.steps; step++) {
+        const next = grid.map(row => row.slice());
+        for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+            if (x === 0 || y === 0 || x === cols - 1 || y === rows - 1) { next[y][x] = 'wall'; continue; }
+            next[y][x] = wallNeighbors(grid, x, y) >= 5 ? 'wall' : 'floor';
+        }
+        grid = next;
+    }
+
+    addExtraCaveChambers(grid, cols, rows, rng);
+
+    // The smoothing above CAN naturally break into several disconnected
+    // pockets, but usually doesn't (see addExtraCaveChambers) — either
+    // way, the old approach kept only the single largest region and threw
+    // every other pocket away, which is exactly why caves read as one
+    // blob instead of a network of chambers. Every pocket big enough to
+    // be a real little room gets kept now, and connectCaveRegions below
+    // carves tunnels between them instead of discarding them — more rooms
+    // AND more tunnels.
+    const MIN_CAVE_ROOM_SIZE = 4; // smaller pockets are noise, not a room
+    let regions = findFloorRegions(grid, cols, rows, MIN_CAVE_ROOM_SIZE);
+    if (!regions.length) regions = findFloorRegions(grid, cols, rows, 1); // pathological (all noise) — keep whatever exists rather than an empty grid
+    const keep = new Set();
+    regions.forEach(region => region.forEach(([x, y]) => keep.add(x + ',' + y)));
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        if (grid[y][x] === 'floor' && !keep.has(x + ',' + y)) grid[y][x] = 'wall';
+    }
+    if (regions.length > 1) connectCaveRegions(grid, cols, rows, regions, rng);
+
+    // Tunnels above make every kept region part of one connected mass —
+    // any surviving floor cell is a valid water-pool seed now, not just
+    // the pre-connection "largest" region.
+    const allFloorCells = [];
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) if (grid[y][x] === 'floor') allFloorCells.push([x, y]);
+
+    if (opts.water && allFloorCells.length) {
+        const poolCount = Math.floor(rng() * 3);
+        for (let p = 0; p < poolCount; p++) {
+            const [sx, sy] = allFloorCells[Math.floor(rng() * allFloorCells.length)];
+            let frontier = [[sx, sy]];
+            const targetSize = 4 + Math.floor(rng() * 8);
+            const pool = new Set();
+            let guard = 0;
+            while (frontier.length && pool.size < targetSize && guard++ < 500) {
+                const idx = Math.floor(rng() * frontier.length);
+                const [cx, cy] = frontier.splice(idx, 1)[0];
+                if (grid[cy] && grid[cy][cx] === 'floor' && !pool.has(cx + ',' + cy)) {
+                    pool.add(cx + ',' + cy);
+                    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) frontier.push([cx + dx, cy + dy]);
+                }
+            }
+            pool.forEach(k => { const [px, py] = k.split(',').map(Number); if (grid[py] && grid[py][px] === 'floor') grid[py][px] = 'water'; });
+        }
+    }
+    return { grid };
+}
+
+// ===================== Wilderness (layered value noise) =====================
+function valueNoise2D(rng, cols, rows, scale) {
+    const lw = Math.ceil(cols / scale) + 2, lh = Math.ceil(rows / scale) + 2;
+    const lattice = Array.from({ length: lh }, () => Array.from({ length: lw }, () => rng()));
+    const smooth = t => t * t * (3 - 2 * t);
+    const out = Array.from({ length: rows }, () => Array(cols).fill(0));
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const gx = x / scale, gy = y / scale;
+            const x0 = Math.floor(gx), y0 = Math.floor(gy), x1 = x0 + 1, y1 = y0 + 1;
+            const sx = smooth(gx - x0), sy = smooth(gy - y0);
+            const v00 = lattice[y0][x0], v10 = lattice[y0][x1], v01 = lattice[y1][x0], v11 = lattice[y1][x1];
+            const top = v00 + (v10 - v00) * sx, bottom = v01 + (v11 - v01) * sx;
+            out[y][x] = top + (bottom - top) * sy;
+        }
+    }
+    return out;
+}
+// Rejection-sampled point scatter shared by every landmark kind below —
+// picks random buildable cells, skipping any too close to another point
+// already placed THIS pass (own set) or an already-placed EARLIER kind
+// (avoid, e.g. keeping a cave mouth off a homestead's own doorstep).
+function scatterPoints(rng, cols, rows, buildable, count, minSpacing, avoid) {
+    const points = [];
+    let guard = 0;
+    while (points.length < count && guard++ < count * 50) {
+        const x = Math.floor(rng() * cols), y = Math.floor(rng() * rows);
+        if (!buildable(x, y)) continue;
+        const tooClose = list => list.some(b => Math.max(Math.abs(b.x - x), Math.abs(b.y - y)) < minSpacing);
+        if (tooClose(points) || (avoid && tooClose(avoid))) continue;
+        points.push({ x, y });
+    }
+    return points;
+}
+
+// Points of interest worth marking on a regional map — homesteads (common,
+// buildable land only), a castle (rare — at most one, a settled region's
+// seat of power), and cave mouths (need real rock, so mountain/hills
+// only). Purely markers on top of whatever biome is already there (see
+// drawBuildingGlyph/drawCastleGlyph/drawCaveGlyph) — Wilderness isn't tied
+// to the tactical grid, so none of these are walkable structures, just
+// points of interest a DM can send the party toward.
+function scatterLandmarks(rng, grid, cols, rows) {
+    const isPlainsHills = (x, y) => grid[y] && (grid[y][x] === 'plains' || grid[y][x] === 'hills');
+    const isMountainHills = (x, y) => grid[y] && (grid[y][x] === 'mountain' || grid[y][x] === 'hills');
+    const minSpacing = Math.max(3, Math.round(Math.min(cols, rows) / 8));
+
+    const targetHouses = Math.min(14, Math.max(1, Math.round((cols * rows) / 150)));
+    const houses = scatterPoints(rng, cols, rows, isPlainsHills, targetHouses, minSpacing);
+    // Only worth marking a castle on a map with room for a real settlement
+    // pattern in the first place — a tiny map gets houses only.
+    const castles = cols * rows >= 200 ? scatterPoints(rng, cols, rows, isPlainsHills, 1, minSpacing, houses) : [];
+    const targetCaves = Math.min(4, Math.max(1, Math.round((cols * rows) / 500)));
+    const caves = scatterPoints(rng, cols, rows, isMountainHills, targetCaves, minSpacing, houses.concat(castles));
+
+    return houses.map(p => Object.assign({ kind: 'building' }, p))
+        .concat(castles.map(p => Object.assign({ kind: 'castle' }, p)))
+        .concat(caves.map(p => Object.assign({ kind: 'cave' }, p)));
+}
+
+// How costly a biome is to route a road through — plains is free (roads
+// naturally follow open ground), hills/forest add a mild penalty (real
+// roads avoid dense woods and slopes where they can), and water/mountain/
+// peak are heavily penalized rather than forbidden outright, so a road
+// CAN cross a river or notch through a mountain pass if that's genuinely
+// the only reasonable way through, but always prefers going around when
+// an easy detour exists.
+const ROAD_TERRAIN_COST = { plains: 0, hills: 1, forest: 2, water: 8, mountain: 6, peak: 10 };
+
+// The one big cross-map road — starts and ends on opposite (west/east)
+// edges at a random row each, arcing gradually between them so it drifts
+// with real direction rather than wandering aimlessly, plus a small
+// chance each step of an extra lateral nudge so it still reads as
+// winding even where the terrain itself doesn't force any turns.
+function traceMainRoad(grid, cols, rows, rng) {
+    const margin = Math.max(2, Math.round(rows * 0.15));
+    const startY = margin + Math.floor(rng() * Math.max(1, rows - margin * 2));
+    const endY = margin + Math.floor(rng() * Math.max(1, rows - margin * 2));
+    let x = 0, y = startY;
+    const path = [[x, y]];
+    while (x < cols - 1) {
+        const progress = x / (cols - 1);
+        const desiredY = startY + (endY - startY) * progress;
+        const candidates = [[1, 0], [1, -1], [1, 1]]
+            .map(([dx, dy]) => [x + dx, y + dy])
+            .filter(([, ny]) => ny >= 1 && ny <= rows - 2)
+            .map(([nx, ny]) => ({ nx, ny, cost: (ROAD_TERRAIN_COST[grid[ny][nx]] || 0) + Math.abs(ny - desiredY) * 0.3 + rng() * 0.5 }));
+        if (rng() < 0.15 && y > 1 && y < rows - 2) {
+            const ny = y + (rng() < 0.5 ? -1 : 1);
+            candidates.push({ nx: x, ny, cost: 0.4 + rng() * 0.3 });
+        }
+        if (!candidates.length) break;
+        candidates.sort((a, b) => a.cost - b.cost);
+        x = candidates[0].nx; y = candidates[0].ny;
+        path.push([x, y]);
+    }
+    return path;
+}
+
+// A smaller connector road from one point toward another — greedily
+// closes the distance every step (so it always terminates) while still
+// preferring whichever direction crosses the cheapest terrain, the same
+// bias traceMainRoad uses, just goal-directed instead of edge-to-edge.
+function traceConnectorRoad(grid, cols, rows, start, end, rng) {
+    let [x, y] = start;
+    const path = [[x, y]];
+    let guard = 0;
+    while ((x !== end[0] || y !== end[1]) && guard++ < (cols + rows) * 2) {
+        const dx = Math.sign(end[0] - x), dy = Math.sign(end[1] - y);
+        const moves = [[dx, 0], [0, dy], [dx, dy]].filter(([mx, my]) => mx !== 0 || my !== 0);
+        const candidates = moves.map(([mx, my]) => [x + mx, y + my])
+            .filter(([nx, ny]) => nx >= 0 && ny >= 0 && nx < cols && ny < rows)
+            .map(([nx, ny]) => ({ nx, ny, cost: (ROAD_TERRAIN_COST[grid[ny][nx]] || 0) + rng() * 0.3 }));
+        if (!candidates.length) break;
+        candidates.sort((a, b) => a.cost - b.cost);
+        x = candidates[0].nx; y = candidates[0].ny;
+        path.push([x, y]);
+    }
+    return path;
+}
+
+// Links every house/building/castle into the road network — closest-to-
+// the-main-road landmarks connect first, and each new connector runs to
+// whichever point is CURRENTLY nearest (a main-road cell, or another
+// landmark already linked in) rather than always the main road itself.
+// That's what naturally produces the "buildings connect to each other
+// too" behavior asked for, as one emergent result of a single greedy
+// nearest-connection pass instead of a separate step of its own. Each
+// small road independently rolls dirt or stone — real local roads
+// wouldn't all be paved the same way just because they share a region.
+function connectLandmarksToRoad(grid, cols, rows, mainRoadPath, landmarks, rng) {
+    if (!landmarks.length) return [];
+    const connected = mainRoadPath.map(([x, y]) => ({ x, y }));
+    const nearestDist = (lm, points) => points.reduce((best, p) => Math.min(best, (p.x - lm.x) ** 2 + (p.y - lm.y) ** 2), Infinity);
+    const ordered = landmarks.slice().sort((a, b) => nearestDist(a, connected) - nearestDist(b, connected));
+    const smallRoads = [];
+    ordered.forEach(lm => {
+        let best = connected[0], bestD = Infinity;
+        connected.forEach(p => { const d = (p.x - lm.x) ** 2 + (p.y - lm.y) ** 2; if (d < bestD) { bestD = d; best = p; } });
+        const path = traceConnectorRoad(grid, cols, rows, [lm.x, lm.y], [best.x, best.y], rng);
+        smallRoads.push({ path, style: rng() < 0.5 ? 'dirt' : 'stone' });
+        connected.push({ x: lm.x, y: lm.y });
+    });
+    return smallRoads;
+}
+
+function generateWilderness(rng, cols, rows, opts) {
+    const elevBase = valueNoise2D(rng, cols, rows, opts.scale);
+    const elevDetail = valueNoise2D(rng, cols, rows, Math.max(2, opts.scale / 3));
+    const moisture = valueNoise2D(rng, cols, rows, opts.scale * 1.3);
+    const grid = Array.from({ length: rows }, () => Array(cols).fill('plains'));
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const e = elevBase[y][x] * 0.75 + elevDetail[y][x] * 0.25;
+            const m = moisture[y][x];
+            let biome;
+            if (e < opts.waterLevel) biome = 'water';
+            else if (e > opts.mountainLevel + 0.08) biome = 'peak';
+            else if (e > opts.mountainLevel) biome = 'mountain';
+            else if (e > opts.mountainLevel - 0.12 && m < 0.45) biome = 'hills';
+            else if (m > 0.55) biome = 'forest';
+            else biome = 'plains';
+            grid[y][x] = biome;
+        }
+    }
+    const buildings = opts.buildings ? scatterLandmarks(rng, grid, cols, rows) : [];
+    // Every house/building/castle gets full road access; a cave only gets
+    // a rough dirt path (see below) — it's a wild feature to explore, not
+    // a settlement anyone paved a proper road to.
+    let mainRoad = [], smallRoads = [];
+    if (opts.buildings) {
+        const roadTargets = buildings.filter(b => b.kind === 'building' || b.kind === 'castle');
+        mainRoad = traceMainRoad(grid, cols, rows, rng);
+        smallRoads = connectLandmarksToRoad(grid, cols, rows, mainRoad, roadTargets, rng);
+
+        // A cave mouth ties into whichever road cell (main OR small) is
+        // nearest it, as a dirt path only — never stone, and never
+        // routed through the same "connect to whatever's nearest, in
+        // closest-first order" network the settlements share, since a
+        // cave isn't part of that settlement network at all.
+        const caves = buildings.filter(b => b.kind === 'cave');
+        if (caves.length) {
+            const roadCells = mainRoad.map(([x, y]) => ({ x, y }))
+                .concat(smallRoads.flatMap(r => r.path.map(([x, y]) => ({ x, y }))));
+            if (roadCells.length) {
+                caves.forEach(cave => {
+                    let best = roadCells[0], bestD = Infinity;
+                    roadCells.forEach(p => { const d = (p.x - cave.x) ** 2 + (p.y - cave.y) ** 2; if (d < bestD) { bestD = d; best = p; } });
+                    const path = traceConnectorRoad(grid, cols, rows, [cave.x, cave.y], [best.x, best.y], rng);
+                    smallRoads.push({ path, style: 'dirt' });
+                });
+            }
+        }
+    }
+    return { grid, buildings, mainRoad, smallRoads };
+}
+
+// ===================== Colors (dungeon/cave match dm.html's MAP_TERRAIN_STYLE exactly) =====================
+const DUNGEON_COLORS = { wall: '#555555', water: '#2e86de', doorFrame: '#6b4423', doorPanel: '#a0703c', doorKnob: '#f0d78c' };
+const WILD_COLORS = {
+    water: ['#3d7ea6', '#2c5b7c'],
+    plains: '#c9c17a',
+    forest: '#3f6b3f',
+    hills: '#8a7355',
+    mountain: '#8f8f8f',
+    peak: '#f0f0f0'
+};
+const ROAD_STYLE_COLOR = { dirt: { fill: '#8b6a43', edge: '#6b4f30' }, stone: { fill: '#a8a296', edge: '#7a756a' } };
+// A road is a stroked polyline through the path's own cell centers, not a
+// per-cell fill — that's what lets it wind smoothly across the grid
+// instead of reading as a blocky staircase of squares. Drawn twice (a
+// slightly wider "edge" pass underneath, same idea as a wall's outline)
+// so the road has a visible border against whatever biome it's crossing.
+function drawRoadPath(ctx, path, cellSize, colors, widthFrac) {
+    if (!path || path.length < 2 || !colors) return;
+    const toPx = ([x, y]) => [(x + 0.5) * cellSize, (y + 0.5) * cellSize];
+    function stroke(width, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(1, cellSize * width);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath();
+        const [sx, sy] = toPx(path[0]);
+        ctx.moveTo(sx, sy);
+        for (let i = 1; i < path.length; i++) { const [px, py] = toPx(path[i]); ctx.lineTo(px, py); }
+        ctx.stroke();
+    }
+    stroke(widthFrac * 1.3, colors.edge);
+    stroke(widthFrac, colors.fill);
+}
+
+// ===================== Rounded regions (blur + re-threshold) =====================
+// Turns a set of grid cells into one smooth, gap-free rounded silhouette —
+// draw the cells as flat black squares, blur the result, then snap the
+// blur back to a hard edge. A from-scratch per-cell corner-rounding
+// version was tried first (round each cell's own corners convex/concave
+// based on its neighbors) and looked right for an isolated cell, but left
+// real gaps wherever three of four cells sharing a corner belonged to the
+// region and only one didn't — confirmed live, and not fixable by
+// patching that one case, since the same mismatch recurs in slightly
+// different neighbor patterns along any jagged coastline. Blurring the
+// whole shape at once sidesteps that entirely: there's no per-cell
+// boundary math that has to independently agree with its neighbors, just
+// one continuous image. Shape (blur+threshold) and content (each cell's
+// actual color/texture, left crisp) are composited separately so a
+// textured fill — water's two-tone dither — doesn't get blurred along
+// with the outline.
+function drawRoundedRegion(mainCtx, width, height, cellSize, cells, paintCellFn) {
+    if (!cells.length) return;
+    const blurPx = Math.max(1, cellSize * 0.35);
+    // Padding so the blur kernel has real mass to draw from right at the
+    // map's outer edge — without it, cells touching the canvas border
+    // measurably shrink after the blur/threshold round-trip (confirmed
+    // live: a thin sliver of bare background along the whole map edge,
+    // ~5% of pixels on a small test grid) since there's nothing beyond the
+    // canvas for the blur to pull from there, unlike every interior cell.
+    const pad = Math.ceil(blurPx * 3);
+    const mw = width + pad * 2, mh = height + pad * 2;
+    const shifted = cells.map(c => Object.assign({}, c, { px: c.px + pad, py: c.py + pad }));
+
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = mw; maskCanvas.height = mh;
+    const mctx = maskCanvas.getContext('2d');
+    mctx.filter = 'blur(' + blurPx + 'px)';
+    mctx.fillStyle = '#000';
+    shifted.forEach(c => mctx.fillRect(c.px, c.py, c.size, c.size));
+    mctx.filter = 'none';
+    const imgData = mctx.getImageData(0, 0, mw, mh);
+    const d = imgData.data;
+    // The mathematical 50% midpoint — a symmetric blur kernel thresholded
+    // here preserves a shape's original area/silhouette on average while
+    // rounding its corners, which is the entire point. (A lower threshold
+    // was tried here to plug a gap between two *different* regions each
+    // blurred independently — it worked, but at this cellSize it also
+    // pushed the cutoff so low that even an isolated corner's faded alpha
+    // still cleared it, silently erasing the rounding everywhere, dungeon
+    // water and cave floors included. Confirmed live. The multi-region
+    // gap is Wilderness-specific — see the flat per-cell base painted
+    // before this in renderWildRegions, which is the correct fix: any
+    // pixel neither region's rounded mask claims still shows that cell's
+    // own true color underneath instead of bleeding through to nothing.)
+    for (let i = 0; i < d.length; i += 4) d[i + 3] = d[i + 3] > 127 ? 255 : 0;
+    mctx.putImageData(imgData, 0, 0);
+
+    const contentCanvas = document.createElement('canvas');
+    contentCanvas.width = mw; contentCanvas.height = mh;
+    const cctx = contentCanvas.getContext('2d');
+    shifted.forEach(c => paintCellFn(cctx, c));
+    cctx.globalCompositeOperation = 'destination-in';
+    cctx.drawImage(maskCanvas, 0, 0);
+    cctx.globalCompositeOperation = 'source-over';
+
+    mainCtx.drawImage(contentCanvas, -pad, -pad);
+}
+
+// ===================== State / wiring =====================
+let currentMode = 'dungeon';
+let lastResult = null; // { grid, cols, rows, mode }
+let regenTimer = null;
+
+// ===================== Wall/door edges =====================
+// Every wall/door this generator produces is an edge, not a cell — see
+// generateDungeon/generateTavern. Horizontal edge "H:x,y" is the line
+// between cell (x,y-1) and (x,y), spanning grid-column x at row-boundary
+// y. Vertical edge "V:x,y" is the line between cell (x-1,y) and (x,y),
+// spanning grid-row y at column-boundary x. Replaced wholesale on every
+// regenerate() — this is view-only now (no manual editing here — see
+// dm.html's "Import Generated Layout" instead, which brings a rolled
+// layout into the real Map Builder as a normal, fully editable map).
+let generatedWalls = new Set();
+let generatedDoors = new Set();
+
+function edgeKey(type, x, y) { return type + ':' + x + ',' + y; }
+
+// Which of a cell's 4 sides a given point is nearest — used by the hover
+// tooltip below to decide whether the cursor is close enough to a
+// gridline to be "on" a wall/door there at all.
+function nearestEdge(px, py, cellSize) {
+    const gx = px / cellSize, gy = py / cellSize;
+    const cellX = Math.floor(gx), cellY = Math.floor(gy);
+    const fx = gx - cellX, fy = gy - cellY;
+    const distN = fy, distS = 1 - fy, distW = fx, distE = 1 - fx;
+    const min = Math.min(distN, distS, distW, distE);
+    if (min === distN) return { type: 'H', x: cellX, y: cellY };
+    if (min === distS) return { type: 'H', x: cellX, y: cellY + 1 };
+    if (min === distW) return { type: 'V', x: cellX, y: cellY };
+    return { type: 'V', x: cellX + 1, y: cellY };
+}
+
+// Shared by every canvas mouse handler — the canvas's on-screen size and
+// its actual pixel resolution aren't the same thing (CSS max-width can
+// scale it down), so a position has to go through this same rect/scale
+// conversion or the hover tooltip would disagree with where the cursor
+// actually is.
+function canvasPixelFromEvent(evt, canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+    return { px: (evt.clientX - rect.left) * scaleX, py: (evt.clientY - rect.top) * scaleY };
+}
+
+// ===================== Hover tooltip =====================
+// A canvas is one opaque DOM node, not one per shape — there's nothing to
+// hang a native per-item title on the way dm.html's real grid cells do
+// (their tokens/terrain/furniture badges/wall-and-door overlay divs all
+// carry their own title="..."). Swapping the CANVAS's own title on
+// mousemove is the standard workaround: the browser's native tooltip still
+// shows, it just always describes whatever's currently under the cursor
+// instead of one fixed string.
+const WILD_BIOME_LABEL = { water: 'Water', plains: 'Plains', forest: 'Forest', hills: 'Hills', mountain: 'Mountain', peak: 'Peak' };
+const WILD_LANDMARK_LABEL = { building: 'Building', castle: 'Castle', cave: 'Cave Entrance' };
+const FLOOR_TEXTURE_LABEL = { stone: 'Stone Floor', tile: 'Tile Floor', wood: 'Wood Floor' };
+function canvasHoverLabel(px, py) {
+    if (!lastResult) return '';
+    const { grid, cols, rows, mode, buildings, rooms } = lastResult;
+    const cellSize = document.getElementById('mapCanvas').width / cols;
+    const cellX = Math.floor(px / cellSize), cellY = Math.floor(py / cellSize);
+    if (cellX < 0 || cellY < 0 || cellX >= cols || cellY >= rows) return '';
+
+    if (mode === 'wild') {
+        const landmark = (buildings || []).find(b => b.x === cellX && b.y === cellY);
+        if (landmark) return WILD_LANDMARK_LABEL[landmark.kind] || '';
+        const { mainRoad, smallRoads } = lastResult;
+        const onCell = ([x, y]) => x === cellX && y === cellY;
+        if ((mainRoad || []).some(onCell)) return 'Main Road (Stone)';
+        const smallHit = (smallRoads || []).find(r => r.path.some(onCell));
+        if (smallHit) return smallHit.style === 'stone' ? 'Local Road (Stone)' : 'Local Road (Dirt)';
+        return WILD_BIOME_LABEL[grid[cellY][cellX]] || '';
+    }
+
+    // Wall/Door edges only claim the tooltip when the cursor is genuinely
+    // close to a gridline — nearestEdge always returns SOME side even
+    // dead center in an open room, which would make every plain floor
+    // cell wrongly report "Wall" the instant the mouse enters it.
+    const gx = px / cellSize, gy = py / cellSize;
+    const fx = gx - Math.floor(gx), fy = gy - Math.floor(gy);
+    const edgeDistPx = Math.min(fx, 1 - fx, fy, 1 - fy) * cellSize;
+    if (edgeDistPx < cellSize * 0.18) {
+        const edge = nearestEdge(px, py, cellSize);
+        const key = edgeKey(edge.type, edge.x, edge.y);
+        if (generatedWalls.has(key)) return 'Wall';
+        if (generatedDoors.has(key)) return 'Door';
+    }
+
+    const furniture = lastFurniturePlacements.find(f => f.cells.some(([x, y]) => x === cellX && y === cellY));
+    if (furniture) return furniture.label;
+
+    const terrain = grid[cellY][cellX];
+    if (terrain === 'wall') return 'Wall';
+    if (terrain === 'door') return 'Door';
+    if (terrain === 'water') return 'Water';
+
+    if (floorTexture && floorTexture !== 'none') {
+        const tex = resolveFloorTexture(floorTexture, cellX, cellY, rooms);
+        if (FLOOR_TEXTURE_LABEL[tex]) return FLOOR_TEXTURE_LABEL[tex];
+    }
+    return 'Floor';
+}
+function handleCanvasHover(evt) {
+    const canvas = document.getElementById('mapCanvas');
+    const { px, py } = canvasPixelFromEvent(evt, canvas);
+    canvas.title = canvasHoverLabel(px, py);
+}
+
+const MODE_DEFAULTS = {
+    dungeon: { cols: 20, rows: 20 },
+    tavern: { cols: 16, rows: 14 }, // one building, not a whole dungeon floor — smaller by default
+    cave: { cols: 20, rows: 20 },
+    wild: { cols: 20, rows: 20 }
+};
+
+let floorTexture = 'none'; // 'none' | 'stone' | 'tile' | 'wood' — Dungeon/Cave only, purely cosmetic
+function setFloorTexture(texture) {
+    floorTexture = texture;
+    document.querySelectorAll('#floorTextureField .pill-btn').forEach(b => b.classList.toggle('active', b.dataset.texture === texture));
+    render();
+}
+
+
+// Box Help (2026-09-07, "lets do the same for the dm tools and generator")
+// — this page has just the one real title (the mode-tabs are buttons, not
+// headings), so one entry covering the whole tool.
+const HELP_CONTENT = {
+    generator: {
+        title: 'Map Generator',
+        body: '<div class="help-modal-section"><h4>How it works</h4><p>Seed-based, no AI — the same seed plus the same settings always rebuilds the exact same map. Roll the 🎲 for a random seed, or type your own to reproduce a specific map later. Write the seed down (with the mode and settings) if you want to come back to it.</p></div>' +
+              '<div class="help-modal-section"><h4>The four modes</h4><p><strong>Dungeon:</strong> rooms and corridors, with sliders for how dense/how big. <strong>Tavern:</strong> one building footprint where every room shares real walls. <strong>Caves:</strong> organic cavern shapes instead of straight corridors. <strong>Wilderness:</strong> a wide-open biome map — forests, mountains, roads, settlements.</p></div>' +
+              '<div class="help-modal-section"><h4>Getting it into your game</h4><p>Once you like a layout, head to DM Tools\' Map tab and use "⬇ Import Generated Layout" — it pastes in as a normal, fully editable map; every wall, door, and terrain piece becomes a regular tool from there. If a big hand-edit goes wrong later, "🎲 Reopen in Generator" on that same map brings you right back to this exact seed and settings to start over.</p></div>'
+    }
+};
+function showHelpPopup(key) {
+    const content = HELP_CONTENT[key];
+    if (!content) return;
+    document.getElementById('boxHelpTitle').textContent = content.title;
+    document.getElementById('boxHelpBody').innerHTML = content.body;
+    document.getElementById('boxHelpModal').classList.add('open');
+}
+function closeBoxHelp() {
+    document.getElementById('boxHelpModal').classList.remove('open');
+}
+
+function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-tabs .pill-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    document.querySelectorAll('.mode-section').forEach(s => s.classList.toggle('active', s.dataset.modeSection === mode));
+    document.getElementById('floorTextureField').style.display = mode === 'wild' ? 'none' : 'block';
+    // Mixed needs a room list to vary by — Dungeon/Tavern only (Tavern's
+    // rooms array is the same {x,y,w,h} shape). Hide the button in Cave/
+    // Wilderness, and fall back to plain if it was active.
+    const supportsMixed = mode === 'dungeon' || mode === 'tavern';
+    document.getElementById('floorTextureMixedBtn').style.display = supportsMixed ? 'inline-block' : 'none';
+    if (!supportsMixed && floorTexture === 'mixed') setFloorTexture('none');
+    // Was 80 for Wilderness alone — dropped to the same 26 every other
+    // mode uses (2026-08-31, bridging Wilderness into the DM Map tab's
+    // Import Generated Layout, see buildExportJson) so a generated
+    // layout is never wider than what dm.html's own single-letter
+    // column labels (A-Z) can actually represent. A silently-truncated
+    // import beyond that would have been a worse experience than just
+    // not offering the extra width where it can't go anywhere useful.
+    const colsInput = document.getElementById('colsInput');
+    colsInput.max = 26;
+    const d = MODE_DEFAULTS[mode];
+    colsInput.value = d.cols;
+    document.getElementById('rowsInput').value = d.rows;
+    document.getElementById('exportBox').style.display = 'none';
+    regenerate();
+}
+
+function randomizeSeed() {
+    document.getElementById('seedInput').value = Math.floor(Math.random() * 1e9).toString(36);
+    regenerate();
+}
+function scheduleRegen() {
+    clearTimeout(regenTimer);
+    regenTimer = setTimeout(regenerate, 250);
+}
+
+function mapColLabel(i) { return String.fromCharCode(65 + i); }
+
+function readOpts() {
+    const density = parseInt(document.getElementById('densityInput').value, 10);
+    // density 1 (sparse) -> minLeaf 10 (a few big rooms), density 5
+    // (maze-like) -> minLeaf 4 (many small ones). maxLeaf is deliberately
+    // kept close to 2*minLeaf+2 — the smallest value that still guarantees
+    // a leaf big enough to be forced to split can actually succeed at
+    // splitting (Leaf.split requires size > 2*minLeaf) — a looser maxLeaf
+    // here was the root cause of the single-giant-room bug above. Sparse
+    // was 10 originally, but on the default 20x20 grid the root leaf is
+    // only 18x18 — since a leaf needs size > 2*minLeaf to split at all,
+    // minLeaf 10 (2*10=20) made Sparse mathematically guaranteed to
+    // produce exactly one giant room every single time, not just usually
+    // — confirmed live. Dropped to 8 so the default grid can still split
+    // at least once at the sparsest setting.
+    const minLeaf = [8, 7, 6, 5, 4][density - 1] || 6;
+    const maxLeaf = minLeaf * 2 + 2;
+    return {
+        cols: Math.max(10, Math.min(80, parseInt(document.getElementById('colsInput').value, 10) || 20)),
+        rows: Math.max(10, Math.min(80, parseInt(document.getElementById('rowsInput').value, 10) || 20)),
+        minLeaf, maxLeaf,
+        minRoom: parseInt(document.getElementById('minRoomInput').value, 10),
+        doors: document.getElementById('doorsInput').checked,
+        water: document.getElementById('dungeonWaterInput').checked,
+        fillProb: parseInt(document.getElementById('fillInput').value, 10) / 100,
+        steps: parseInt(document.getElementById('stepsInput').value, 10),
+        caveWater: document.getElementById('caveWaterInput').checked,
+        roomCount: parseInt(document.getElementById('tavernRoomsInput').value, 10),
+        furniture: document.getElementById('tavernFurnitureInput').checked,
+        scale: parseInt(document.getElementById('scaleInput').value, 10),
+        waterLevel: parseInt(document.getElementById('waterLevelInput').value, 10) / 100,
+        mountainLevel: parseInt(document.getElementById('mountainLevelInput').value, 10) / 100,
+        buildings: document.getElementById('wildBuildingsInput').checked
+    };
+}
+
+// ---------- Recall a past generation (2026-09-01) ----------
+// Captures every raw form field this generator has, not just the
+// derived values readOpts() computes (e.g. the density SLIDER position,
+// not just the minLeaf/maxLeaf it maps to) — the point is restoring the
+// exact UI a DM had, not just a map that happens to look similar.
+// Exported as part of buildExportJson() below, and read back either via
+// applyGeneratorSettings() (used when this page is opened with a
+// ?settings= link — see tryLoadSettingsFromQuery) or pasted straight
+// into the DM Map tab's own layout, which stores it untouched on the
+// map row for its own "Reopen in Generator" button to hand right back
+// here later.
+function captureGeneratorSettings() {
+    return {
+        mode: currentMode,
+        seed: document.getElementById('seedInput').value,
+        cols: document.getElementById('colsInput').value,
+        rows: document.getElementById('rowsInput').value,
+        density: document.getElementById('densityInput').value,
+        minRoom: document.getElementById('minRoomInput').value,
+        doors: document.getElementById('doorsInput').checked,
+        dungeonWater: document.getElementById('dungeonWaterInput').checked,
+        fill: document.getElementById('fillInput').value,
+        steps: document.getElementById('stepsInput').value,
+        caveWater: document.getElementById('caveWaterInput').checked,
+        tavernRooms: document.getElementById('tavernRoomsInput').value,
+        tavernFurniture: document.getElementById('tavernFurnitureInput').checked,
+        scale: document.getElementById('scaleInput').value,
+        waterLevel: document.getElementById('waterLevelInput').value,
+        mountainLevel: document.getElementById('mountainLevelInput').value,
+        wildBuildings: document.getElementById('wildBuildingsInput').checked,
+        floorTexture
+    };
+}
+function applyGeneratorSettings(s) {
+    if (!s || !s.mode) return;
+    setMode(s.mode); // resets every field to that mode's defaults and regenerates once — overridden field-by-field right below, then regenerated again for real
+    document.getElementById('seedInput').value = s.seed || '';
+    document.getElementById('colsInput').value = s.cols;
+    document.getElementById('rowsInput').value = s.rows;
+    document.getElementById('densityInput').value = s.density;
+    document.getElementById('minRoomInput').value = s.minRoom;
+    document.getElementById('doorsInput').checked = !!s.doors;
+    document.getElementById('dungeonWaterInput').checked = !!s.dungeonWater;
+    document.getElementById('fillInput').value = s.fill;
+    document.getElementById('stepsInput').value = s.steps;
+    document.getElementById('caveWaterInput').checked = !!s.caveWater;
+    document.getElementById('tavernRoomsInput').value = s.tavernRooms;
+    document.getElementById('tavernFurnitureInput').checked = !!s.tavernFurniture;
+    document.getElementById('scaleInput').value = s.scale;
+    document.getElementById('waterLevelInput').value = s.waterLevel;
+    document.getElementById('mountainLevelInput').value = s.mountainLevel;
+    document.getElementById('wildBuildingsInput').checked = !!s.wildBuildings;
+    floorTexture = s.floorTexture || 'none';
+    document.querySelectorAll('#floorTextureField .pill-btn').forEach(b => b.classList.toggle('active', b.dataset.texture === floorTexture));
+    regenerate();
+}
+// dm.html's "🎲 Reopen in Generator" button opens this page as
+// mapgen.html?settings=<json> — checked once on load, in place of the
+// usual random-seed startup.
+function tryLoadSettingsFromQuery() {
+    const raw = new URLSearchParams(location.search).get('settings');
+    if (!raw) return false;
+    try {
+        applyGeneratorSettings(JSON.parse(raw));
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// The "← DM Tools" link's onclick (2026-09-01, "the last placement we
+// were at on that tab would be nice too") — a real history.back() lands
+// on dm.html exactly as it was left (scroll position, selected tool,
+// etc., typically straight from the browser's bfcache) instead of a
+// fresh page load. Only used when this page was actually reached FROM
+// dm.html in this same tab (checked via document.referrer, now that
+// both links are plain same-tab navigation, not target="_blank") and
+// there's real history to go back to — otherwise (bookmarked, typed
+// directly, a page refresh here) falls through to the plain href
+// navigation below by returning true.
+function goBackToDmTools(evt) {
+    try {
+        if (history.length > 1 && document.referrer && new URL(document.referrer).pathname.endsWith('dm.html')) {
+            evt.preventDefault();
+            history.back();
+            return false;
+        }
+    } catch (e) { /* malformed referrer, e.g. — just fall through to the normal link below */ }
+    return true;
+}
+
+function updateRangeLabels() {
+    document.getElementById('densityVal').textContent = ['Sparse', 'Light', 'Normal', 'Dense', 'Maze-like'][parseInt(document.getElementById('densityInput').value, 10) - 1];
+    document.getElementById('minRoomVal').textContent = document.getElementById('minRoomInput').value;
+    document.getElementById('fillVal').textContent = document.getElementById('fillInput').value + '%';
+    document.getElementById('stepsVal').textContent = document.getElementById('stepsInput').value;
+    document.getElementById('scaleVal').textContent = document.getElementById('scaleInput').value;
+    document.getElementById('waterLevelVal').textContent = document.getElementById('waterLevelInput').value + '%';
+    document.getElementById('mountainLevelVal').textContent = document.getElementById('mountainLevelInput').value + '%';
+    document.getElementById('tavernRoomsVal').textContent = document.getElementById('tavernRoomsInput').value;
+}
+
+function regenerate() {
+    updateRangeLabels();
+    const seed = document.getElementById('seedInput').value || 'seed';
+    const opts = readOpts();
+    const rng = makeRng(seed + '|' + currentMode);
+    let result;
+    if (currentMode === 'dungeon') result = generateDungeon(rng, opts.cols, opts.rows, opts);
+    else if (currentMode === 'tavern') result = generateTavern(rng, opts.cols, opts.rows, opts);
+    else if (currentMode === 'cave') result = generateCave(rng, opts.cols, opts.rows, { fillProb: opts.fillProb, steps: opts.steps, water: opts.caveWater });
+    else result = generateWilderness(rng, opts.cols, opts.rows, opts);
+
+    lastResult = { grid: result.grid, rooms: result.rooms || [], tavern: result.tavern || null, showFurniture: !!opts.furniture, buildings: result.buildings || [], mainRoad: result.mainRoad || [], smallRoads: result.smallRoads || [], cols: opts.cols, rows: opts.rows, mode: currentMode, seed };
+    generatedWalls = result.edgeWalls || new Set();
+    generatedDoors = result.edgeDoors || new Set();
+    render();
+    updateSummary(seed, opts);
+    updateLegend();
+    document.getElementById('exportBox').style.display = 'none';
+}
+
+function isDarkMode() { return document.body.classList.contains('dark-mode'); }
+
+function render() {
+    const canvas = document.getElementById('mapCanvas');
+    const { grid, cols, rows, mode, rooms, tavern, showFurniture, buildings, mainRoad, smallRoads } = lastResult;
+    const maxW = 760, maxH = 640;
+    const cellSize = Math.max(6, Math.min(30, Math.floor(Math.min(maxW / cols, maxH / rows))));
+    const width = cols * cellSize, height = rows * cellSize;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    const floorColor = isDarkMode() ? '#2a2a3e' : '#ffffff';
+    const gridLine = isDarkMode() ? '#3a3a52' : '#dddddd';
+
+    // Dungeon and Cave both paint rock (wall) as the base and carve the
+    // open floor space out on top — Cave rounds that carve into organic
+    // curves, Dungeon keeps it sharp-edged (rooms/corridors stay
+    // rectilinear by design) and traces a bold line along the actual
+    // floor boundary instead, so the wall reads as a clean architectural
+    // edge hugging the grid rather than a field of flat gray squares. Only
+    // Wilderness paints straight onto a floor-colored base, since every
+    // one of its cells belongs to some biome or other — there's no "wall"
+    // to carve away from.
+    ctx.fillStyle = mode === 'wild' ? floorColor : DUNGEON_COLORS.wall;
+    ctx.fillRect(0, 0, width, height);
+    if (mode !== 'wild') drawThickWallTexture(ctx, width, height);
+
+    if (mode === 'wild') renderWildRegions(ctx, grid, cols, rows, cellSize, width, height, buildings, mainRoad, smallRoads);
+    else {
+        renderDungeonRegions(ctx, grid, cols, rows, cellSize, width, height, mode === 'cave', floorColor, rooms);
+        // Generated interior partitions (room-to-room walls/doors — see
+        // generateDungeon/generateTavern) first, so furniture (bar, beds,
+        // etc.) visually sits in front of them like real objects in a room.
+        renderEdgeSet(ctx, generatedWalls, generatedDoors, cellSize);
+        if (mode === 'tavern' && showFurniture) drawTavernFurniture(ctx, tavern, cellSize, grid, cols, rows, generatedDoors);
+        else lastFurniturePlacements = []; // stale from a previous Tavern render otherwise — hover tooltip must not report furniture that isn't actually drawn
+    }
+
+    // Grid lines on top, subtle — lets a DM count squares at a glance.
+    // Off by default for Wilderness (2026-08-29) — a regional map reads as
+    // a picture more than a tactical grid anyway (see the "not tied to
+    // the tactical grid" note elsewhere), and the lines competed with the
+    // road network's own thin lines running under them. "Show grid" opts
+    // back in for anyone who still wants square-counting on a Wilderness
+    // map; Dungeon/Tavern/Caves always show it — those ARE the tactical
+    // grid, no opinion to have there.
+    if (mode !== 'wild' || document.getElementById('wildGridInput').checked) {
+        ctx.strokeStyle = gridLine;
+        ctx.lineWidth = 1;
+        for (let x = 0; x <= cols; x++) { ctx.beginPath(); ctx.moveTo(x * cellSize + 0.5, 0); ctx.lineTo(x * cellSize + 0.5, height); ctx.stroke(); }
+        for (let y = 0; y <= rows; y++) { ctx.beginPath(); ctx.moveTo(0, y * cellSize + 0.5); ctx.lineTo(width, y * cellSize + 0.5); ctx.stroke(); }
+    }
+}
+
+// ===================== Floor textures =====================
+// "Mixed" (Dungeon only — Caves have no discrete room list to vary by)
+// gives each room its own texture, picked from the room's own position
+// via cellHash rather than the seeded rng — so switching Floor Texture
+// never perturbs the actual layout, same as every other texture option
+// being purely cosmetic. Corridor cells (floor not inside any room's own
+// rectangle) stay plain, which reads as "furnished rooms, bare hallway"
+// rather than one undifferentiated texture everywhere.
+const MIXED_FLOOR_TEXTURES = ['stone', 'tile', 'wood'];
+function roomTextureFor(room) {
+    const idx = Math.floor(cellHash(room.x, room.y, 61) * MIXED_FLOOR_TEXTURES.length);
+    return MIXED_FLOOR_TEXTURES[Math.min(idx, MIXED_FLOOR_TEXTURES.length - 1)];
+}
+function resolveFloorTexture(texture, x, y, rooms) {
+    if (texture !== 'mixed') return texture;
+    const room = (rooms || []).find(r => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
+    return room ? roomTextureFor(room) : 'none';
+}
+
+// Purely cosmetic, drawn straight onto the canvas per cell — the
+// underlying grid/export data stays exactly "floor" either way. Each
+// draws from the cell's own absolute grid position (x, y), not a
+// per-region random roll, so a texture lines up seamlessly across
+// neighboring cells (tile's checkerboard, wood's plank seams) without
+// needing real seamless-pattern tiling machinery.
+function paintFloorCell(ctx, texture, x, y, px, py, cellSize, floorColor) {
+    if (texture === 'stone') drawStoneFloorCell(ctx, x, y, px, py, cellSize);
+    else if (texture === 'tile') drawTileFloorCell(ctx, x, y, px, py, cellSize);
+    else if (texture === 'wood') drawWoodFloorCell(ctx, x, y, px, py, cellSize);
+    else { ctx.fillStyle = floorColor; ctx.fillRect(px, py, cellSize, cellSize); }
+}
+
+function drawStoneFloorCell(ctx, x, y, px, py, cellSize) {
+    ctx.fillStyle = '#8f8a7d'; // mortar
+    ctx.fillRect(px, py, cellSize, cellSize);
+    const slabCount = 2 + Math.floor(cellHash(x, y, 41) * 2);
+    for (let i = 0; i < slabCount; i++) {
+        const w = cellSize * (0.4 + cellHash(x, y, 42 + i * 4) * 0.3);
+        const h = cellSize * (0.35 + cellHash(x, y, 43 + i * 4) * 0.3);
+        const sx = px + cellSize * 0.05 + cellHash(x, y, 44 + i * 4) * Math.max(0, cellSize * 0.9 - w);
+        const sy = py + cellSize * 0.05 + cellHash(x, y, 45 + i * 4) * Math.max(0, cellSize * 0.9 - h);
+        const shade = 190 + Math.floor(cellHash(x, y, 46 + i * 4) * 30);
+        ctx.fillStyle = 'rgb(' + shade + ',' + shade + ',' + (shade - 6) + ')';
+        const r = Math.min(w, h) * 0.2;
+        ctx.beginPath();
+        ctx.moveTo(sx + r, sy);
+        ctx.arcTo(sx + w, sy, sx + w, sy + h, r);
+        ctx.arcTo(sx + w, sy + h, sx, sy + h, r);
+        ctx.arcTo(sx, sy + h, sx, sy, r);
+        ctx.arcTo(sx, sy, sx + w, sy, r);
+        ctx.closePath();
+        ctx.fill();
+    }
+}
+
+function drawTileFloorCell(ctx, x, y, px, py, cellSize) {
+    const n = 2; // sub-tiles per cell edge — indexed off the absolute grid
+    const sub = cellSize / n; // position so the checker pattern is continuous across cells, not per-cell independent
+    for (let sy = 0; sy < n; sy++) {
+        for (let sx = 0; sx < n; sx++) {
+            const gx = x * n + sx, gy = y * n + sy;
+            ctx.fillStyle = (gx + gy) % 2 === 0 ? '#e8e2d0' : '#cfc4a8';
+            ctx.fillRect(px + sx * sub, py + sy * sub, sub + 0.5, sub + 0.5); // +0.5 covers the float-rounding hairline seam between sub-tiles
+        }
+    }
+}
+
+function drawWoodFloorCell(ctx, x, y, px, py, cellSize) {
+    const plankH = cellSize * 0.5; // fixed in absolute pixels so seams land on the same line in every cell of a plank row
+    ctx.fillStyle = '#8a6a45';
+    ctx.fillRect(px, py, cellSize, cellSize);
+    ctx.strokeStyle = '#6b4f30';
+    ctx.lineWidth = Math.max(1, cellSize * 0.03);
+    for (let ly = Math.ceil(py / plankH) * plankH; ly <= py + cellSize; ly += plankH) {
+        ctx.beginPath(); ctx.moveTo(px, ly); ctx.lineTo(px + cellSize, ly); ctx.stroke();
+    }
+    for (let i = 0; i < 2; i++) {
+        const gy = py + cellSize * (0.25 + i * 0.4 + cellHash(x, y, 50 + i) * 0.15);
+        const gx1 = px + cellSize * (0.05 + cellHash(x, y, 52 + i) * 0.15);
+        const gx2 = gx1 + cellSize * (0.4 + cellHash(x, y, 54 + i) * 0.3);
+        ctx.strokeStyle = cellHash(x, y, 56 + i) < 0.5 ? 'rgba(0,0,0,0.15)' : 'rgba(255,220,180,0.18)';
+        ctx.lineWidth = Math.max(1, cellSize * 0.02);
+        ctx.beginPath(); ctx.moveTo(gx1, gy); ctx.lineTo(gx2, gy); ctx.stroke();
+    }
+}
+
+// "Open" = walkable — floor, water, and door cells all count as open
+// space for the purposes of tracing where a wall actually is. A door cell
+// counts as open here on purpose: it's the gap in the wall, and the wall
+// trace below (drawWallOutline) is what's supposed to leave that gap for
+// drawDoorMarker to fill in with its own marker.
+function isOpenCell(grid, cols, rows, x, y) {
+    if (x < 0 || y < 0 || x >= cols || y >= rows) return false;
+    const t = grid[y][x];
+    return t === 'floor' || t === 'water' || t === 'door';
+}
+
+// Traces a bold line along every edge where an open cell borders a wall
+// cell — the floor's own boundary, one segment per grid edge. This is
+// what makes a wall read as a clean line hugging the grid instead of a
+// blocky field of individually-outlined gray squares (see chat — matching
+// a reference image where walls and doors both sit right on the
+// gridline). Rooms/corridors stay perfectly rectilinear by design, so
+// (unlike the biome/cave rounding) this needs no curve-fitting at all —
+// every wall edge already lies exactly on a grid line.
+// Walls read heavier than doors on purpose — a wall is the solid, load-
+// bearing thing; a door is the thin gap in it. Shared by every place that
+// draws either (auto-generated + manual) so a manually-added wall/door
+// never looks like a different weight of object than a generated one.
+function wallLineWidth(cellSize) { return Math.max(3, cellSize * 0.24); }
+function doorBarWidth(cellSize) { return Math.max(2, cellSize * 0.13); }
+
+function drawWallOutline(ctx, grid, cols, rows, cellSize) {
+    ctx.strokeStyle = '#2b2b2b';
+    ctx.lineWidth = wallLineWidth(cellSize);
+    ctx.lineCap = 'square';
+    ctx.beginPath();
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (!isOpenCell(grid, cols, rows, x, y)) continue;
+            const px = x * cellSize, py = y * cellSize;
+            if (!isOpenCell(grid, cols, rows, x, y - 1)) { ctx.moveTo(px, py); ctx.lineTo(px + cellSize, py); }
+            if (!isOpenCell(grid, cols, rows, x, y + 1)) { ctx.moveTo(px, py + cellSize); ctx.lineTo(px + cellSize, py + cellSize); }
+            if (!isOpenCell(grid, cols, rows, x - 1, y)) { ctx.moveTo(px, py); ctx.lineTo(px, py + cellSize); }
+            if (!isOpenCell(grid, cols, rows, x + 1, y)) { ctx.moveTo(px + cellSize, py); ctx.lineTo(px + cellSize, py + cellSize); }
+        }
+    }
+    ctx.stroke();
+}
+
+// A door renders as a threshold bar sitting across the gap the wall
+// outline left for it, oriented to match whichever wall it's set into —
+// not a filled cell, so it reads as part of the wall line rather than a
+// block dropped on top of it. (cx, cy) is the bar's own center and
+// spanLen is how far it runs along its own direction — shared by the
+// auto-generated (spans a whole cell) and manual (spans one grid edge)
+// door markers below, so both look like the same kind of object.
+function drawDoorBar(ctx, cx, cy, horizontal, spanLen, cellSize) {
+    const bar = doorBarWidth(cellSize);
+    ctx.fillStyle = DUNGEON_COLORS.doorPanel;
+    ctx.strokeStyle = DUNGEON_COLORS.doorFrame;
+    ctx.lineWidth = Math.max(1, cellSize * 0.04);
+    if (horizontal) {
+        ctx.fillRect(cx - spanLen / 2, cy - bar / 2, spanLen, bar);
+        ctx.strokeRect(cx - spanLen / 2, cy - bar / 2, spanLen, bar);
+    } else {
+        ctx.fillRect(cx - bar / 2, cy - spanLen / 2, bar, spanLen);
+        ctx.strokeRect(cx - bar / 2, cy - spanLen / 2, bar, spanLen);
+    }
+    ctx.fillStyle = DUNGEON_COLORS.doorKnob;
+    ctx.beginPath();
+    if (horizontal) ctx.arc(cx + spanLen * 0.22, cy, Math.max(1, cellSize * 0.05), 0, Math.PI * 2);
+    else ctx.arc(cx, cy + spanLen * 0.22, Math.max(1, cellSize * 0.05), 0, Math.PI * 2);
+    ctx.fill();
+}
+
+// A door cell always has a flanking wall on some side (the room wall it
+// was carved through) — the door marker itself never sits on that same
+// side. It goes on one of the two sides 90° around from the wall instead
+// (see chat), sitting right on that edge's own gridline rather than the
+// cell's center — which in practice lands it exactly on the actual
+// corridor-to-room threshold, not on the solid wall it replaced.
+function drawDoorMarker(ctx, grid, cols, rows, x, y, cellSize) {
+    const px = x * cellSize, py = y * cellSize;
+    const wallN = !isOpenCell(grid, cols, rows, x, y - 1);
+    const wallS = !isOpenCell(grid, cols, rows, x, y + 1);
+    const wallW = !isOpenCell(grid, cols, rows, x - 1, y);
+    const wallE = !isOpenCell(grid, cols, rows, x + 1, y);
+
+    const candidates = [];
+    if ((wallN || wallS) && !wallW) candidates.push('W');
+    if ((wallN || wallS) && !wallE) candidates.push('E');
+    if ((wallE || wallW) && !wallN) candidates.push('N');
+    if ((wallE || wallW) && !wallS) candidates.push('S');
+    const side = candidates[0] || (!wallN && 'N') || (!wallS && 'S') || (!wallW && 'W') || 'E';
+
+    let cx, cy, horizontal;
+    if (side === 'N') { cx = px + cellSize / 2; cy = py; horizontal = true; }
+    else if (side === 'S') { cx = px + cellSize / 2; cy = py + cellSize; horizontal = true; }
+    else if (side === 'W') { cx = px; cy = py + cellSize / 2; horizontal = false; }
+    else { cx = px + cellSize; cy = py + cellSize / 2; horizontal = false; }
+    drawDoorBar(ctx, cx, cy, horizontal, cellSize, cellSize);
+}
+
+// ===================== Manual edge rendering =====================
+function edgeMidpoint(type, ex, ey, cellSize) {
+    return type === 'H'
+        ? { cx: ex * cellSize + cellSize / 2, cy: ey * cellSize, horizontal: true }
+        : { cx: ex * cellSize, cy: ey * cellSize + cellSize / 2, horizontal: false };
+}
+function parseEdgeKey(key) {
+    const [type, coords] = key.split(':');
+    const [x, y] = coords.split(',').map(Number);
+    return { type, x, y };
+}
+function renderEdgeSet(ctx, wallSet, doorSet, cellSize) {
+    if (wallSet.size) {
+        ctx.strokeStyle = '#2b2b2b';
+        ctx.lineWidth = wallLineWidth(cellSize);
+        ctx.lineCap = 'square';
+        ctx.beginPath();
+        wallSet.forEach(key => {
+            const e = parseEdgeKey(key);
+            if (e.type === 'H') { const x0 = e.x * cellSize, y0 = e.y * cellSize; ctx.moveTo(x0, y0); ctx.lineTo(x0 + cellSize, y0); }
+            else { const x0 = e.x * cellSize, y0 = e.y * cellSize; ctx.moveTo(x0, y0); ctx.lineTo(x0, y0 + cellSize); }
+        });
+        ctx.stroke();
+    }
+    doorSet.forEach(key => {
+        const e = parseEdgeKey(key);
+        const { cx, cy, horizontal } = edgeMidpoint(e.type, e.x, e.y, cellSize);
+        drawDoorBar(ctx, cx, cy, horizontal, cellSize, cellSize);
+    });
+}
+
+// Thick Wall stone-block look (2026-08-31) — same coursed-masonry idea as
+// dm.html's .thick-wall-cell, drawn directly since this is a canvas, not
+// real DOM elements to attach a CSS class to. Painted once across the
+// WHOLE canvas immediately after the flat rock fill, before any floor
+// space gets carved out on top of it — only the rock that's actually left
+// showing ends up with the texture, no per-cell masking needed. Kept as a
+// texture layered over the existing DUNGEON_COLORS.wall base rather than
+// a new color, so it doesn't disturb the wall/legend color match with
+// dm.html's own Wall tool.
+function drawThickWallTexture(ctx, width, height) {
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    for (let y = 0; y <= height; y += 9) {
+        ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(width, y + 0.5); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+    for (let x = 0; x <= width; x += 13) {
+        ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, height); ctx.stroke();
+    }
+}
+
+function renderDungeonRegions(ctx, grid, cols, rows, cellSize, width, height, isCave, floorColor, rooms) {
+    if (!isCave) {
+        // Dungeon: carve the floor/door/water shape flat (sharp-edged —
+        // rooms stay rectilinear) on top of the wall-colored base, then
+        // trace the wall line along its actual boundary.
+        for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+            if (isOpenCell(grid, cols, rows, x, y)) paintFloorCell(ctx, resolveFloorTexture(floorTexture, x, y, rooms), x, y, x * cellSize, y * cellSize, cellSize, floorColor);
+        }
+        drawWallOutline(ctx, grid, cols, rows, cellSize);
+    } else {
+        // Cave mode: round the cave's own open-floor shape into smooth
+        // curves instead of pixelated cellular-automata steps. Water/door
+        // count as "open" too so the cave mouth doesn't notch around a
+        // pool or doorway sitting right at its edge. No "Mixed" here —
+        // caves have no discrete room list to vary by (resolveFloorTexture
+        // just passes non-'mixed' values through unchanged, and the
+        // Mixed button itself is hidden for this mode — see setMode).
+        const floorCells = [];
+        for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+            if (isOpenCell(grid, cols, rows, x, y)) floorCells.push({ x, y, px: x * cellSize, py: y * cellSize, size: cellSize });
+        }
+        drawRoundedRegion(ctx, width, height, cellSize, floorCells, (c, cell) => paintFloorCell(c, floorTexture, cell.x, cell.y, cell.px, cell.py, cell.size, floorColor));
+    }
+
+    // Water — always rounded, in both dungeon and cave, as an actual pond.
+    const waterCells = [];
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        if (grid[y][x] === 'water') waterCells.push({ px: x * cellSize, py: y * cellSize, size: cellSize });
+    }
+    drawRoundedRegion(ctx, width, height, cellSize, waterCells, (c, cell) => { c.fillStyle = DUNGEON_COLORS.water; c.fillRect(cell.px, cell.py, cell.size, cell.size); });
+
+    // Doors — drawn last, on top of the wall outline's gap.
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        if (grid[y][x] === 'door') drawDoorMarker(ctx, grid, cols, rows, x, y, cellSize);
+    }
+}
+
+// A biome "group" for rounding purposes — Mountain and its snow-capped
+// Peak tiles round together as one region (so a mountain range doesn't
+// get a weird notch right at the snowline) even though they still paint
+// in their own distinct colors.
+function wildBlobGroup(biome) { return biome === 'peak' ? 'mountain' : biome; }
+
+// Wilderness has multiple biome regions covering the WHOLE canvas (unlike
+// Dungeon/Cave water, which is one region over an already-opaque flat
+// background) — two different, independently-blurred regions can each
+// land a hair short of the exact seam between them, leaving a gap neither
+// claims. A flat same-colored safety base under each region was tried
+// first and looked completely unrounded (confirmed live) — the base ends
+// up showing the SAME color the region's own overlay would show for that
+// cell anyway, which defeats the "reveal what's underneath" mechanic
+// rounding depends on, exactly like the very first attempt at this
+// feature did. The actual fix: don't threshold each region independently
+// at all — blur every region's mask, then assign each pixel to whichever
+// region has the highest blurred density there ("argmax ownership").
+// Every pixel ends up claimed by exactly one region by construction (no
+// gaps possible), while a true corner still rounds normally since its own
+// region's density, even diminished by blur, still beats a neighboring
+// region's near-zero density out there.
+function renderWildRegions(ctx, grid, cols, rows, cellSize, width, height, buildings, mainRoad, smallRoads) {
+    const cellsByGroup = {};
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const biome = grid[y][x];
+            const g = wildBlobGroup(biome);
+            (cellsByGroup[g] = cellsByGroup[g] || []).push({ x, y, px: x * cellSize, py: y * cellSize, size: cellSize, biome });
+        }
+    }
+    const groupOrder = ['plains', 'hills', 'forest', 'mountain', 'water'].filter(g => cellsByGroup[g]);
+    if (!groupOrder.length) return;
+
+    const blurPx = Math.max(1, cellSize * 0.35);
+    const pad = Math.ceil(blurPx * 3); // same outer-edge-shrinkage fix as drawRoundedRegion
+    const mw = width + pad * 2, mh = height + pad * 2;
+
+    const alphaMaps = groupOrder.map(g => {
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = mw; maskCanvas.height = mh;
+        const mctx = maskCanvas.getContext('2d');
+        mctx.filter = 'blur(' + blurPx + 'px)';
+        mctx.fillStyle = '#000';
+        cellsByGroup[g].forEach(c => mctx.fillRect(c.px + pad, c.py + pad, c.size, c.size));
+        mctx.filter = 'none';
+        return mctx.getImageData(0, 0, mw, mh).data;
+    });
+
+    const pixelCount = mw * mh;
+    const ownerMasks = groupOrder.map(() => new Uint8ClampedArray(pixelCount * 4));
+    for (let p = 0; p < pixelCount; p++) {
+        let bestIdx = 0, bestVal = alphaMaps[0][p * 4 + 3];
+        for (let gi = 1; gi < groupOrder.length; gi++) {
+            const v = alphaMaps[gi][p * 4 + 3];
+            if (v > bestVal) { bestVal = v; bestIdx = gi; }
+        }
+        if (bestVal > 0) {
+            const arr = ownerMasks[bestIdx];
+            const i = p * 4;
+            arr[i + 3] = 255;
+        }
+    }
+
+    groupOrder.forEach((g, gi) => {
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = mw; maskCanvas.height = mh;
+        maskCanvas.getContext('2d').putImageData(new ImageData(ownerMasks[gi], mw, mh), 0, 0);
+
+        const contentCanvas = document.createElement('canvas');
+        contentCanvas.width = mw; contentCanvas.height = mh;
+        const cctx = contentCanvas.getContext('2d');
+        // Painted inflated well beyond each cell's own tight rectangle —
+        // argmax ownership can (and is meant to) claim territory past a
+        // cell's own footprint for a neighbor's corner to round into, and
+        // that claimed area needs SOME color already sitting there for the
+        // destination-in mask below to keep. A tight per-cell fillRect
+        // left those "won but outside any cell's own rect" pixels fully
+        // transparent — confirmed live as a real, large-scale gap (5-6% of
+        // the canvas, not a rare edge case) once ownership was actually
+        // computed correctly. The inflate margin only needs to comfortably
+        // exceed the blur radius groups compete over; a full cell is
+        // generous. Overlap between same-group cells' inflated rects is
+        // harmless — final visibility is decided by the mask, not by
+        // which cell's paint happened to land there last.
+        const inflate = cellSize;
+        cellsByGroup[g].forEach(cell => {
+            cctx.fillStyle = cell.biome === 'water'
+                ? (cellHash(cell.x, cell.y, 11) < 0.5 ? WILD_COLORS.water[0] : WILD_COLORS.water[1])
+                : (WILD_COLORS[cell.biome] || WILD_COLORS.plains);
+            cctx.fillRect(cell.px + pad - inflate, cell.py + pad - inflate, cell.size + inflate * 2, cell.size + inflate * 2);
+        });
+        cctx.globalCompositeOperation = 'destination-in';
+        cctx.drawImage(maskCanvas, 0, 0);
+        cctx.globalCompositeOperation = 'source-over';
+        ctx.drawImage(contentCanvas, -pad, -pad);
+    });
+
+    // Roads on top of the biome but UNDER the decorative glyphs below, so
+    // a tree/rock glyph can still scatter near or over a road passing
+    // through its tile (a real road through a forest still has trees
+    // right up against it) instead of the road looking laid down after
+    // the fact on top of everything.
+    drawRoadPath(ctx, mainRoad, cellSize, ROAD_STYLE_COLOR.stone, 0.55);
+    (smallRoads || []).forEach(r => drawRoadPath(ctx, r.path, cellSize, ROAD_STYLE_COLOR[r.style], 0.28));
+
+    // Decorative glyphs on top, per cell, unclipped — small enough (jitter
+    // stays within the middle 40-70% of each cell) to not need to respect
+    // the rounded silhouette precisely.
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) drawWildGlyph(ctx, grid[y][x], x * cellSize, y * cellSize, cellSize, x, y);
+
+    // Landmarks draw last, on top of any biome glyph already sitting on
+    // that same tile (a homestead can sit on a plains tile that would
+    // otherwise show nothing, but shouldn't get hidden under a hill glyph
+    // either).
+    (buildings || []).forEach(b => {
+        const px = b.x * cellSize, py = b.y * cellSize;
+        if (b.kind === 'castle') drawCastleGlyph(ctx, px, py, cellSize);
+        else if (b.kind === 'cave') drawCaveGlyph(ctx, px, py, cellSize);
+        else drawBuildingGlyph(ctx, px, py, cellSize);
+    });
+}
+
+// A simple house glyph (walls + peaked roof) — same warm wood/brick tones
+// as the standalone generator's own Tavern furniture (see drawTable/
+// drawShelfRun) so a settlement marker reads as "a building" rather than
+// blending into the biome glyphs (tree/mountain/hill) it's drawn on top of.
+function drawBuildingGlyph(ctx, px, py, size) {
+    const cx = px + size / 2, cy = py + size / 2;
+    const w = size * 0.56, h = size * 0.4;
+    const bx = cx - w / 2, by = cy - h / 2 + size * 0.08;
+    ctx.fillStyle = '#d8c9a8';
+    ctx.fillRect(bx, by, w, h);
+    ctx.strokeStyle = '#5c4028'; ctx.lineWidth = Math.max(1, size * 0.05);
+    ctx.strokeRect(bx, by, w, h);
+    ctx.fillStyle = '#8a3a2a';
+    ctx.beginPath();
+    ctx.moveTo(bx - size * 0.06, by);
+    ctx.lineTo(cx, by - size * 0.32);
+    ctx.lineTo(bx + w + size * 0.06, by);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#4a1e14'; ctx.lineWidth = Math.max(1, size * 0.04);
+    ctx.stroke();
+    ctx.fillStyle = '#5c4028';
+    ctx.fillRect(cx - size * 0.06, by + h - size * 0.16, size * 0.12, size * 0.16);
+}
+
+// A larger, grey stone keep with a crenellated parapet and a single
+// tower — deliberately bigger and cooler-toned than drawBuildingGlyph so
+// it reads as "the one castle" rather than just another homestead.
+function drawCastleGlyph(ctx, px, py, size) {
+    const cx = px + size / 2, cy = py + size / 2;
+    const w = size * 0.8, h = size * 0.5;
+    const bx = cx - w / 2, by = cy - h / 2 + size * 0.14;
+    ctx.fillStyle = '#9b9689';
+    ctx.fillRect(bx, by, w, h);
+    ctx.strokeStyle = '#4a473f'; ctx.lineWidth = Math.max(1, size * 0.05);
+    ctx.strokeRect(bx, by, w, h);
+    // Crenellations along the top of the wall.
+    const merlon = w / 7;
+    ctx.fillStyle = '#9b9689';
+    for (let i = 0; i < 7; i += 2) ctx.fillRect(bx + i * merlon, by - size * 0.08, merlon, size * 0.08);
+    // A single square tower, taller than the wall, at the left end.
+    const tw = size * 0.22, th = size * 0.42;
+    ctx.fillStyle = '#8a8577';
+    ctx.fillRect(bx - tw * 0.15, by - th + size * 0.05, tw, th);
+    ctx.strokeRect(bx - tw * 0.15, by - th + size * 0.05, tw, th);
+    for (let i = 0; i < 3; i += 2) ctx.fillRect(bx - tw * 0.15 + i * (tw / 3), by - th + size * 0.05 - size * 0.07, tw / 3, size * 0.07);
+    ctx.fillStyle = '#4a3a2a';
+    ctx.fillRect(cx - size * 0.07, by + h - size * 0.2, size * 0.14, size * 0.2);
+}
+
+// A dark, rounded opening set into a small rocky mound — marks a dungeon
+// delve's entrance on the regional map (pairs with this tool's own
+// Dungeon/Caves modes).
+function drawCaveGlyph(ctx, px, py, size) {
+    const cx = px + size / 2, cy = py + size * 0.62;
+    ctx.fillStyle = '#6f6a5e';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, size * 0.42, size * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - size * 0.02, size * 0.2, size * 0.24, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#4a453a'; ctx.lineWidth = Math.max(1, size * 0.04);
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, size * 0.42, size * 0.3, 0, 0, Math.PI * 2);
+    ctx.stroke();
+}
+
+function drawWildGlyph(ctx, biome, px, py, size, x, y) {
+    if (biome === 'forest') {
+        const jx = px + size * (0.3 + cellHash(x, y, 21) * 0.4);
+        const jy = py + size * (0.3 + cellHash(x, y, 22) * 0.4);
+        ctx.fillStyle = cellHash(x, y, 23) < 0.5 ? '#335a33' : '#4d7a4d';
+        ctx.beginPath(); ctx.arc(jx, jy, size * 0.28, 0, Math.PI * 2); ctx.fill();
+    } else if (biome === 'mountain' || biome === 'peak') {
+        ctx.fillStyle = biome === 'peak' ? '#ffffff' : '#6f6f6f';
+        ctx.beginPath();
+        ctx.moveTo(px + size * 0.5, py + size * 0.18);
+        ctx.lineTo(px + size * 0.85, py + size * 0.82);
+        ctx.lineTo(px + size * 0.15, py + size * 0.82);
+        ctx.closePath(); ctx.fill();
+    } else if (biome === 'hills') {
+        ctx.strokeStyle = '#6b5a41'; ctx.lineWidth = Math.max(1, size * 0.06);
+        ctx.beginPath();
+        ctx.arc(px + size * (0.3 + cellHash(x, y, 24) * 0.4), py + size * 0.75, size * 0.3, Math.PI, 0);
+        ctx.stroke();
+    }
+}
+
+function updateSummary(seed, opts) {
+    const modeLabel = { dungeon: 'Dungeon', tavern: 'Tavern', cave: 'Caves', wild: 'Wilderness' }[currentMode];
+    document.getElementById('summaryLine').innerHTML =
+        '<span><b>' + modeLabel + '</b></span><span>Seed: <b>' + seed + '</b></span><span>' + opts.cols + '&times;' + opts.rows + '</span>';
+
+    const note = document.getElementById('compatNote');
+    if (currentMode === 'wild') {
+        note.innerHTML = '<div class="compat-note ok">Wilderness maps are a regional reference, not tied to the tactical grid — use Download PNG to save a picture.</div>';
+    } else if (opts.cols === 20 && opts.rows === 20) {
+        note.innerHTML = '<div class="compat-note ok">✓ Matches the DM Map tab\'s fixed 20&times;20 grid — export below is ready to drop into a map\'s terrain data.</div>';
+    } else {
+        note.innerHTML = '<div class="compat-note warn">⚠ The DM Map tab uses a fixed 20&times;20 grid — set Width and Height to 20 to reuse this export there.</div>';
+    }
+}
+
+// Renders one of the actual glyph-drawing functions (drawBuildingGlyph/
+// drawCastleGlyph/drawCaveGlyph) onto a small offscreen canvas so the
+// legend shows the REAL icon a DM sees on the map, not a flat color
+// standing in for it — a plain colored dot doesn't tell you a building
+// looks like a house vs. a castle looking like a keep. Painted over the
+// biome color that landmark actually scatters onto (plains for
+// buildings/castles, mountain for caves) so the icon reads exactly as it
+// does on the real map.
+function legendIconDataUrl(drawFn, bgColor) {
+    const size = 20;
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, size, size);
+    drawFn(ctx, 0, 0, size);
+    return c.toDataURL('image/png');
+}
+
+function updateLegend() {
+    const box = document.getElementById('legendBox');
+    let items;
+    if (currentMode === 'wild') {
+        items = [
+            { label: 'Water', color: WILD_COLORS.water[0] }, { label: 'Plains', color: WILD_COLORS.plains }, { label: 'Forest', color: WILD_COLORS.forest },
+            { label: 'Hills', color: WILD_COLORS.hills }, { label: 'Mountain', color: WILD_COLORS.mountain }, { label: 'Peak', color: WILD_COLORS.peak }
+        ];
+        if (document.getElementById('wildBuildingsInput').checked) {
+            items.push(
+                { label: 'Building', icon: legendIconDataUrl(drawBuildingGlyph, WILD_COLORS.plains) },
+                { label: 'Castle', icon: legendIconDataUrl(drawCastleGlyph, WILD_COLORS.plains) },
+                { label: 'Cave Entrance', icon: legendIconDataUrl(drawCaveGlyph, WILD_COLORS.mountain) },
+                { label: 'Main Road (stone)', color: ROAD_STYLE_COLOR.stone.fill },
+                { label: 'Local Road (dirt/stone)', color: ROAD_STYLE_COLOR.dirt.fill }
+            );
+        }
+    } else {
+        items = [{ label: 'Floor', color: isDarkMode() ? '#2a2a3e' : '#ffffff' }, { label: 'Wall', color: DUNGEON_COLORS.wall }, { label: 'Door', color: DUNGEON_COLORS.doorPanel }];
+        if (currentMode === 'dungeon' && document.getElementById('dungeonWaterInput').checked) items.push({ label: 'Water', color: DUNGEON_COLORS.water });
+        if (currentMode === 'cave' && document.getElementById('caveWaterInput').checked) items.push({ label: 'Water', color: DUNGEON_COLORS.water });
+    }
+    box.innerHTML = items.map(item => item.icon
+        ? '<span class="swatch"><img src="' + item.icon + '" width="16" height="16" style="border-radius:3px; flex-shrink:0;" alt="">' + item.label + '</span>'
+        : '<span class="swatch"><span class="dot" style="background:' + item.color + '; border:1px solid rgba(0,0,0,0.15);"></span>' + item.label + '</span>'
+    ).join('');
+}
+
+function toggleExport() {
+    const box = document.getElementById('exportBox');
+    if (box.style.display === 'none') {
+        document.getElementById('exportHint').textContent = currentMode === 'wild'
+            ? 'Wilderness biome grid, row-major (not the DM Map tab\'s terrain format).'
+            : 'grid_data + wall_edges + cols/rows — paste straight into the DM Map tab\'s Import Generated Layout, any size up to ' + document.getElementById('colsInput').max + '×' + document.getElementById('rowsInput').max + '.';
+        document.getElementById('exportArea').value = buildExportJson();
+        box.style.display = 'block';
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+// Interior room-to-room walls/doors live as edges now (see
+// generateDungeon/generateTavern), not grid_data terrain — they'd
+// otherwise silently vanish from the export entirely, since grid_data
+// only carries non-floor CELL terrain (background rock/water/the rare
+// corridor-to-room door). wall_edges here is the exact shape the DM Map
+// tab's own database column expects (see
+// supabase/migrations/20260829_map_wall_edges.sql and dm.html's
+// "Import Generated Layout").
+function buildEdgeExport() {
+    const out = {};
+    generatedWalls.forEach(k => out[k] = { type: 'wall', hidden: false });
+    generatedDoors.forEach(k => out[k] = { type: 'door', hidden: false });
+    return out;
+}
+
+function buildExportJson() {
+    const { grid, cols, rows, mode, buildings, mainRoad, smallRoads } = lastResult;
+    if (mode === 'wild') {
+        // Bridged into the SAME grid_data/wall_edges/cols/rows shape the
+        // DM Map tab's Import Generated Layout already expects for
+        // Dungeon/Cave/Tavern (2026-08-31, "Wilderness map viewable
+        // separately... with its own fog of war") — a Wilderness layout
+        // becomes its own ordinary campaign map, with the SAME
+        // independent per-map fog-of-war every map already has, switched
+        // to like any other via the Map tab's own map picker, rather
+        // than needing a whole separate system built for it. Every cell
+        // gets an explicit biome terrain — unlike Dungeon's `floor`,
+        // 'plains' is a real biome to actually show, not empty space to
+        // skip. 'peak' now has its own distinct DM Map tab tile too
+        // (2026-08-31 — used to fold into 'mountain', undone once dm.html
+        // grew a real Peak terrain), so it passes through unchanged.
+        // Roads and Building/Castle/Cave landmarks both carry over as
+        // furniture on top of the biome terrain underneath (2026-08-31 —
+        // roads were originally left out, "this is a bug" per chat, since
+        // dm.html has no dedicated road TILE of its own yet — see the
+        // still-open "Add roads to the DM map builder" item for a real
+        // manual placement tool; this is import-only). Roads are stamped
+        // first, buildings second, so a landmark that happens to sit on
+        // a road cell keeps showing as the landmark, not paved over.
+        const grid_data = {};
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                grid_data[mapColLabel(x) + (y + 1)] = { terrain: grid[y][x], hidden: false, fogRevealed: false };
+            }
+        }
+        (mainRoad || []).forEach(([x, y]) => {
+            const key = mapColLabel(x) + (y + 1);
+            if (grid_data[key]) grid_data[key].furniture = 'road-stone';
+        });
+        (smallRoads || []).forEach(r => {
+            (r.path || []).forEach(([x, y]) => {
+                const key = mapColLabel(x) + (y + 1);
+                if (grid_data[key]) grid_data[key].furniture = r.style === 'dirt' ? 'road-dirt' : 'road-stone';
+            });
+        });
+        (buildings || []).forEach(b => {
+            const key = mapColLabel(b.x) + (b.y + 1);
+            if (grid_data[key]) grid_data[key].furniture = b.kind;
+        });
+        return JSON.stringify({ grid_data, wall_edges: {}, cols, rows, generatorSettings: captureGeneratorSettings() }, null, 2);
+    }
+    const grid_data = {};
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            const terrain = grid[y][x];
+            if (terrain === 'floor') continue;
+            const key = mapColLabel(x) + (y + 1);
+            grid_data[key] = { terrain, hidden: false, fogRevealed: false };
+        }
+    }
+    // grid_data only ever carries non-floor cells (see the `continue`
+    // above), so it can't be relied on to tell the DM Map tab how big
+    // this layout actually is (a floor-only rightmost column/bottommost
+    // row would silently under-report the real size there). Explicit
+    // cols/rows here (2026-08-31, "Allow full-size generator maps into
+    // DM maps") lets dm.html's Import Generated Layout resize its own
+    // grid to match exactly, instead of guessing from the sparsest key.
+    return JSON.stringify({ grid_data, wall_edges: buildEdgeExport(), cols, rows, generatorSettings: captureGeneratorSettings() }, null, 2);
+}
+
+function copyExport() {
+    const text = document.getElementById('exportArea').value;
+    const status = document.getElementById('copyStatus');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+            () => { status.textContent = 'Copied!'; setTimeout(() => status.textContent = '', 2000); },
+            () => { status.textContent = 'Copy failed — select the text and copy manually.'; }
+        );
+    } else {
+        document.getElementById('exportArea').select();
+        status.textContent = 'Selected — press Ctrl+C to copy.';
+    }
+}
+
+function downloadPng() {
+    const canvas = document.getElementById('mapCanvas');
+    const link = document.createElement('a');
+    link.download = 'map-' + currentMode + '-' + (lastResult.seed || 'seed') + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    document.getElementById('darkToggleBtn').textContent = isDarkMode() ? '☀️' : '🌙';
+    render();
+    updateLegend();
+}
+
+// Theme Color (2026-09-07, DM-Tester only for now) — same one-hue-
+// generates-everything system as index.html/dm.html/menu.html; see
+// index.html's own copy of these three functions for the full reasoning.
+// Reads the same 'theme_hue' localStorage key (same-origin, no extra
+// plumbing) so picking a color on the Menu page's wheel reaches this page
+// too, even though it has no shared.css/shared.js of its own.
+function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const toHex = x => Math.round(255 * x).toString(16).padStart(2, '0');
+    return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+}
+function deriveThemeShades(hue) {
+    return {
+        white: hslToHex(hue, 35, 96),
+        grey: hslToHex(hue, 28, 90),
+        blue: hslToHex(hue, 55, 56),
+        blueDark: hslToHex(hue, 55, 33),
+        blueHover: hslToHex(hue, 55, 45),
+        darkWhite: hslToHex(hue, 22, 17),
+        darkGrey: hslToHex(hue, 20, 23)
+    };
+}
+function applySavedLightTheme() {
+    const hueStr = localStorage.getItem('theme_hue');
+    if (hueStr === null) return;
+    const hue = parseInt(hueStr, 10);
+    if (isNaN(hue)) return;
+    const shades = deriveThemeShades(hue);
+    const root = document.documentElement.style;
+    root.setProperty('--theme-white', shades.white);
+    root.setProperty('--theme-grey', shades.grey);
+    root.setProperty('--theme-blue', shades.blue);
+    root.setProperty('--theme-blue-dark', shades.blueDark);
+    root.setProperty('--theme-blue-hover', shades.blueHover);
+    root.setProperty('--theme-dark-white', shades.darkWhite);
+    root.setProperty('--theme-dark-grey', shades.darkGrey);
+}
+applySavedLightTheme();
+
+// Page background gradient (2026-09-08) — the same 'theme_colors' picker
+// on the Menu page that index.html/dm.html/menu.html already read via
+// their own applySavedTheme() copies; this page just never had one of its
+// own, so it always showed the hardcoded default gradient regardless of
+// what was actually picked there.
+function applySavedTheme() {
+    const saved = JSON.parse(localStorage.getItem('theme_colors') || 'null');
+    if (saved) {
+        document.documentElement.style.setProperty('--bg-color-1', saved.color1);
+        document.documentElement.style.setProperty('--bg-color-2', saved.color2);
+    }
+}
+applySavedTheme();
+
+// Init
+document.getElementById('mapCanvas').addEventListener('mousemove', handleCanvasHover);
+document.getElementById('mapCanvas').addEventListener('mouseleave', () => { document.getElementById('mapCanvas').title = ''; });
+if (!tryLoadSettingsFromQuery()) randomizeSeed();
+
+// Beta heads-up (2026-09-10) — once per session so returning to this
+// page from an import round-trip doesn't re-nag.
+if (!sessionStorage.getItem('betaNoticeMapgenSeen')) {
+    sessionStorage.setItem('betaNoticeMapgenSeen', '1');
+    setTimeout(() => alert("🗺️ The Map Generator is still in beta.\n\nIt works, but expect rough edges — and big improvements on the way. Thanks for testing it out!"), 200);
+}
+</script>
+</body>
+</html>

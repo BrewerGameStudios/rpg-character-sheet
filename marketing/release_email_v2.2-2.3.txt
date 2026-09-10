@@ -1,0 +1,47 @@
+SUBJECT: 🎲 Big Updates to Your Character Sheet — v2.2.0 & v2.3.0 Are Here!
+
+---
+
+Hey Adventurer,
+
+It's been a while since our last update, and your character sheet has been busy leveling up behind the scenes. Here's everything new since v2.2.0 and v2.3.0 rolled out — nothing to install, nothing to configure. It's already live.
+
+📝 CAMPAIGN & CHARACTER NOTES GOT A FULL REWORK
+The Notes page now works a lot more like Google Docs. You get a visible cursor (finally), a formatting toolbar that stays put no matter how far you scroll, and a real "paper" page that grows as you write. Bold, italic, underline, bullet lists, and 9 text colors (plus a custom color picker) all now clearly show which one is active — and yes, notes now come with browser spell check turned on.
+
+☁️ NOTES NOW ACTUALLY SYNC TO THE CLOUD
+Here's the big one: Campaign Notes previously lived in their own little bubble and never made it into Cloud Backup or onto your other devices — even though everything else on the sheet did. That's fixed. Your notes now travel with the rest of your character everywhere: Save, autosave, Export, and Cloud Backup. If you had notes typed in before this update, they've been automatically recovered and folded into your character the next time you opened the app — nothing should have been lost.
+
+⚔️ NEW ON THE SHEET
+• Ki Points tracker, right in the Attacks box
+• Bonus Actions box
+• Casting Time / Duration fields on Spells
+• A dedicated Cloak / Cape attire slot
+• Recipe Cards in the Workshop — check off ingredients as you collect them, just like a real recipe card
+• Swipe left/right on mobile to flip between tabs
+
+🛠️ QUALITY OF LIFE
+• Dexterity modifier now automatically drives Initiative
+• Passive Wisdom calculates correctly (Wisdom mod + 10) and can be edited by hand for gear/homebrew bonuses
+• Proficiency bonus is now editable
+• New character stat boxes are flagged in red until you set them, so nothing gets mistaken for a real value
+• The sheet now reopens your last active character automatically, with the save name already filled in — no more autosave silently failing because the Save box was empty
+
+🐛 BUG FIXES
+• Coins were rebuilt from the ground up: correct weight math, and coins can now be split across multiple stacks and containers
+• Fixed autosave only triggering on typing — clicking Add/Remove buttons now saves too, and the app force-saves the instant it's backgrounded on mobile so you can't lose progress by switching apps
+• Fixed potion weight totals not updating
+• Fixed a frozen "Total Inventory Weight" display
+• Fixed a duplicated Hit Points box and layout overflow on tablets/phones
+• Fixed images failing to upload on iMac
+
+🔒 A COUPLE HOUSEKEEPING NOTES
+We refreshed our Privacy Policy and Terms of Service (both linked at the bottom of the sheet). Nothing scary — just want to say it plainly: we will never sell your email address. It's only ever used to send an email like this one, when there's a major bug fix or update worth telling you about.
+
+That's the rundown! As always, if you run into anything weird, hit "Report a Bug" in the app or just reply to this email — we read every one.
+
+May your rolls always be with advantage,
+Brewer Game Studios
+
+---
+BrewerGameStudios@Gmail.com

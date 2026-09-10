@@ -1,0 +1,36 @@
+-- Email opt-out flag for the future bulk emailer
+--
+-- Adds one boolean column to the existing license_accounts directory
+-- (see 20260820_license_accounts.sql) rather than a new table — that
+-- table is already the one-row-per-licensed-email directory, so this is
+-- just one more fact about each account, not a second list to keep in
+-- sync with the first.
+--
+-- Default is false ("opted in") on purpose: every existing account gets
+-- backfilled as opted-in the moment this runs (matching "make all of our
+-- current clients automatically opted in"), and every future account
+-- (via the existing sync_license_account() trigger) starts opted-in too
+-- unless they explicitly check the opt-out box on menu.html.
+--
+-- Chose a flag over actually deleting/removing a row when someone opts
+-- out: it's reversible (opting back in later doesn't need to recreate
+-- their account), and it doesn't touch the account's other data. When
+-- the real emailer gets built, it should simply filter its recipient
+-- query with `where email_opt_out = false` — that's the entire contract
+-- this column exists to provide.
+--
+-- Draft for you to read and run yourself in the Supabase dashboard's SQL
+-- editor, same as every other migration in this folder. Nothing has been
+-- run against the live database.
+--
+-- Note: license_accounts only has a row for every email that's actually
+-- touched campaigns/monsters_npcs/library_books/character_backups so far
+-- (plus every row in "Licenses", but only once 20260820_licenses_sync.sql
+-- has also been run). If that migration hasn't been run yet, a licensed
+-- customer who's never saved anything won't have an opt-out row yet —
+-- menu.html's checkbox still works fine for them (it creates the row on
+-- first use), but the emailer's recipient list won't include them until
+-- either they visit menu.html once, or licenses_sync.sql runs.
+
+alter table license_accounts
+    add column if not exists email_opt_out boolean not null default false;
