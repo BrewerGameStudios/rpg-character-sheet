@@ -1123,7 +1123,7 @@ function restrictedFeature(featureName) {
     // trial, blocked only by the hard lock above once the 30 days are up.
     // Creating/managing a campaign as a DM, on the other hand, is bundled
     // into the paid license the same way Cloud Backups is.)
-    const lockedDuringTrial = ['Importing', 'Exporting', 'Printing', 'Cloud Backups', 'DM Tools'];
+    const lockedDuringTrial = ['Importing', 'Exporting', 'Printing', 'Cloud Backups', 'DM Tools', 'Potion Book', 'My Spellbook'];
     if (lockedDuringTrial.includes(featureName)) {
         alert(`${featureName} is locked during the trial. Activate the full version to unlock all features.`);
         const lock = document.getElementById('license-lock');

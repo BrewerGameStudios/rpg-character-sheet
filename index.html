@@ -1053,6 +1053,25 @@
             box-shadow: 0 0 0 2px rgba(155, 89, 182, 0.22);
         }
 
+        /* Class Resources tracker rows (2026-09-10). Phones: name row on
+           top, the -/current/max/+ counter wraps under it, description
+           below. Wide screens (>=620px): counter rides on the same line
+           as the name, kept compact. */
+        .resource-tracker-row .rt-top {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+        }
+        .resource-tracker-row .rt-headline {
+            display: flex; align-items: center; gap: 8px;
+            flex: 1 1 100%; min-width: 0;
+        }
+        .resource-tracker-row .rt-headline > .resource-tracker-name { flex: 1 1 auto; min-width: 0; }
+        .resource-tracker-row .rt-counter {
+            display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+        }
+        @media (min-width: 620px) {
+            .resource-tracker-row .rt-headline { flex: 1 1 auto; }
+        }
+
         .attunement-section {
             border: 2px solid #333;
             border-radius: 8px;
@@ -1107,7 +1126,7 @@
         /* Align spell columns and style the remove button */
         .spell-row {
             display: grid;
-            grid-template-columns: 50px 50px 100px 1fr 40px; /* Matches your header grid */
+            grid-template-columns: 100px 1fr 40px; /* Level, Name, Delete — Spells & Cantrips both override inline anyway */
             gap: 8px;
             align-items: center;
             margin-bottom: 8px;
@@ -1152,6 +1171,30 @@
         .spellbook-entry-name.is-custom::after { content: " (custom)"; font-size: 10.5px; color: #999; font-weight: normal; }
         .spellbook-entry-name.is-srd::after { content: " (5e)"; font-size: 10.5px; color: #999; font-weight: normal; }
         .spellbook-entry button.remove-spell { flex-shrink: 0; }
+
+        /* Potion Book (2026-09-12) — reuses .spellbook-search and
+           .spellbook-level-group as-is (purely structural/visual, nothing
+           spell-specific about them); potion entries get their own rows
+           since, unlike a spell, a short potion's actual rules text is
+           worth showing right in the picker instead of just a name. */
+        .potionbook-entry { padding: 8px 10px; border-top: 1px solid #eee; }
+        .potionbook-entry:first-child { border-top: none; }
+        body.dark-mode .potionbook-entry { border-top-color: #3a3a3a; }
+        .potionbook-entry-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .potionbook-entry-name { font-weight: bold; font-size: 12.5px; flex: 1; }
+        .potionbook-entry-rarity { font-size: 10.5px; color: #999; text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0; }
+        /* (2026-09-12, "make the potion info adjustable in the book") —
+           Price/Weight/Description are live inputs on every entry now,
+           SRD included, not read-only text. */
+        .potionbook-entry-name-input { flex: 1; font-weight: bold; font-size: 12.5px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; }
+        body.dark-mode .potionbook-entry-name-input { background: #1e1e2e; border-color: #4a4a5e; color: #e0e0e0; }
+        .potionbook-entry-fields { display: flex; gap: 6px; margin-bottom: 4px; }
+        .potionbook-entry-fields input { flex: 1; font-size: 11px; padding: 4px 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        body.dark-mode .potionbook-entry-fields input { background: #1e1e2e; border-color: #4a4a5e; color: #e0e0e0; }
+        .potionbook-entry-desc-input { width: 100%; font-size: 11.5px; min-height: 44px; padding: 5px 7px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: inherit; resize: vertical; }
+        body.dark-mode .potionbook-entry-desc-input { background: #1e1e2e; border-color: #4a4a5e; color: #e0e0e0; }
+        .potionbook-login-notice { background: #fff3cd; color: #7a5c00; border: 1px solid #ffe08a; border-radius: 6px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; line-height: 1.4; }
+        body.dark-mode .potionbook-login-notice { background: #4a3c10; color: #ffe08a; border-color: #6b571a; }
 
         .remove-spell {
             background: #d32f2f; /* Matching the Red X from Attacks */
@@ -2078,7 +2121,7 @@
         .dice-section summary::before { content: '▸'; display: inline-block; margin-right: 6px; transition: transform 0.15s ease; }
         .dice-section[open] summary::before { transform: rotate(90deg); }
         body.dark-mode .dice-section summary { background: #1e1e2e; color: #e0e0e0; }
-        .dice-section > div:not(.dice-custom-row):not(.dice-custom-result) { padding: 6px 10px; }
+        .dice-section > div:not(.dice-custom-row):not(.dice-custom-result):not(.dice-custom-row-header) { padding: 6px 10px; }
 
         .dice-roll-row {
             display: grid;
@@ -2150,6 +2193,27 @@
         body.dark-mode .dice-custom-notation-row input {
             background: #1e1e2e; border-color: #4a4a5e; color: #e0e0e0;
         }
+        /* Column labels above the count/modifier boxes (2026-09-13,
+           "lets label the dice count and modifier boxes in the custom
+           dice roller so people know what box is what") — the boxes only
+           ever had hover-only `title` tooltips, which don't work at all
+           on touch devices (same gap Speed/Vision's own help buttons had
+           to fix earlier: "tablet dosent like the hover feature"). Same
+           column widths as .dice-custom-row right below so the labels
+           land directly above their own box. */
+        .dice-custom-row-header {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 60px 60px 70px;
+            gap: 8px;
+            padding: 8px 10px 0;
+            font-size: 9.5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #999;
+            text-align: center;
+        }
+        .dice-custom-row-header > div:first-child { text-align: left; }
+        body.dark-mode .dice-custom-row-header { color: #9a9ab4; }
         .dice-custom-row {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 60px 60px 70px;
@@ -2696,6 +2760,41 @@
         </div>
     </div>
 
+    <!-- Potion Book (2026-09-12) — "adjust potions like we have spells,
+         we can do our 5e list of potions that are open source, but also
+         add custom maker as well." Simpler than the Spellbook: no
+         class/prepared concept here, a potion is just something you have
+         or don't (and possibly several of), so this is a straight
+         searchable picker. Every entry's Price/Weight/Description are
+         live-editable right here — including the SRD ones ("make the
+         potion info adjustable... allow user to add cost, even in the 5e
+         list") — and "+ New Custom Potion" (moved in here from the page
+         itself) replaces what used to be a standalone "+ Add Potion"
+         button below the sheet's own Potions list. Edits auto-save on
+         blur ("the save to library button doesn't need to be seen, we
+         auto save already") — no visible save step. See
+         readPotionBookEntry/addPotionFromBookEntry/autoSavePotionBookEntry. -->
+    <div id="potionBookModal" onclick="if(event.target===this) closePotionBookModal()" style="display:none; position:fixed; z-index:4000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items:center; justify-content:center;">
+        <div class="text-box" style="max-width: 560px; width: 92%; max-height: 85vh; overflow-y: auto; background: var(--theme-white); padding: 25px; border: 3px solid var(--theme-blue); border-radius: 10px; position: relative;">
+            <button onclick="closePotionBookModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer; color: #666;">✖</button>
+
+            <h2 style="color: var(--theme-blue-dark); border-bottom: 2px solid var(--theme-blue); margin-bottom: 15px; display:flex; align-items:center; gap:8px;">Potion Book <button type="button" class="help-btn" onclick="showHelpPopup('potionBook')" title="What is this?" aria-label="Help: Potion Book">?</button></h2>
+
+            <!-- (2026-09-12, "update that not being logged into an
+                 account will not save so no one gets upset") — shown once
+                 per modal open rather than nagging on every single edit;
+                 set/cleared in openPotionBookModal/renderPotionBookList so
+                 it also reacts if they log in without closing this first. -->
+            <div id="potionBookLoginNotice" class="potionbook-login-notice" style="display:none;">⚠️ You're not logged in — edits here (custom potions, price/weight/description changes) won't be saved. Log in to keep them.</div>
+
+            <div style="text-align:center; margin-bottom:10px;">
+                <button type="button" class="btn" style="margin-top:0;" onclick="addBlankPotionToBook()">+ New Custom Potion</button>
+            </div>
+            <input type="text" id="potionBookSearch" class="spellbook-search" placeholder="Search potions..." oninput="renderPotionBookList()">
+            <div id="potionBookList"></div>
+        </div>
+    </div>
+
     <!-- Druid Wild Shape beast library (2026-09-09) — all the setup/
          editing lives here; only the ACTIVE form shows on the Main tab
          (see #activeWildShapeCard). -->
@@ -2704,9 +2803,37 @@
             <button onclick="closeWildShapeModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer; color:#666;">✖</button>
             <h2 style="color: var(--theme-blue-dark); border-bottom: 2px solid var(--theme-blue); margin-bottom: 15px; display:flex; align-items:center; gap:8px;">Wild Shape — Beast Forms <button type="button" class="help-btn" onclick="showHelpPopup('wildShape')" title="What is this?" aria-label="Help: Wild Shape">?</button></h2>
 
-            <div style="display:flex; gap:8px; margin-bottom:14px;">
+            <!-- Level Availability (2026-09-13) — real 5e Wild Shape rules
+                 by default (CR 1/4 @ Lv2, 1/2 @ Lv4, 1 + swim/fly @ Lv8),
+                 fully editable for a homebrew table. A beast form with no
+                 CR set is never gated by this at all. -->
+            <div style="border:1px solid #ddd; border-radius:8px; padding:10px; margin-bottom:14px; background:rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <strong style="font-size:12.5px;">Level Availability</strong>
+                    <button type="button" class="btn" style="margin-top:0; padding:3px 8px; font-size:11px; background:#888;" onclick="resetWildShapeRules()">Reset to 5e Defaults</button>
+                </div>
+                <p style="font-size:11px; color:#888; margin:0 0 8px;">What CR is allowed at what level — adjustable for house rules. Informational only, nothing here blocks adding or transforming.</p>
+                <div id="wildShapeThresholdList"></div>
+                <button type="button" class="btn" style="margin-top:4px; font-size:11px; padding:4px 10px;" onclick="addWildShapeThreshold()">+ Add Level</button>
+                <label style="display:flex; align-items:center; gap:6px; font-size:11.5px; margin-top:10px;">
+                    Swim/Fly speed allowed at level
+                    <input type="number" id="wildShapeSwimFlyLevel" value="8" min="1" style="width:50px;" oninput="updateWildShapeSwimFlyLevel(this.value)">
+                </label>
+                <div id="wildShapeAvailabilitySummary" style="margin-top:8px; font-weight:bold; font-size:12.5px; color:var(--theme-blue-dark);"></div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
                 <select id="wildShapeAddSelect" style="flex:1;"></select>
                 <button type="button" class="btn" style="margin-top:0;" onclick="addWildShapeFormFromPicker()">+ Add</button>
+            </div>
+            <!-- Import (2026-09-13) — same .monster shape dm.html's own
+                 Creature Library and the Monster Generator already export,
+                 so anything pulled or built there (any of the full SRD
+                 bestiary, not just this pop-out's own curated 14 presets)
+                 comes in with its complete stat block, no retyping. -->
+            <div style="margin-bottom:14px;">
+                <button type="button" class="btn" style="margin-top:0; width:100%; background:#888;" onclick="document.getElementById('wsImportFile').click()">⬆ Import .monster File</button>
+                <input type="file" id="wsImportFile" accept=".monster" style="display:none;" onchange="csImportMonsterFile('ws', event)">
             </div>
 
             <div id="wildShapeFormList"></div>
@@ -2929,6 +3056,12 @@
                          anyone who'd rather click than type. -->
                     <div class="dice-custom-notation-row">
                         <input type="text" id="diceCustomNotation" placeholder="Or type it: 1d20, 2d6+3, etc." onkeydown="if(event.key==='Enter') rollCustomDice()">
+                    </div>
+                    <div class="dice-custom-row-header">
+                        <div>Dice</div>
+                        <div>Count</div>
+                        <div>Modifier</div>
+                        <div></div>
                     </div>
                     <div class="dice-custom-row">
                         <select id="diceCustomSides">
@@ -3183,9 +3316,34 @@
                     <label style="display:flex; align-items:center; gap:4px;">Dark Vision (ft) <button type="button" class="help-btn" onclick="showHelpPopup('darkVision')" title="What is this?" aria-label="Help: Dark Vision">?</button></label>
                     <input type="number" id="darkvisionRange" value="0" min="0">
                 </div>
+                <!-- Dex Mod + Modifier (2026-09-13, "Initiative will not
+                     keep the custom modifier, it wil keep realculating the
+                     math... lets add a modifier box that wy the math wont
+                     interfear but also allow custom to add and add them
+                     together", then "lets match armor class so people will
+                     understand") — real bug: #initiative used to get its
+                     value STOMPED by updateModifiers() any time ANY numeric
+                     field anywhere on the sheet changed (not just Dex),
+                     since it unconditionally overwrote it with the raw Dex
+                     mod — a typed-in Alert-feat-style bonus never survived
+                     past the next keystroke elsewhere on the sheet. Same
+                     visual pattern as Base + Temp AC above — a labeled pair
+                     joined by "+" underneath the total — except the left
+                     box here is disabled: unlike AC's Base (which the
+                     player sets directly, no formula behind it), Initiative's
+                     base component IS a fixed 5e formula (your current Dex
+                     modifier), so it stays a live read-only display rather
+                     than another freely-typable box; the right box is the
+                     one real input, a flat bonus like the Alert feat. See
+                     updateInitiative(). -->
                 <div class="combat-box">
                     <label style="display:flex; align-items:center; gap:4px;">Initiative <button type="button" class="help-btn" onclick="showHelpPopup('initiative')" title="What is this?" aria-label="Help: Initiative">?</button></label>
                     <input type="number" id="initiative" value="0">
+                    <div style="display:flex; align-items:center; gap:4px; margin-top:6px;">
+                        <input type="number" id="initiativeDexMod" value="0" disabled title="Your current Dexterity modifier — updates automatically as Dexterity changes, not editable here." style="font-size:11px; font-weight:normal; padding:4px; text-align:center; background:#eee; color:#888;">
+                        <span style="font-size:11px; color:#888;">+</span>
+                        <input type="number" id="initiativeMod" value="0" oninput="updateInitiative()" title="Initiative Modifier — a flat bonus on top of your Dexterity modifier, like the Alert feat's +5. Back to 0 if it doesn't apply." style="font-size:11px; font-weight:normal; padding:4px; text-align:center;">
+                    </div>
                 </div>
                 <div class="combat-box">
                     <label style="display:flex; align-items:center; gap:4px;">Proficiency Bonus <button type="button" class="help-btn" onclick="showHelpPopup('proficiencyBonus')" title="What is this?" aria-label="Help: Proficiency Bonus">?</button></label>
@@ -3584,16 +3742,26 @@
                 <button type="button" id="wildShapeResourceBtn" class="btn" style="display:none; background: var(--theme-blue-dark); margin-top:4px; font-size:12px; padding:6px 12px;" onclick="openWildShapeModal()">🐾 Beast Forms</button>
                 <select onchange="addResourceTrackerFromPicker(this.value); this.value='';" style="margin-top:4px; width:auto; font-size:12px;">
                     <option value="">+ Add Resource Tracker...</option>
-                    <option value="Ki Points">Ki Points (Monk)</option>
-                    <option value="Superiority Dice">Superiority Dice (Battle Master Fighter)</option>
                     <option value="Rage">Rage (Barbarian)</option>
                     <option value="Bardic Inspiration">Bardic Inspiration (Bard)</option>
                     <option value="Channel Divinity">Channel Divinity (Cleric/Paladin)</option>
+                    <option value="Divine Intervention">Divine Intervention (Cleric)</option>
                     <option value="Wild Shape">Wild Shape (Druid)</option>
-                    <option value="Sorcery Points">Sorcery Points (Sorcerer)</option>
+                    <option value="Wild Companion">Wild Companion (Druid, Tasha's)</option>
                     <option value="Action Surge">Action Surge (Fighter)</option>
                     <option value="Second Wind">Second Wind (Fighter)</option>
+                    <option value="Indomitable">Indomitable (Fighter)</option>
+                    <option value="Superiority Dice">Superiority Dice (Battle Master Fighter)</option>
+                    <option value="Ki Points">Ki Points (Monk)</option>
                     <option value="Lay on Hands">Lay on Hands (Paladin)</option>
+                    <option value="Divine Sense">Divine Sense (Paladin)</option>
+                    <option value="Favored Foe">Favored Foe (Ranger, Tasha's)</option>
+                    <option value="Sorcery Points">Sorcery Points (Sorcerer)</option>
+                    <option value="Tides of Chaos">Tides of Chaos (Wild Magic Sorcerer)</option>
+                    <option value="Mystic Arcanum">Mystic Arcanum (Warlock)</option>
+                    <option value="Arcane Recovery">Arcane Recovery (Wizard)</option>
+                    <option value="Breath Weapon">Breath Weapon (Dragonborn)</option>
+                    <option value="Relentless Endurance">Relentless Endurance (Half-Orc)</option>
                     <option value="__custom__">Custom...</option>
                 </select>
             </div>
@@ -3648,6 +3816,9 @@
 
             <div class="attacks-section">
                 <h3 style="display:flex; align-items:center; gap:8px;">Potions <button type="button" class="help-btn" onclick="showHelpPopup('potions')" title="What is this?" aria-label="Help: Potions">?</button></h3>
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <button type="button" class="btn" style="margin-top:0; font-size:14px; padding:12px 20px;" onclick="openPotionBookModal()">📖 Potion Book</button>
+                </div>
                 <div id="list-potions">
                     <div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;">
                         <div>Qty</div>
@@ -3658,7 +3829,12 @@
                         <div></div>
                     </div>
                 </div>
-                <button class="btn" onclick="addPotion()">+ Add Potion</button>
+                <!-- (2026-09-12, "move the add potion button to the
+                     inside of the book not on the page") — creating a new
+                     custom potion happens inside the Potion Book now (its
+                     own "+ New Custom Potion" button); addPotion() itself
+                     is unchanged and still what actually builds a row,
+                     just no longer exposed as a bare button out here. -->
             </div>
             <div style="text-align: center; margin-top: 30px; opacity: 0.5; font-size: 10px;">
                 Brewer Game Studios | RPG Character Sheet vBeta 3.0.0 | Hardware ID: <span id="display-id"></span> <!--// **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************-->
@@ -3864,9 +4040,7 @@
                 </div>
 
                 <div id="spellsList">
-                    <div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent; order: -1;">
-                        <div style="text-align: center;">Prep</div>
-                        <div style="text-align: center;">Used</div>
+                    <div style="display: grid; grid-template-columns: 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; order: -1;">
                         <div>Level</div>
                         <div>Spell Name</div>
                         <div></div>
@@ -3882,7 +4056,7 @@
 
         <div class="container">
             <div class="total-weight-display" style="margin-bottom: 20px; font-weight: bold; border-bottom: 2px solid #333; padding-bottom: 10px;">
-                Total Global Weight: <span id="totalWeight">0.00</span> lbs
+                Total Global Weight: <span id="totalWeight">0.00</span> lbs<span id="wsGlobalWeightNote" style="font-weight:normal; font-style:italic;"></span>
             </div>
             <div class="attacks-section">
                 <h3 style="display:flex; align-items:center; gap:8px;">Coins <button type="button" class="help-btn" onclick="showHelpPopup('coins')" title="What is this?" aria-label="Help: Coins">?</button></h3>
@@ -3954,12 +4128,23 @@
             </div>
             <div id="dynamicMountList"></div>
 
-            <!-- Familiars (2026-09-09) — their own stat blocks, alongside
-                 mounts/vehicles since it's the same "creatures travelling
-                 with you" space. -->
+            <!-- Familiars & Companions (2026-09-09) — their own stat
+                 blocks, alongside mounts/vehicles since it's the same
+                 "creatures travelling with you" space. Covers a familiar,
+                 a Ranger's Beast Master companion, a Find Steed mount, a
+                 Warlock's Pact of the Chain familiar, etc. -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 30px 0 16px; padding-top: 20px; border-top: 2px solid #ccc;">
-                <h2 style="text-transform: uppercase; font-size: 18px; display:flex; align-items:center; gap:8px;">Familiars <button type="button" class="help-btn" onclick="showHelpPopup('familiars')" title="What is this?" aria-label="Help: Familiars">?</button></h2>
-                <button class="btn" onclick="addFamiliar()">+ Add Familiar</button>
+                <h2 style="text-transform: uppercase; font-size: 18px; display:flex; align-items:center; gap:8px;">Familiars &amp; Companions <button type="button" class="help-btn" onclick="showHelpPopup('familiars')" title="What is this?" aria-label="Help: Familiars & Companions">?</button></h2>
+                <div style="display:flex; gap:8px;">
+                    <!-- Import (2026-09-13) — same .monster shape dm.html's
+                         own Creature Library and the Monster Generator
+                         already export; a full SRD creature (or anything
+                         custom built there) comes in with its complete
+                         stat block, no retyping. -->
+                    <button class="btn" style="background:#888;" onclick="document.getElementById('famImportFile').click()">⬆ Import</button>
+                    <input type="file" id="famImportFile" accept=".monster" style="display:none;" onchange="csImportMonsterFile('fam', event)">
+                    <button class="btn" onclick="addFamiliar()">+ Add</button>
+                </div>
             </div>
             <div id="dynamicFamiliarList"></div>
         </div>
@@ -4164,7 +4349,7 @@
             initiative: {
                 title: 'Initiative',
                 body: '<p><strong>5e rules:</strong> at the start of a fight, everyone rolls a d20 + their Dexterity modifier — the results set the turn order for the whole combat, highest going first.</p>' +
-                      '<p><strong>On this sheet:</strong> this fills in from your Dexterity modifier automatically, but it\'s still a real editable number in case something (the Alert feat, etc.) gives you a flat bonus on top. The Dice Roller\'s Initiative button rolls d20 + whatever\'s here.</p>'
+                      '<p><strong>On this sheet:</strong> the big number is your total. Underneath it, same layout as Armor Class\'s own Base + Temp above — the left box is your current Dexterity modifier (grayed out, updates on its own as Dexterity changes, not something you type into), and the box after the "+" is your Initiative Modifier, a flat bonus on top for something like the Alert feat (+5). Set the Modifier once and the total keeps adding it correctly from then on, no matter what else on the sheet changes. Back to 0 if nothing applies. The Dice Roller\'s Initiative button rolls d20 + whatever the total shows.</p>'
             },
             proficiencyBonus: {
                 title: 'Proficiency Bonus',
@@ -4237,7 +4422,15 @@
             },
             potions: {
                 title: 'Potions',
-                body: '<p><strong>How to use this:</strong> a dedicated quick-list for consumables — potions, elixirs, anything you\'d want to grab in a hurry mid-fight rather than digging through a full inventory container. Qty, Price, and Weight work the same as everywhere else on the sheet.</p>'
+                body: '<p><strong>How to use this:</strong> a dedicated quick-list for consumables — potions, elixirs, anything you\'d want to grab in a hurry mid-fight rather than digging through a full inventory container. Qty, Price, and Weight work the same as everywhere else on the sheet.</p>' +
+                      '<p><strong>Adding one:</strong> use the Potion Book above — every potion, custom or 5e, gets added from there now. See its own help for details.</p>'
+            },
+            potionBook: {
+                title: 'Potion Book',
+                body: '<p><strong>How to use this:</strong> search or browse by rarity, edit any entry\'s Price, Weight, or Description right here — SRD potions included — then "+ Add to Sheet" drops a normal Potions row using whatever the card currently shows, edited or not. "+ New Custom Potion" up top starts a blank card for anything homebrew, in place of what used to be a separate "+ Add Potion" button on the page itself.</p>' +
+                      '<p><strong>Saving an edit:</strong> automatic — click out of a field you\'ve changed and it\'s pushed to your account\'s own cloud library right then, no separate save step. Remembered from then on, on any character, any device you\'re logged into. For an SRD potion this is an override: the real SRD text is never changed, your version just displays in its place until you hit ↺ to reset it (a genuinely custom potion gets 🗑 instead, which removes it outright). Saving needs an activated license (same as Cloud Backups); "+ Add to Sheet" doesn\'t — a not-yet-licensed edit just doesn\'t stick around once you close this.</p>' +
+                      '<p><strong>About that price field:</strong> the 5e rules don\'t fix a single price for a magic item — the only official number is the Dungeon Master\'s Guide\'s wide RANGE per rarity tier (e.g. 50–100 gp for Common), which is DMG content, not SRD content. That\'s never prefilled here for that reason; whatever you type into Price is entirely your own call, not something pulled from a rulebook.</p>' +
+                      '<p><strong>Where the base data comes from:</strong> all 20 potions and oils here are pulled from the official 5e System Reference Document (SRD) — the free rules reference Wizards of the Coast themselves publish for public/third-party use, under the Open Gaming License. Their names and descriptions are never copied from the Dungeon Master\'s Guide or any other for-sale book.</p>'
             },
             portrait: {
                 title: 'Portrait',
@@ -4292,7 +4485,8 @@
                 body: '<p><strong>5e rules:</strong> a caster who prepares spells (Wizard, Cleric, Druid, Paladin) knows or has access to far more spells than they actually prepare each day — the Cantrips and Spells lists below only show what you\'ve got ready RIGHT NOW.</p>' +
                       '<p><strong>On this sheet:</strong> pick your class and hit "+ Add All Class Spells" to bulk-add every real 5e spell/cantrip that class can learn — added unprepared, so nothing new suddenly clutters the lists below. Check a box here to prepare it (which is also what makes it appear below, and — for a damage spell — adds it to Attacks); uncheck to unprepare without losing it, or hit ✖ to remove it from your spellbook for good. Every field this fills in — name, level, casting time, range, duration, components — stays a normal, freely-editable box afterward, exactly like typing one in yourself.</p>' +
                       '<p><strong>Custom:</strong> the last option in the class dropdown — its own space for homebrew spells/cantrips that aren\'t on the real 5e list. "+ Add Custom Spell/Cantrip" just asks for a name; fill in the rest on the row itself. Works exactly like a real one otherwise — check it to prepare it, uncheck to unprepare without losing it, ✖ to delete it for good. A homebrew spell/cantrip you type in directly on its own row (not through this button) shows up here automatically too, so nothing ever becomes unmanageable.</p>' +
-                      '<p><strong>Where this comes from:</strong> every spell here is pulled from the official 5e System Reference Document (SRD) — the free rules reference Wizards of the Coast themselves publish specifically for public/third-party use, under the Open Gaming License. Nothing here is copied from the Player\'s Handbook or any other for-sale book; it\'s all content Wizards already released for exactly this kind of use.</p>'
+                      '<p><strong>Where this comes from:</strong> every spell here is pulled from the official 5e System Reference Document (SRD) — the free rules reference Wizards of the Coast themselves publish specifically for public/third-party use, under the Open Gaming License. Nothing here is copied from the Player\'s Handbook or any other for-sale book; it\'s all content Wizards already released for exactly this kind of use.</p>' +
+                      '<p><strong>Saving a custom spell:</strong> once you\'ve typed one in and filled it out, its "☁️ Save to My Spellbook" button pushes it to your account\'s own cloud library — it then shows up under "☁️ My Saved" at the top of this modal\'s Custom tab, ready to add to any character, on any device you\'re logged into. Requires an activated license (same as Cloud Backups) since it\'s saved to your account, not just this device.</p>'
             },
             cantrips: {
                 title: 'Cantrips',
@@ -4326,12 +4520,17 @@
             wildShape: {
                 title: 'Wild Shape (Druid)',
                 body: '<p><strong>How to use this:</strong> a pop-out library of the beast forms you can turn into. Pick a beast from the list (its AC, HP, speed, ability scores and attacks come pre-filled from the Monster Manual) or add a blank custom form, then edit anything that\'s off. Everything you save here stays hidden in the pop-out.</p>' +
-                      '<p><strong>Transforming:</strong> hit "Transform into this" and a compact card appears on the Main tab with just that beast\'s stats and a HP box to track its separate hit-point pool. Your own INT/WIS/CHA, saving throws, skill proficiencies, class features and personality don\'t change — only what the card shows. Hit "Revert" (on the card or in the pop-out) to change back. Damage that drops the beast\'s HP below 0 carries over to your normal HP.</p>' +
+                      '<p><strong>Full stat block:</strong> a form now carries everything a real 5e stat block does — Saving Throws, Skills, damage Vulnerabilities/Resistances/Immunities, Condition Immunities, Languages, Traits, Multiattack, a real Attacks table, Other/Bonus Actions, Reactions, Legendary/Lair Actions, Regional Effects — same shape DM Tools\' own Creature Library uses. Nothing here is enforced; fill in only what a given beast actually needs.</p>' +
+                      '<p><strong>Import:</strong> "⬆ Import .monster File" reads a file exported from DM Tools\' Creature Library or the standalone Monster Generator (any of the full 5e SRD bestiary, not just this pop-out\'s own curated 14 quick-picks, or a DM-built custom creature) straight in with its complete stat block — no retyping.</p>' +
+                      '<p><strong>Transforming:</strong> hit "Transform into this" and a compact card appears on the Main tab with that beast\'s core stats and a HP box to track its separate hit-point pool. Your own INT/WIS/CHA, saving throws, skill proficiencies, class features and personality don\'t change — only what the card shows. Hit "Revert" (on the card or in the pop-out) to change back. Damage that drops the beast\'s HP below 0 carries over to your normal HP.</p>' +
+                      '<p><strong>Level Availability:</strong> the real 5e rule by default — CR 1/4 at level 2, CR 1/2 at level 4, CR 1 (and a swim/fly speed) at level 8 — shown as a note under each form\'s own CR box so you can see at a glance whether you\'re old enough for it yet. Fully adjustable at the top of the pop-out for a homebrew table, Circle of the Moon\'s own higher limits, or anything else — purely informational, nothing here stops you from adding or transforming into a form outside the current rule.</p>' +
+                      '<p><strong>Weight:</strong> an approximate reference weight per form, for roleplay (5e stat blocks don\'t publish official creature weight, so treat this as flavor, not canon). While transformed, it stands in for your own body weight in Total Global Weight up top — you\'re not lugging your normal gear weight around as a bear, you\'re just a bear. Leave it blank to skip this entirely.</p>' +
                       '<p>This is a reference card, not a rules engine — special traits are shown as text for you to apply yourself.</p>'
             },
             familiars: {
-                title: 'Familiars',
-                body: '<p><strong>How to use this:</strong> one card per familiar — its species, AC, HP (current / max), speed, senses, ability scores, any attacks, and a notes field for special abilities (spell delivery, telepathy, etc.). Enough to actually run it at the table.</p>'
+                title: 'Familiars & Companions',
+                body: '<p><strong>How to use this:</strong> one card per creature bonded to you — a familiar (Find Familiar, Warlock Pact of the Chain), a Ranger\'s Beast Master companion, a Find Steed mount, a Drakewarden drake, and so on. Each card holds its species, a full 5e stat block (AC, HP current/max, speed, ability scores, senses, Saving Throws, Skills, damage types, Languages, Traits, a real Attacks table, and every other stat block section — same shape Wild Shape\'s own beast forms and DM Tools\' Creature Library use), and a Notes field for anything else (spell delivery, telepathy, the Beast Master command action, etc.). Enough to actually run it at the table.</p>' +
+                      '<p><strong>Import:</strong> "⬆ Import" reads a .monster file exported from DM Tools\' Creature Library or the standalone Monster Generator straight in with its complete stat block — no retyping, whether it\'s a real SRD creature or something a DM built custom.</p>'
             },
             workshop: {
                 title: 'Workshop',
@@ -4745,6 +4944,21 @@
             acEl.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
+        // #initiative = Dex mod + initiativeMod (see the HTML comment above
+        // the Initiative box) — called both from updateModifiers() whenever
+        // Dex changes and directly from initiativeMod's own oninput, same
+        // two-caller pattern as updateAC().
+        function updateInitiative() {
+            const dexScore = parseInt(document.getElementById('dex').value, 10) || 10;
+            const dexMod = Math.floor((dexScore - 10) / 2);
+            const customMod = parseInt(document.getElementById('initiativeMod').value, 10) || 0;
+            const dexModEl = document.getElementById('initiativeDexMod');
+            if (dexModEl) dexModEl.value = dexMod;
+            const initEl = document.getElementById('initiative');
+            initEl.value = dexMod + customMod;
+            initEl.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
         // Master Update: Recalculates everything
         function updateModifiers() {
             // 1. Proficiency Bonus: auto-calculated from level (see
@@ -4770,11 +4984,10 @@
                 const modEl = document.getElementById(data.mod);
                 if (modEl) modEl.textContent = (mod >= 0 ? "+" : "") + mod;
 
-                // Dexterity modifier also drives Initiative
-                if (ability === 'dex') {
-                    const initEl = document.getElementById('initiative');
-                    if (initEl) initEl.value = mod;
-                }
+                // Dexterity modifier also drives Initiative — see
+                // updateInitiative(), which adds initiativeMod on top
+                // instead of this stomping the box outright.
+                if (ability === 'dex') updateInitiative();
 
                 // Wisdom modifier drives Passive Wisdom (Perception): the
                 // 5e formula is 10 + Wis mod, plus proficiency bonus if
@@ -4882,19 +5095,88 @@
             'Bardic Inspiration': 'long',
             'Channel Divinity': 'short',
             'Wild Shape': 'short',
+            'Wild Companion': 'short',
             'Sorcery Points': 'long',
+            'Tides of Chaos': 'long',
             'Action Surge': 'short',
             'Second Wind': 'short',
-            'Lay on Hands': 'long'
+            'Indomitable': 'long',
+            'Lay on Hands': 'long',
+            'Divine Sense': 'long',
+            'Divine Intervention': 'long',
+            'Favored Foe': 'long',
+            'Arcane Recovery': 'long',
+            'Mystic Arcanum': 'long',
+            'Breath Weapon': 'short',
+            'Relentless Endurance': 'long'
         };
+        // Short "what it does" blurb pre-filled when you add a preset —
+        // fully editable afterward, same as every other box in the row.
+        const RESOURCE_DESCRIPTIONS = {
+            'Rage': 'Bonus action; lasts 1 min. Advantage on STR checks/saves, +damage on melee STR attacks, resistance to bludgeoning/piercing/slashing.',
+            'Bardic Inspiration': 'Bonus action to give a creature a Bardic Inspiration die (d6, grows). It adds it to one ability check, attack roll, or save within 10 min.',
+            'Channel Divinity': 'Fuels your subclass’s Channel Divinity option(s) — e.g. a Cleric’s Turn Undead. One effect per use.',
+            'Divine Intervention': 'Action to call on your deity: roll d100, success if ≤ your Cleric level. On success it can’t be used again for 7 days; on failure, retry after a long rest. (Level 20: automatic.)',
+            'Wild Shape': 'Action to turn into a beast you’ve seen (CR / movement limits by level and subclass). Lasts hours = ½ Druid level.',
+            'Wild Companion': 'Expend a use of Wild Shape to cast Find Familiar without material components; the spirit lasts until your next long rest.',
+            'Action Surge': 'One additional action on your turn (not a bonus action).',
+            'Second Wind': 'Bonus action to regain 1d10 + Fighter level HP.',
+            'Indomitable': 'Reroll a failed saving throw — you must use the new roll.',
+            'Superiority Dice': 'Fuel Battle Master maneuvers (d8, grows to d10/d12). Spent as part of a maneuver’s attack or effect.',
+            'Ki Points': 'Fuel Flurry of Blows, Patient Defense, Step of the Wind, Stunning Strike, and other monk features.',
+            'Lay on Hands': 'A pool of HP restored by touch (action). 5 points instead cures one disease or neutralizes one poison.',
+            'Divine Sense': 'Action: sense celestials, fiends, and undead within 60 ft (not behind total cover), and consecrated/desecrated ground, until your next turn.',
+            'Favored Foe': 'On a hit, mark the target (no action / bonus action per the option). Once each turn you deal +1d4 (grows) extra damage to it. Concentration, up to 1 min.',
+            'Sorcery Points': 'Convert to and from spell slots (Font of Magic) and fuel Metamagic.',
+            'Tides of Chaos': 'Advantage on one attack roll, ability check, or save. Regained on a long rest — or when the DM has you roll on the Wild Magic Surge table.',
+            'Mystic Arcanum': 'A 6th–9th-level spell you can cast once without expending a spell slot.',
+            'Arcane Recovery': 'Once per day on a short rest, recover spell slots with a combined level ≤ ½ your Wizard level (rounded up); none above 5th level.',
+            'Breath Weapon': 'Action: exhale energy in a line or cone (by ancestry). Dex or Con save; 2d6 damage (grows with level), half on a save.',
+            'Relentless Endurance': 'When reduced to 0 HP but not killed outright, drop to 1 HP instead.'
+        };
+
+        // 5e "max uses" by the character's level (+ ability mods / prof
+        // bonus where the feature scales that way). Best-effort for
+        // single-class; multiclass and subclass variants differ, so the
+        // number stays fully editable on the row.
+        function resourceMaxForTemplate(name, level) {
+            const L = Math.max(1, Math.min(20, parseInt(level, 10) || 1));
+            const prof = Math.ceil(L / 4) + 1; // derived from level, per the "based on level" ask
+            const mod = id => Math.floor(((parseInt(document.getElementById(id)?.value, 10) || 10) - 10) / 2);
+            switch (name) {
+                case 'Rage': return L >= 20 ? 99 : L >= 17 ? 6 : L >= 12 ? 5 : L >= 6 ? 4 : L >= 3 ? 3 : 2;
+                case 'Bardic Inspiration': return Math.max(1, mod('cha'));
+                case 'Channel Divinity': return L >= 18 ? 3 : L >= 6 ? 2 : 1;
+                case 'Wild Shape':
+                case 'Wild Companion': return 2;
+                case 'Sorcery Points':
+                case 'Ki Points': return L;
+                case 'Action Surge': return L >= 17 ? 2 : 1;
+                case 'Indomitable': return L >= 17 ? 3 : L >= 13 ? 2 : 1;
+                case 'Superiority Dice': return L >= 15 ? 6 : L >= 7 ? 5 : 4;
+                case 'Lay on Hands': return L * 5;
+                case 'Divine Sense': return 1 + mod('cha');
+                case 'Favored Foe': return prof;
+                case 'Mystic Arcanum': return L >= 17 ? 4 : L >= 15 ? 3 : L >= 13 ? 2 : 1;
+                case 'Tides of Chaos':
+                case 'Second Wind':
+                case 'Divine Intervention':
+                case 'Arcane Recovery':
+                case 'Breath Weapon':
+                case 'Relentless Endurance': return 1;
+                default: return 0;
+            }
+        }
+
         function addResourceTrackerFromPicker(value) {
             if (!value) return;
             if (value === '__custom__') {
                 const name = prompt('Name this resource (e.g. a homebrew feature your class/subclass grants):', '');
                 if (name === null) return;
-                addResourceTrackerRow(name.trim() || 'Resource', 0, 0, 'long');
+                addResourceTrackerRow(name.trim() || 'Resource', 0, 0, 'long', '');
             } else {
-                addResourceTrackerRow(value, 0, 0, RESOURCE_TRACKER_TEMPLATES[value] || 'long');
+                const max = resourceMaxForTemplate(value, document.getElementById('level')?.value);
+                addResourceTrackerRow(value, max, max, RESOURCE_TRACKER_TEMPLATES[value] || 'long', RESOURCE_DESCRIPTIONS[value] || '');
             }
             hasUnsavedChanges = true;
             if (window.autoSave) autoSave();
@@ -4905,27 +5187,43 @@
         // Bardic Inspiration/Sorcery Points/Lay on Hands). Stays a plain
         // <select> on the row itself, so a homebrew resource can pick
         // whichever fits, same as the name being renamable after the fact.
-        function addResourceTrackerRow(name = '', current = 0, max = 0, restoresOn = 'long') {
+        // Responsive tracker rows (2026-09-10). Layout is driven by the
+        // .rt-top / .rt-headline / .rt-counter CSS: phones stack the
+        // counter under the name, screens >=620px keep it on the same
+        // line. Description always sits full-width underneath. Selector
+        // class names are unchanged so
+        // getCharacterData/setCharacterData/shortRest/longRest still find
+        // everything.
+        function addResourceTrackerRow(name = '', current = 0, max = 0, restoresOn = 'long', desc = '') {
             const list = document.getElementById('resourceTrackersList');
             const row = document.createElement('div');
             row.className = 'ki-tracker resource-tracker-row';
-            row.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:10px; padding:10px; background:rgba(102,126,234,0.05); border-radius:8px; border:1px solid #555; flex-wrap:wrap;';
+            row.style.cssText = 'display:flex; flex-direction:column; gap:8px; margin-bottom:10px; padding:10px; background:rgba(102,126,234,0.05); border-radius:8px; border:1px solid #555;';
             row.innerHTML = `
-                <input type="text" class="resource-tracker-name" placeholder="Resource Name" value="${name}" oninput="updateWildShapeResourceButton()" style="font-weight:bold; flex:1 1 120px; min-width:100px; border:1px solid #ccc; border-radius:4px; padding:6px 8px;">
-                <select class="resource-tracker-restores" title="When this comes back">
-                    <option value="none">No auto-reset</option>
-                    <option value="short">Short or Long Rest</option>
-                    <option value="long">Long Rest only</option>
-                </select>
-                <button type="button" onclick="adjustResourceTracker(this, -1)" style="width: 28px; height: 28px; cursor: pointer; background: #dc3545; color: white; border: none; border-radius: 4px; font-weight: bold;">-</button>
-                <input type="number" class="resource-tracker-current" value="${current}" min="0" oninput="clampResourceTracker(this)" style="width: 45px; text-align: center;">
-                <span>/</span>
-                <input type="number" class="resource-tracker-max" value="${max}" min="0" oninput="clampResourceTracker(this)" style="width: 45px; text-align: center;">
-                <button type="button" onclick="adjustResourceTracker(this, 1)" style="width: 28px; height: 28px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold;">+</button>
-                <button type="button" class="remove-spell" onclick="if(confirm('Remove this resource tracker?')){this.parentElement.remove(); updateWildShapeResourceButton();}" title="Remove">✖</button>
+                <div class="rt-top">
+                    <div class="rt-headline">
+                        <input type="text" class="resource-tracker-name" placeholder="Resource Name" value="${name}" oninput="updateWildShapeResourceButton()" style="font-weight:bold; border:1px solid #ccc; border-radius:4px; padding:6px 8px;">
+                        <select class="resource-tracker-restores" title="When this comes back" style="flex:0 1 auto; min-width:0; max-width:150px;">
+                            <option value="none">No auto-reset</option>
+                            <option value="short">Short or Long Rest</option>
+                            <option value="long">Long Rest only</option>
+                        </select>
+                        <button type="button" class="remove-spell" onclick="if(confirm('Remove this resource tracker?')){this.closest('.resource-tracker-row').remove(); updateWildShapeResourceButton();}" title="Remove" style="flex-shrink:0;">✖</button>
+                    </div>
+                    <div class="rt-counter">
+                        <button type="button" onclick="adjustResourceTracker(this, -1)" style="width: 28px; height: 28px; cursor: pointer; background: #dc3545; color: white; border: none; border-radius: 4px; font-weight: bold;">-</button>
+                        <input type="number" class="resource-tracker-current" value="${current}" min="0" oninput="clampResourceTracker(this)" style="width: 44px; text-align: center;">
+                        <span>/</span>
+                        <input type="number" class="resource-tracker-max" value="${max}" min="0" oninput="clampResourceTracker(this)" style="width: 44px; text-align: center;">
+                        <button type="button" onclick="adjustResourceTracker(this, 1)" style="width: 28px; height: 28px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold;">+</button>
+                    </div>
+                </div>
+                <textarea class="resource-tracker-desc" placeholder="What it does (editable)" oninput="autoSizeTextarea(this)" style="width:100%; box-sizing:border-box; min-height:38px; font-size:12px; border:1px solid #ccc; border-radius:4px; padding:6px 8px; resize:vertical;">${escapeHtml(desc)}</textarea>
             `;
             row.querySelector('.resource-tracker-restores').value = restoresOn;
             list.appendChild(row);
+            const ta = row.querySelector('.resource-tracker-desc');
+            if (ta && desc) autoSizeTextarea(ta);
             updateWildShapeResourceButton();
             return row;
         }
@@ -5072,6 +5370,7 @@
                                                                                               class="cantrip-description"
                                                                                               oninput="autoSizeTextarea(this)"
                                                                                               style="width: 100%; min-height: 40px;"></textarea>
+                                                                                                      <button type="button" class="btn" style="margin-top:6px; font-size:11px; padding:5px 10px;" onclick="saveCustomSpellToBook(this, true)" title="Adds this cantrip to your own Spellbook — it'll show up there on every character, on any device you're logged into.">☁️ Save to My Spellbook</button>
                                                                                                       </div>
                                                                                                       `;
             cantripsList.appendChild(row);
@@ -5323,6 +5622,22 @@
             countEl.textContent = `${rows.length} item(s) attuned`;
         }
 
+        // The active Wild Shape form's own weight (if one's set) stands in
+        // for the character's normal body weight everywhere that's read —
+        // for roleplay purposes (2026-09-13, "so that this can attune to
+        // the global weight"), the druid's own body IS the beast right
+        // now. A form with no weight set (most custom builds, until
+        // filled in) just falls back to the character's own #weight
+        // field, same as always.
+        function getEffectiveBodyWeight() {
+            const activeForm = (typeof wildShapeForms !== 'undefined') ? wildShapeForms.find(f => f.id === activeWildShapeId) : null;
+            if (activeForm && activeForm.weight !== undefined && activeForm.weight !== null && activeForm.weight !== '' && !isNaN(parseFloat(activeForm.weight))) {
+                return parseFloat(activeForm.weight);
+            }
+            const charWeightInput = document.getElementById('weight');
+            return charWeightInput ? parseFloat(charWeightInput.value.replace(/[^0-9.]/g, '')) || 0 : 0;
+        }
+
         function updateTotalWeight() {
             let globalTotal = 0;
 
@@ -5420,8 +5735,13 @@
             // own load total below — those are already counted once via the
             // inventory total and the character's/container's own weight, so
             // adding a mount's full load here would double-count them.
-            const charWeightInput = document.getElementById('weight');
-            const charWeight = charWeightInput ? parseFloat(charWeightInput.value.replace(/[^0-9.]/g, '')) || 0 : 0;
+            // Wild Shape (2026-09-13, "so that this can attune to the
+            // global weight, for roleplay purposes"): while transformed,
+            // the active beast form's own weight (if you set one) stands
+            // in for your normal body weight instead — see
+            // getEffectiveBodyWeight(). A form with no weight set just
+            // falls back to #weight as always.
+            const charWeight = getEffectiveBodyWeight();
 
             let mountsOwnWeightTotal = 0;
             document.querySelectorAll('.mount-card .manual-mount-load').forEach(input => {
@@ -5430,6 +5750,13 @@
 
             const globalDisplay = document.getElementById('totalWeight');
             if (globalDisplay) globalDisplay.textContent = (globalTotal + charWeight + mountsOwnWeightTotal + containersBaseWeightTotal).toFixed(2);
+
+            const wsWeightNote = document.getElementById('wsGlobalWeightNote');
+            if (wsWeightNote) {
+                const activeForm = (typeof wildShapeForms !== 'undefined') ? wildShapeForms.find(f => f.id === activeWildShapeId) : null;
+                const usingFormWeight = activeForm && activeForm.weight !== undefined && activeForm.weight !== null && activeForm.weight !== '' && !isNaN(parseFloat(activeForm.weight));
+                wsWeightNote.textContent = usingFormWeight ? ` (as ${activeForm.name || 'current form'}, ${parseFloat(activeForm.weight)} lb)` : '';
+            }
 
             // 4. Update Mounts
             document.querySelectorAll('.mount-card').forEach(mount => updateMountLoad(mount.id));
@@ -5443,13 +5770,12 @@
             const manualInput = card.querySelector('.manual-mount-load');
             let totalCalculatedLoad = manualInput ? parseFloat(manualInput.value) || 0 : 0;
 
-            // 2. Add Rider Weight safely if checked
+            // 2. Add Rider Weight safely if checked (uses the active Wild
+            // Shape form's own weight instead of the character's normal
+            // #weight when transformed — see getEffectiveBodyWeight())
             const ridingCheckbox = card.querySelector('.is-riding');
             if (ridingCheckbox && ridingCheckbox.checked) {
-                const charWeightInput = document.getElementById('weight');
-                // Clean the input to remove "lbs" or other text before parsing
-                const cleanWeight = charWeightInput ? charWeightInput.value.replace(/[^0-9.]/g, '') : "0";
-                totalCalculatedLoad += parseFloat(cleanWeight) || 0;
+                totalCalculatedLoad += getEffectiveBodyWeight();
             }
 
             // 3. Sync Hitched Containers
@@ -5596,10 +5922,301 @@
                                                                                               placeholder="Potion description..."
                                                                                               oninput="autoSizeTextarea(this)"
                                                                                               style="width: 100%; min-height: 40px; margin-top:5px;">${desc}</textarea>
+                                                                                                        <button type="button" class="btn" style="margin-top:6px; font-size:11px; padding:5px 10px;" onclick="saveCustomPotionToBook(this)" title="Adds this potion to your own Potion Book — it'll show up there on every character, on any device you're logged into.">☁️ Save to Potion Book</button>
                                                                                                         </div>
                                                                                                         `;
             list.appendChild(row);
             updateTotalWeight();
+        }
+
+        // (2026-09-12, "custom potions need to save to our potion book") —
+        // pushes THIS row's current name/price/weight/description to the
+        // account's own cloud custom_potions table, so it shows up under
+        // "My Potions" in the Potion Book from then on — same "+ Add" flow
+        // as an SRD entry, just something you made up yourself. Upserts
+        // on (user_email, name), so clicking this again after editing the
+        // same potion updates it in place instead of piling up duplicates.
+        // A real 5e SRD name is skipped with a note — that one's already
+        // in the book, no need for a second copy of it under Custom.
+        async function saveCustomPotionToBook(btn) {
+            if (!restrictedFeature('Potion Book')) return;
+            const row = btn.closest('.inventory-row');
+            const name = row.querySelector('.eq-name').value.trim();
+            if (!name) { alert('Name this potion first.'); return; }
+            // (2026-09-12, "allow user to add cost in the library, even in
+            // the 5e list") — a name matching a real SRD potion is no
+            // longer rejected: saving one now means "remember MY price/
+            // weight/description for this SRD potion," an override the
+            // Potion Book displays instead of (never replacing) the real
+            // SRD text — see renderPotionBookList.
+            const price = row.querySelector('.eq-price').value.trim();
+            const weight = parseFloat(row.querySelector('.eq-weight').value) || 0;
+            const description = row.querySelector('.eq-desc').value.trim();
+            const email = localStorage.getItem('licenseEmail');
+
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+            const { error } = await _supabase.from('custom_potions')
+                .upsert({ user_email: email.toLowerCase(), name, price, weight, description }, { onConflict: 'user_email, name' });
+            btn.disabled = false;
+            btn.textContent = originalText;
+
+            if (error) { alert('Could not save to your Potion Book: ' + error.message); return; }
+            alert(`Saved "${name}" to your Potion Book.`);
+        }
+
+        // Potion Book (2026-09-12, "adjust potions like we have spells...
+        // 5e list of potions that are open source, but also add custom
+        // maker as well") — same sourcing as SRD_SPELLS: the real 5e
+        // System Reference Document (Open Gaming License), pulled from
+        // Open5e's API (api.open5e.com/v1/magicitems, document
+        // wotc-srd, type=Potion) — all 20 potions/oils the SRD actually
+        // defines, nothing invented. Checked directly against that API
+        // response (2026-09-12): it carries no price or weight field at
+        // all for any item — name/type/desc/rarity/requires_attunement,
+        // nothing else. Price stays blank for that reason: the only real
+        // 5e number for a magic item's value is the DMG's RANGE per
+        // rarity tier (e.g. "50-100 gp" for Common), and that's Dungeon
+        // Master's Guide content, not SRD/OGL content — using it here
+        // would contradict this feature's own "nothing copied from the
+        // DMG" claim. Weight of 0.5 lb is different: not rules text at
+        // all, just the common "a vial is basically weightless" physical
+        // convention, same spirit as leaving a spell's damage dice blank
+        // rather than guessing (see fillSpellRowFromSRD) — a real number,
+        // not a game-rule fact being asserted.
+        const SRD_POTIONS = [
+            { name: 'Oil of Etherealness', rarity: 'Rare', weight: 0.5, desc: "Beads of this cloudy gray oil form on the outside of its container and quickly evaporate. The oil can cover a Medium or smaller creature, along with the equipment it's wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the effect of the etherealness spell for 1 hour." },
+            { name: 'Oil of Sharpness', rarity: 'Very Rare', weight: 0.5, desc: 'This clear, gelatinous oil sparkles with tiny, ultrathin silver shards. The oil can coat one slashing or piercing weapon or up to 5 pieces of slashing or piercing ammunition. Applying the oil takes 1 minute. For 1 hour, the coated item is magical and has a +3 bonus to attack and damage rolls.' },
+            { name: 'Oil of Slipperiness', rarity: 'Uncommon', weight: 0.5, desc: "This sticky black unguent is thick and heavy in the container, but it flows quickly when poured. The oil can cover a Medium or smaller creature, along with the equipment it's wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the effect of a freedom of movement spell for 8 hours. Alternatively, the oil can be poured on the ground as an action, where it covers a 10-foot square, duplicating the effect of the grease spell in that area for 8 hours." },
+            { name: 'Philter of Love', rarity: 'Uncommon', weight: 0.5, desc: "The next time you see a creature within 10 minutes after drinking this philter, you become charmed by that creature for 1 hour. If the creature is of a species and gender you are normally attracted to, you regard it as your true love while you are charmed. This potion's rose-hued, effervescent liquid contains one easy-to-miss bubble shaped like a heart." },
+            { name: 'Potion of Animal Friendship', rarity: 'Uncommon', weight: 0.5, desc: 'When you drink this potion, you can cast the animal friendship spell (save DC 13) for 1 hour at will. Agitating this muddy liquid brings little bits into view: a fish scale, a hummingbird tongue, a cat claw, or a squirrel hair.' },
+            { name: 'Potion of Clairvoyance', rarity: 'Rare', weight: 0.5, desc: 'When you drink this potion, you gain the effect of the clairvoyance spell. An eyeball bobs in this yellowish liquid but vanishes when the potion is opened.' },
+            { name: 'Potion of Climbing', rarity: 'Common', weight: 0.5, desc: 'When you drink this potion, you gain a climbing speed equal to your walking speed for 1 hour. During this time, you have advantage on Strength (Athletics) checks you make to climb. The potion is separated into brown, silver, and gray layers resembling bands of stone. Shaking the bottle fails to mix the colors.' },
+            { name: 'Potion of Diminution', rarity: 'Rare', weight: 0.5, desc: "When you drink this potion, you gain the 'reduce' effect of the enlarge/reduce spell for 1d4 hours (no concentration required). The red in the potion's liquid continuously contracts to a tiny bead and then expands to color the clear liquid around it. Shaking the bottle fails to interrupt this process." },
+            { name: 'Potion of Flying', rarity: 'Very Rare', weight: 0.5, desc: "When you drink this potion, you gain a flying speed equal to your walking speed for 1 hour and can hover. If you're in the air when the potion wears off, you fall unless you have some other means of staying aloft. This potion's clear liquid floats at the top of its container and has cloudy white impurities drifting in it." },
+            { name: 'Potion of Gaseous Form', rarity: 'Rare', weight: 0.5, desc: "When you drink this potion, you gain the effect of the gaseous form spell for 1 hour (no concentration required) or until you end the effect as a bonus action. This potion's container seems to hold fog that moves and pours like water." },
+            { name: 'Potion of Giant Strength', rarity: 'Varies', weight: 0.5, desc: "When you drink this potion, your Strength score changes for 1 hour: Hill giant strength sets it to 21 (Uncommon), Frost or Stone giant strength to 23 (Rare), Fire giant strength to 25 (Rare), Cloud giant strength to 27 (Very Rare), or Storm giant strength to 29 (Legendary). The potion has no effect on you if your Strength is already equal to or greater than that score. This potion's transparent liquid has floating in it a sliver of fingernail from a giant of the appropriate type." },
+            { name: 'Potion of Growth', rarity: 'Uncommon', weight: 0.5, desc: "When you drink this potion, you gain the 'enlarge' effect of the enlarge/reduce spell for 1d4 hours (no concentration required). The red in the potion's liquid continuously expands from a tiny bead to color the clear liquid around it and then contracts. Shaking the bottle fails to interrupt this process." },
+            { name: 'Potion of Healing', rarity: 'Varies', weight: 0.5, desc: "You regain hit points when you drink this potion. Potion of Healing (Common) restores 2d4+2 HP, Potion of Greater Healing (Uncommon) restores 4d4+4 HP, Potion of Superior Healing (Rare) restores 8d4+8 HP, and Potion of Supreme Healing (Very Rare) restores 10d4+20 HP. Whatever its potency, the potion's red liquid glimmers when agitated." },
+            { name: 'Potion of Heroism', rarity: 'Rare', weight: 0.5, desc: 'For 1 hour after drinking it, you gain 10 temporary hit points that last for 1 hour. For the same duration, you are under the effect of the bless spell (no concentration required). This blue potion bubbles and steams as if boiling.' },
+            { name: 'Potion of Invisibility', rarity: 'Very Rare', weight: 0.5, desc: "This potion's container looks empty but feels as though it holds liquid. When you drink it, you become invisible for 1 hour. Anything you wear or carry is invisible with you. The effect ends early if you attack or cast a spell." },
+            { name: 'Potion of Mind Reading', rarity: 'Rare', weight: 0.5, desc: "When you drink this potion, you gain the effect of the detect thoughts spell (save DC 13). The potion's dense, purple liquid has an ovoid cloud of pink floating in it." },
+            { name: 'Potion of Poison', rarity: 'Uncommon', weight: 0.5, desc: 'This concoction looks, smells, and tastes like a potion of healing or other beneficial potion. However, it is actually poison masked by illusion magic. An identify spell reveals its true nature. If you drink it, you take 3d6 poison damage, and you must succeed on a DC 13 Constitution saving throw or be poisoned. At the start of each of your turns while you are poisoned in this way, you take 3d6 poison damage. At the end of each of your turns, you can repeat the saving throw. On a successful save, the poison damage you take on your subsequent turns decreases by 1d6. The poison ends when the damage decreases to 0.' },
+            { name: 'Potion of Resistance', rarity: 'Uncommon', weight: 0.5, desc: 'When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from: Acid, Cold, Fire, Force, Lightning, Necrotic, Poison, Psychic, Radiant, or Thunder.' },
+            { name: 'Potion of Speed', rarity: 'Very Rare', weight: 0.5, desc: "When you drink this potion, you gain the effect of the haste spell for 1 minute (no concentration required). The potion's yellow fluid is streaked with black and swirls on its own." },
+            { name: 'Potion of Water Breathing', rarity: 'Uncommon', weight: 0.5, desc: 'You can breathe underwater for 1 hour after drinking this potion. Its cloudy green fluid smells of the sea and has a jellyfish-like bubble floating in it.' }
+        ];
+        // "My Potions" sorts first — your own saved potions are what
+        // you're most likely looking for once you have any.
+        const POTION_RARITY_ORDER = ['My Potions', 'Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary', 'Varies'];
+
+        // Loaded fresh every time the modal opens (2026-09-12) — this
+        // account's own custom_potions rows. desc is normalized from the
+        // table's `description` column. A row here can mean either of two
+        // things, told apart in renderPotionBookList by whether its name
+        // matches a real SRD potion: a genuinely custom potion (shown
+        // under "My Potions"), or a saved price/weight/description
+        // OVERRIDE for an SRD potion (shown under that potion's own real
+        // rarity group instead, in place of the plain SRD defaults).
+        let myCustomPotions = [];
+
+        async function openPotionBookModal() {
+            document.getElementById('potionBookModal').style.display = 'flex';
+            document.getElementById('potionBookList').innerHTML = '<p style="text-align:center; color:#888; font-size:12.5px; padding:10px;">Loading your Potion Book…</p>';
+            await loadMyCustomPotions();
+            renderPotionBookList();
+        }
+        function closePotionBookModal() {
+            document.getElementById('potionBookModal').style.display = 'none';
+        }
+
+        async function loadMyCustomPotions() {
+            const email = localStorage.getItem('licenseEmail');
+            if (!email) { myCustomPotions = []; return; } // trial/unactivated — nothing of theirs to fetch yet
+            try {
+                const { data, error } = await _supabase.from('custom_potions')
+                    .select('*').eq('user_email', email.toLowerCase()).order('name');
+                if (error) throw error;
+                myCustomPotions = (data || []).map(p => ({
+                    id: p.id, name: p.name, price: p.price, weight: p.weight,
+                    desc: p.description, rarity: 'My Potions'
+                }));
+            } catch (e) {
+                console.error('Could not load custom potions:', e);
+                myCustomPotions = [];
+            }
+        }
+
+        // (2026-09-12, "make the potion info adjustable in the book...
+        // allow user to add cost in the library, even in the 5e list") —
+        // merges an SRD potion with any saved override sharing its name
+        // (case-insensitive), so the book shows YOUR price/weight/desc in
+        // place of the bare defaults once you've saved one, without ever
+        // touching the real SRD_POTIONS data itself. A custom_potions row
+        // whose name ISN'T a real SRD potion is genuinely custom instead
+        // — grouped under "My Potions" — not an override of anything.
+        function renderPotionBookList() {
+            const container = document.getElementById('potionBookList');
+            if (!container) return;
+            // Re-checked on every render (not just on open) so logging in
+            // without closing the modal first clears the notice right away.
+            const loginNotice = document.getElementById('potionBookLoginNotice');
+            if (loginNotice) loginNotice.style.display = localStorage.getItem('licenseEmail') ? 'none' : 'block';
+            const query = (document.getElementById('potionBookSearch').value || '').toLowerCase();
+
+            const customByName = new Map(myCustomPotions.map(p => [p.name.toLowerCase(), p]));
+            const srdEntries = SRD_POTIONS.map(p => {
+                const override = customByName.get(p.name.toLowerCase());
+                return {
+                    name: p.name, rarity: p.rarity, isOverride: !!override,
+                    id: override ? override.id : null,
+                    price: override ? override.price : (p.price || ''),
+                    weight: override ? override.weight : p.weight,
+                    desc: override ? override.desc : p.desc
+                };
+            });
+            const customOnlyEntries = myCustomPotions
+                .filter(p => !SRD_POTIONS.some(sp => sp.name.toLowerCase() === p.name.toLowerCase()))
+                .map(p => ({ ...p, rarity: 'My Potions', isOverride: false }));
+
+            const matches = [...customOnlyEntries, ...srdEntries]
+                .filter(p => p.name.toLowerCase().includes(query) || p.desc.toLowerCase().includes(query));
+
+            if (!matches.length) {
+                container.innerHTML = '<p style="text-align:center; color:#888; font-size:12.5px; padding:10px;">No matches.</p>';
+                return;
+            }
+
+            const byRarity = {};
+            matches.forEach(p => { (byRarity[p.rarity] = byRarity[p.rarity] || []).push(p); });
+
+            container.innerHTML = POTION_RARITY_ORDER.filter(r => byRarity[r]).map(rarity => {
+                const entries = byRarity[rarity].sort((a, b) => a.name.localeCompare(b.name));
+                const rows = entries.map(p => {
+                    const safeName = escapeHtmlDice(p.name);
+                    // A real cloud id means there's something of yours to
+                    // remove: for a true custom potion that deletes it
+                    // outright; for an SRD override it just resets that
+                    // potion back to the plain 5e defaults (the SRD entry
+                    // itself is never touched either way).
+                    const removeBtn = p.id
+                        ? `<button type="button" class="btn" style="margin-top:0; padding:4px 8px; font-size:11px; background:#c0392b;" onclick="deleteCustomPotionFromBook('${p.id}')" title="${p.isOverride ? 'Reset to the default 5e price/weight/description' : 'Remove from your Potion Book'}">${p.isOverride ? '↺' : '🗑'}</button>`
+                        : '';
+                    return `
+                        <div class="potionbook-entry">
+                            <div class="potionbook-entry-head">
+                                <span class="potionbook-entry-name">${safeName}</span>
+                                <button type="button" class="btn" style="margin-top:0; padding:4px 10px; font-size:11px;" onclick="addPotionFromBookEntry(this)">+ Add to Sheet</button>
+                                ${removeBtn}
+                            </div>
+                            <div class="potionbook-entry-fields">
+                                <input type="text" class="pb-price" placeholder="Price (e.g. 50 gp)" value="${escapeHtmlDice(p.price || '')}" onchange="autoSavePotionBookEntry(this)">
+                                <input type="text" class="pb-weight" placeholder="Weight (lb)" value="${p.weight ? escapeHtmlDice(String(p.weight)) : ''}" onchange="autoSavePotionBookEntry(this)">
+                            </div>
+                            <textarea class="potionbook-entry-desc-input" oninput="autoSizeTextarea(this)" onchange="autoSavePotionBookEntry(this)">${escapeHtmlDice(p.desc)}</textarea>
+                        </div>`;
+                }).join('');
+                return `<details class="spellbook-level-group" open><summary>${escapeHtmlDice(rarity)} (${entries.length})</summary>${rows}</details>`;
+            }).join('');
+        }
+
+        async function deleteCustomPotionFromBook(id) {
+            if (!confirm('Remove this from your Potion Book? This cannot be undone (it won\'t touch any potion already on a character sheet).')) return;
+            const { error } = await _supabase.from('custom_potions').delete().eq('id', id);
+            if (error) { alert('Could not remove: ' + error.message); return; }
+            await loadMyCustomPotions();
+            renderPotionBookList();
+        }
+
+        // Reads a potionbook-entry card's CURRENT on-screen values — not a
+        // backing JS object — so whatever's been typed but not yet saved
+        // is exactly what "+ Add to Sheet" uses too. Works for an SRD
+        // entry, a saved custom one, and a brand-new not-yet-saved card
+        // from addBlankPotionToBook alike: the name is a fixed label in
+        // the first two, a plain input in the third (see there).
+        function readPotionBookEntry(el) {
+            const card = el.closest('.potionbook-entry');
+            const nameEl = card.querySelector('.potionbook-entry-name') || card.querySelector('.potionbook-entry-name-input');
+            return {
+                card,
+                name: (nameEl.tagName === 'INPUT' ? nameEl.value : nameEl.textContent).trim(),
+                price: card.querySelector('.pb-price').value.trim(),
+                weight: parseFloat(card.querySelector('.pb-weight').value) || 0,
+                desc: card.querySelector('.potionbook-entry-desc-input').value.trim()
+            };
+        }
+
+        // Drops a normal, fully-editable Potions row using whatever this
+        // card currently shows — including any not-yet-saved edits.
+        // Deliberately just appends a new row rather than checking for an
+        // existing one — clicking this again for a second (or third)
+        // potion of the same kind is how you get more of them; bump the
+        // Qty field on an existing row instead if you'd rather stack them.
+        function addPotionFromBookEntry(btn) {
+            const p = readPotionBookEntry(btn);
+            if (!p.name) return;
+            addPotion(p.name, p.price, p.weight, 1, p.desc);
+            // A brand-new, never-saved card (see addBlankPotionToBook) has
+            // nothing worth keeping around in the book once it's on the
+            // sheet — clean it up rather than leaving an orphaned blank
+            // card. A real SRD/saved-custom card just stays put.
+            if (p.card.classList.contains('potionbook-entry-unsaved')) p.card.remove();
+        }
+
+        // (2026-09-12, "the save to library button doesn't need to be
+        // seen, we auto save already so its not needed") — fires on
+        // `change` (blur-after-edit, not every keystroke) for any of a
+        // card's Price/Weight/Description fields, or its name field on a
+        // brand-new card. Silent by design, same spirit as the character
+        // sheet's own autosave never popping a confirmation — no button,
+        // no alert on success. A missing name or missing license (not
+        // logged in — Potion Book needs one, same as Cloud Backups) just
+        // means there's nothing to key the save on yet; it quietly no-ops
+        // rather than nagging mid-edit, and tries again the next time any
+        // field on this card changes.
+        async function autoSavePotionBookEntry(el) {
+            const p = readPotionBookEntry(el);
+            if (!p.name) return;
+            const email = localStorage.getItem('licenseEmail');
+            if (!email) return;
+
+            const { error } = await _supabase.from('custom_potions')
+                .upsert({ user_email: email.toLowerCase(), name: p.name, price: p.price, weight: p.weight, description: p.desc }, { onConflict: 'user_email, name' });
+            if (error) { console.error('Potion Book auto-save failed:', error); return; }
+            // No re-render here — that would blow away focus/selection on
+            // whatever field the user just left. This card is now real
+            // saved data though, so "+ Add to Sheet" shouldn't treat it as
+            // a throwaway blank anymore (see addPotionFromBookEntry).
+            p.card.classList.remove('potionbook-entry-unsaved');
+            await loadMyCustomPotions(); // keeps state fresh for the next render (search, reopen, etc.)
+        }
+
+        // "+ New Custom Potion" (2026-09-12, "move the add potion button
+        // to the inside of the book not on the page") — a blank, editable
+        // card prepended right above the list, same shape as every other
+        // entry except its name is a plain input (nothing to label it
+        // with yet). Auto-saves the moment a named field loses focus (see
+        // autoSavePotionBookEntry) — no separate save step. "+ Add to
+        // Sheet" works on it immediately either way, saved yet or not.
+        function addBlankPotionToBook() {
+            const list = document.getElementById('potionBookList');
+            const card = document.createElement('div');
+            card.className = 'potionbook-entry potionbook-entry-unsaved';
+            card.innerHTML = `
+                <div class="potionbook-entry-head">
+                    <input type="text" class="potionbook-entry-name-input" placeholder="Potion Name" onchange="autoSavePotionBookEntry(this)">
+                    <button type="button" class="btn" style="margin-top:0; padding:4px 10px; font-size:11px;" onclick="addPotionFromBookEntry(this)">+ Add to Sheet</button>
+                    <button type="button" class="btn" style="margin-top:0; padding:4px 8px; font-size:11px; background:#c0392b;" onclick="this.closest('.potionbook-entry').remove()" title="Discard">✖</button>
+                </div>
+                <div class="potionbook-entry-fields">
+                    <input type="text" class="pb-price" placeholder="Price (e.g. 50 gp)" onchange="autoSavePotionBookEntry(this)">
+                    <input type="text" class="pb-weight" placeholder="Weight (lb)" onchange="autoSavePotionBookEntry(this)">
+                </div>
+                <textarea class="potionbook-entry-desc-input" placeholder="What does it do?" oninput="autoSizeTextarea(this)" onchange="autoSavePotionBookEntry(this)"></textarea>
+            `;
+            list.prepend(card);
+            card.querySelector('.potionbook-entry-name-input').focus();
         }
 
         function toggleDarkMode() {
@@ -5729,9 +6346,13 @@
 
             const row = document.createElement("div");
             row.className = "spell-row"; // Applies the grid layout
+            // (2026-09-10) — matched to the Cantrip layout: Level + Name +
+            // delete on the top line, and Prepared / Bonus Action? / Used
+            // moved down into the details panel as one checkbox row.
+            // Bonus Action? is rarely meaningful for a leveled spell but
+            // stays for homebrew / custom use.
+            row.style.gridTemplateColumns = "100px 1fr 40px"; // Level, Name, Delete
             row.innerHTML = `
-                                                                                                        <input type="checkbox" class="spell-prepared" onchange="handleSpellPreparedChange(this)" title="Prepared — checking this adds it to Attacks (or Bonus Actions, see the checkbox below) so it's ready to roll in combat; unchecking removes that entry again.">
-                                                                                                        <input type="checkbox" class="spell-used">
                                                                                                         <select class="spell-level-select">
                                                                                                         <option value="0">Level 1</option>
                                                                                                         <option value="1">Level 2</option>
@@ -5756,13 +6377,22 @@
                                                                                                         <input type="text" placeholder="Damage Dice — optional" class="spell-dice" oninput="handleSpellCombatFieldChange(this)" style="flex: 1; padding: 5px;" title="If this has real dice notation (e.g. 8d6), checking Prepared carries it into the Attacks entry as its damage. Leave blank for a spell with no damage roll (a save-only or utility spell, etc.) — that entry just has no damage dice for the Dice Roller to offer, same as any other attack without any.">
                                                                                                         <input type="text" placeholder="Damage Type (e.g. fire)" class="spell-damage-type" oninput="handleSpellCombatFieldChange(this)" style="flex: 1; padding: 5px;">
                                                                                                         </div>
-                                                                                                        <label style="display:flex; align-items:center; gap:6px; font-size:12px; margin-bottom:5px; cursor:pointer;" title="Checked: Prepared sends this to Bonus Actions instead of Attacks. Only matters at the moment Prepared is checked — flipping this afterward doesn't move an entry already created.">
+                                                                                                        <div style="display:flex; gap:14px; margin-bottom:5px;">
+                                                                                                        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;" title="Checking this adds it to Attacks (or Bonus Actions, see the checkbox next to it) so it's ready to roll in combat; unchecking removes that entry again.">
+                                                                                                        <input type="checkbox" class="spell-prepared" onchange="handleSpellPreparedChange(this)"> Prepared
+                                                                                                        </label>
+                                                                                                        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;" title="Checked: Prepared sends this to Bonus Actions instead of Attacks. Only matters at the moment Prepared is checked — flipping this afterward doesn't move an entry already created. Uncommon for a leveled spell, kept for homebrew.">
                                                                                                         <input type="checkbox" class="spell-bonus-action-flag"> Bonus Action?
                                                                                                         </label>
+                                                                                                        <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;" title="Mark this spell used — Short Rest restores half of everything marked Used across Spells and Cantrips, Long Rest clears all of it.">
+                                                                                                        <input type="checkbox" class="spell-used"> Used
+                                                                                                        </label>
+                                                                                                        </div>
                                                                                                         <textarea placeholder="Spell details..."
                                                                                               class="spell-description"
                                                                                               oninput="autoSizeTextarea(this)"
                                                                                               style="width: 100%; min-height: 40px;"></textarea>
+                                                                                                        <button type="button" class="btn" style="margin-top:6px; font-size:11px; padding:5px 10px;" onclick="saveCustomSpellToBook(this, false)" title="Adds this spell to your own Spellbook — it'll show up there on every character, on any device you're logged into.">☁️ Save to My Spellbook</button>
                                                                                                         </div>
                                                                                                         `;
 
@@ -5907,12 +6537,114 @@
         // could've changed, or another tab's edits could've added/removed
         // a spell, since it was last open) rather than relying on whatever
         // it last showed.
-        function openSpellbookModal() {
-            renderSpellbookSection();
+        // Cloud-saved custom spells/cantrips for this account (2026-09-12,
+        // "lets do that to our open source too" — same idea as
+        // custom_potions, applied here). Only fetched when the modal
+        // actually opens (not from renderSpellbookSection's other call
+        // site in setCharacterData, which runs on every character load
+        // whether or not this modal ever gets opened this session) —
+        // renderSpellbookList just renders whatever's already in here,
+        // same lazily-populated pattern as myCustomPotions.
+        let myCustomSpells = [];
+
+        async function openSpellbookModal() {
             document.getElementById('spellbookModal').style.display = 'flex';
+            await loadMyCustomSpells();
+            renderSpellbookSection();
         }
         function closeSpellbookModal() {
             document.getElementById('spellbookModal').style.display = 'none';
+        }
+
+        async function loadMyCustomSpells() {
+            const email = localStorage.getItem('licenseEmail');
+            if (!email) { myCustomSpells = []; return; }
+            try {
+                const { data, error } = await _supabase.from('custom_spells')
+                    .select('*').eq('user_email', email.toLowerCase()).order('name');
+                if (error) throw error;
+                myCustomSpells = (data || []).map(s => ({
+                    id: s.id, name: s.name, cantrip: s.cantrip, level: s.level,
+                    castingTime: s.casting_time, range: s.range, duration: s.duration,
+                    components: s.components, dice: s.dice, damageType: s.damage_type,
+                    desc: s.description
+                }));
+            } catch (e) {
+                console.error('Could not load custom spells:', e);
+                myCustomSpells = [];
+            }
+        }
+
+        // Pushes THIS row's current fields to the account's own cloud
+        // custom_spells table — same "+ Save to Potion Book" idea as
+        // Potions, adapted to a spell/cantrip row's own fields. Upserts on
+        // (user_email, name), so re-saving after edits updates in place.
+        async function saveCustomSpellToBook(btn, cantrip) {
+            if (!restrictedFeature('My Spellbook')) return;
+            const row = btn.closest('.spell-row');
+            const nameField = row.querySelector(cantrip ? '.cantrip-name' : '.spell-name');
+            const name = nameField.value.trim();
+            if (!name) { alert('Name this first.'); return; }
+            if (SRD_SPELLS.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+                alert(`"${name}" is already a real 5e ${cantrip ? 'cantrip' : 'spell'} in the Spellbook — no need to save it separately.`);
+                return;
+            }
+            const levelSelect = row.querySelector('.spell-level-select');
+            const level = levelSelect ? (parseInt(levelSelect.value, 10) || 0) : 0;
+            const castingTime = row.querySelector('.spell-casting-time').value.trim();
+            const range = row.querySelector('.spell-range').value.trim();
+            const duration = row.querySelector('.spell-duration').value.trim();
+            const components = row.querySelector('.spell-components').value.trim();
+            const dice = row.querySelector('.spell-dice').value.trim();
+            const damageType = row.querySelector('.spell-damage-type').value.trim();
+            const description = row.querySelector(cantrip ? '.cantrip-description' : '.spell-description').value.trim();
+            const email = localStorage.getItem('licenseEmail');
+
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+            const { error } = await _supabase.from('custom_spells').upsert({
+                user_email: email.toLowerCase(), name, cantrip, level,
+                casting_time: castingTime, range, duration, components, dice,
+                damage_type: damageType, description
+            }, { onConflict: 'user_email, name' });
+            btn.disabled = false;
+            btn.textContent = originalText;
+
+            if (error) { alert('Could not save to your Spellbook: ' + error.message); return; }
+            alert(`Saved "${name}" to your Spellbook.`);
+        }
+
+        // Prefills a normal spell/cantrip row from a cloud-saved custom
+        // entry — unlike fillSpellRowFromSRD, damage dice IS carried over
+        // here: this is the player's own real data, not a guess (see the
+        // SRD_SPELLS comment on why guessing dice is avoided there).
+        function addCustomSpellFromBook(name, cantrip) {
+            const spell = myCustomSpells.find(s => s.name === name && s.cantrip === cantrip);
+            if (!spell) return;
+            if (cantrip) addCantrip(); else addSpell();
+            const list = document.getElementById(cantrip ? 'cantripsList' : 'spellsList');
+            const row = list.lastElementChild;
+            (row.querySelector('.spell-name') || row.querySelector('.cantrip-name')).value = spell.name;
+            const levelSelect = row.querySelector('.spell-level-select');
+            if (levelSelect) levelSelect.value = String(spell.level || 0);
+            const set = (cls, val) => { const el = row.querySelector(cls); if (el) el.value = val || ''; };
+            set('.spell-casting-time', spell.castingTime);
+            set('.spell-range', spell.range);
+            set('.spell-duration', spell.duration);
+            set('.spell-components', spell.components);
+            set('.spell-dice', spell.dice);
+            set('.spell-damage-type', spell.damageType);
+            (row.querySelector('.spell-description') || row.querySelector('.cantrip-description')).value = spell.desc || '';
+            renderSpellbookList();
+        }
+
+        async function deleteCustomSpellFromBook(id) {
+            if (!confirm('Remove this from your Spellbook? This cannot be undone (it won\'t touch any spell already on a character sheet).')) return;
+            const { error } = await _supabase.from('custom_spells').delete().eq('id', id);
+            if (error) { alert('Could not remove: ' + error.message); return; }
+            await loadMyCustomSpells();
+            renderSpellbookList();
         }
 
         // A row "counts" as existing if its name matches (case-insensitive)
@@ -6044,7 +6776,32 @@
             const all = [...srdForClass.map(s => ({ name: s.name, level: s.level, custom: false, srd: s })), ...otherEntries]
                 .filter(s => s.name.toLowerCase().includes(query));
 
-            if (!all.length) {
+            // (2026-09-12, "lets do that to our open source too" — same
+            // idea as custom_potions) — cloud-saved custom spells/cantrips
+            // NOT already on this character, Custom tab only, shown as
+            // their own section above the level groups below. "+ Add"
+            // pulls one onto the sheet (addCustomSpellFromBook); once
+            // added it's a completely normal row and behaves exactly like
+            // any other entry here from then on — this section only ever
+            // lists what ISN'T on the sheet yet.
+            const cloudOnlyEntries = isCustomTab
+                ? myCustomSpells.filter(s => !findSpellRowByName(s.name, s.cantrip) && s.name.toLowerCase().includes(query))
+                : [];
+            const cloudHtml = cloudOnlyEntries.length ? `
+                <details class="spellbook-level-group" open>
+                    <summary>☁️ My Saved (${cloudOnlyEntries.length})</summary>
+                    ${cloudOnlyEntries.sort((a, b) => a.name.localeCompare(b.name)).map(s => {
+                        const safeName = escapeHtmlDice(s.name);
+                        return `
+                            <div class="spellbook-entry">
+                                <span class="spellbook-entry-name">${safeName}${s.cantrip ? ' (cantrip)' : ''}</span>
+                                <button type="button" class="btn" style="margin-top:0; padding:3px 8px; font-size:11px;" onclick="addCustomSpellFromBook('${safeName}', ${s.cantrip})">+ Add</button>
+                                <button type="button" class="remove-spell" onclick="deleteCustomSpellFromBook('${s.id}')" title="Remove from your Spellbook">🗑</button>
+                            </div>`;
+                    }).join('')}
+                </details>` : '';
+
+            if (!all.length && !cloudOnlyEntries.length) {
                 const emptyMsg = isCustomTab
                     ? 'You haven\'t added any custom spells or cantrips yet — use the buttons above.'
                     : (selectedClass ? 'No matches.' : 'Pick a spellcasting class above to browse its spells, or search for a spell you\'ve already added below.');
@@ -6055,7 +6812,7 @@
             const byLevel = {};
             all.forEach(s => { (byLevel[s.level] = byLevel[s.level] || []).push(s); });
 
-            container.innerHTML = Object.keys(byLevel).map(Number).sort((a, b) => a - b).map(level => {
+            container.innerHTML = cloudHtml + Object.keys(byLevel).map(Number).sort((a, b) => a - b).map(level => {
                 const entries = byLevel[level].sort((a, b) => a.name.localeCompare(b.name));
                 const rows = entries.map(s => {
                     const cantrip = level === 0;
@@ -6246,6 +7003,9 @@
                 // truth (not DOM-walked), same as notes/needsAttentionFields.
                 wildShapeForms: wildShapeForms,
                 activeWildShapeId: activeWildShapeId,
+                // Level Availability rules (2026-09-13) — per-character, so
+                // one player's homebrew table doesn't affect another's.
+                wildShapeRules: wildShapeRules,
                 // Familiars (2026-09-09) — their own stat blocks, tracked
                 // on the Mounts tab alongside mounts/vehicles.
                 familiars: familiars
@@ -6407,7 +7167,8 @@
                     name: row.querySelector('.resource-tracker-name').value,
                     current: row.querySelector('.resource-tracker-current').value,
                     max: row.querySelector('.resource-tracker-max').value,
-                    restoresOn: row.querySelector('.resource-tracker-restores').value
+                    restoresOn: row.querySelector('.resource-tracker-restores').value,
+                    desc: (row.querySelector('.resource-tracker-desc') || {}).value || ''
                 });
             });
 
@@ -6550,7 +7311,7 @@
             document.getElementById('multiclassList').innerHTML = '';
             document.getElementById('attacksList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 2fr 55px 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; text-align: center;"><div>Equip</div><div style="text-align: left;">Weapon/Attack</div><div>Attack Die</div><div>Attack Bonus</div><div>Damage</div><div>Type</div><div></div></div>';
             document.getElementById('list-potions').innerHTML = '<div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;"><div>Qty</div><div style="text-align: left;">Potion Name</div><div>Price</div><div>Unit Wt</div><div>Total Wt</div><div></div></div>';
-            document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent; order: -1;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
+            document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; order: -1;"><div>Level</div><div>Spell Name</div><div></div></div>';
             document.getElementById('cantripsList').innerHTML = '<div style="display: grid; grid-template-columns: 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; order: -1;"><div>Level</div><div>Cantrip Name</div><div></div></div>';
             document.getElementById('bonusActionsList').innerHTML = '';
             document.getElementById('reactionsList').innerHTML = '';
@@ -6634,10 +7395,19 @@
             // realtime subscription as needed).
             if (typeof initCalendarWidget === 'function') initCalendarWidget();
 
-            // Wild Shape forms + Familiars (2026-09-09)
-            wildShapeForms = Array.isArray(data.wildShapeForms) ? data.wildShapeForms : [];
+            // Wild Shape forms + Familiars (2026-09-09). Each form/companion
+            // saved before the full-stat-block upgrade (2026-09-13) gets
+            // migrated to the new shape here, lazily, the first time it
+            // loads — see wsMigrateOldForm/famMigrateOldForm.
+            wildShapeForms = Array.isArray(data.wildShapeForms) ? data.wildShapeForms.map(wsMigrateOldForm) : [];
             activeWildShapeId = data.activeWildShapeId || null;
-            familiars = Array.isArray(data.familiars) ? data.familiars : [];
+            // Level Availability rules (2026-09-13) — an old save with none
+            // of this yet just gets the real 5e defaults, not a blank/empty
+            // ruleset that would gate nothing.
+            wildShapeRules = (data.wildShapeRules && Array.isArray(data.wildShapeRules.thresholds))
+                ? data.wildShapeRules
+                : JSON.parse(JSON.stringify(WILD_SHAPE_DEFAULT_RULES));
+            familiars = Array.isArray(data.familiars) ? data.familiars.map(famMigrateOldForm) : [];
             if (typeof renderActiveWildShapeCard === 'function') renderActiveWildShapeCard();
             if (typeof renderFamiliars === 'function') renderFamiliars();
             if (typeof updateWildShapeResourceButton === 'function') updateWildShapeResourceButton();
@@ -6702,7 +7472,7 @@
             if ((parseInt(data.superiorityMax, 10) || 0) > 0 && !legacyTrackers.some(r => r.name === 'Superiority Dice')) {
                 legacyTrackers.push({ name: 'Superiority Dice', current: data.superiorityCurrent || 0, max: data.superiorityMax, restoresOn: 'short' });
             }
-            legacyTrackers.forEach(r => addResourceTrackerRow(r.name, r.current, r.max, r.restoresOn || 'long'));
+            legacyTrackers.forEach(r => addResourceTrackerRow(r.name, r.current, r.max, r.restoresOn || 'long', r.desc || RESOURCE_DESCRIPTIONS[r.name] || ''));
 
             // 6. Restore Storage Containers (Pass 1: Creation)
             const globalIdMap = {};
@@ -6846,9 +7616,29 @@
                 xpInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
 
-            setTimeout(() => {
-                document.querySelectorAll('textarea').forEach(tx => autoSizeTextarea(tx));
-            }, 50);
+            // BUG FIX (2026-09-13, "Mac: Attacks boxes render messed up"
+            // still happening after the 2026-09-02 showPage() fix) — this
+            // was the exact same fixed-duration guess that fix already
+            // replaced elsewhere, just never carried over here. Attacks
+            // lives on mainPage, which is already the active tab on a
+            // fresh load — showPage()'s own fix only re-runs when
+            // NAVIGATING INTO a tab, so it never gets a chance to correct
+            // Attacks on load at all; THIS is the only thing sizing its
+            // textareas then. A slow reflow (a character with a lot of
+            // Attacks rows, or a differently-timed load — a browser
+            // re-fetching everything over the network loses this race far
+            // more often than a packaged app loading local resources,
+            // matching "used to reset on app restart, doesn't in browser")
+            // can lose a 50ms guess and leave every textarea stuck wrong
+            // until something else happens to resize them. Same double-
+            // requestAnimationFrame fix as showPage() — guaranteed to have
+            // reflowed by the second callback, regardless of how long
+            // that actually took.
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    document.querySelectorAll('textarea').forEach(tx => autoSizeTextarea(tx));
+                });
+            });
 
             // The synthetic 'input' events dispatched above (the "final poke")
             // would otherwise trip the unsaved-changes flag on a sheet that
@@ -6872,41 +7662,406 @@
         // is there for anything not listed. Special abilities are a short
         // text note, not mechanised — this is a reference card, not a
         // rules engine.
+        //
+        // `weight` (2026-09-13, "we also need a weight if available, so
+        // that this can attune to the global weight, for roleplay
+        // purposes") — a real 5e stat block doesn't publish creature
+        // weight at all (checked: neither the Monster Manual nor Open5e's
+        // own data has a weight field for any of this), so these are
+        // reasonable real-world reference numbers for flavor, not
+        // official/SRD data — same spirit as this whole list already
+        // being "a reference card, not a rules engine." Blank is always a
+        // valid value (a custom form you don't want gated by weight at
+        // all); see updateTotalWeight()'s Wild Shape override below.
         const WILD_SHAPE_BEASTS = [
-            { name: 'Wolf', cr: '1/4', ac: 13, hp: 11, speed: '40 ft.', str: 12, dex: 15, con: 12, int: 3, wis: 12, cha: 6, senses: 'Passive Perception 13', traits: 'Pack Tactics. Keen Hearing & Smell (adv. Perception by hearing/smell).', attacks: [{ name: 'Bite', bonus: '+4', damage: '2d4+2', note: 'DC 11 STR save or knocked prone' }] },
-            { name: 'Panther', cr: '1/4', ac: 12, hp: 13, speed: '50 ft., climb 40 ft.', str: 14, dex: 15, con: 10, int: 3, wis: 14, cha: 7, senses: 'Passive Perception 14', traits: 'Pounce: 20+ ft. move then hit → DC 12 STR or prone, then bonus-action Bite. Keen Smell. Stealthy.', attacks: [{ name: 'Bite', bonus: '+4', damage: '1d6+2', note: '' }, { name: 'Claw', bonus: '+4', damage: '1d4+2', note: '' }] },
-            { name: 'Boar', cr: '1/4', ac: 11, hp: 13, speed: '40 ft.', str: 13, dex: 11, con: 12, int: 2, wis: 9, cha: 5, senses: 'Passive Perception 9', traits: 'Charge: 20+ ft. line then hit → +1d6 slashing, DC 11 STR or prone. Relentless (1/short rest).', attacks: [{ name: 'Tusk', bonus: '+3', damage: '1d6+1', note: '' }] },
-            { name: 'Giant Badger', cr: '1/4', ac: 10, hp: 13, speed: '30 ft., burrow 10 ft.', str: 13, dex: 10, con: 15, int: 2, wis: 12, cha: 5, senses: 'Passive Perception 11', traits: 'Keen Smell.', attacks: [{ name: 'Bite', bonus: '+3', damage: '1d6+1', note: 'Multiattack: bite + claws' }, { name: 'Claws', bonus: '+3', damage: '2d4+1', note: '' }] },
-            { name: 'Giant Frog', cr: '1/4', ac: 11, hp: 18, speed: '30 ft., swim 30 ft.', str: 12, dex: 13, con: 11, int: 2, wis: 10, cha: 3, senses: 'Darkvision 30 ft., Passive Perception 12', traits: 'Amphibious. Standing Leap (20 ft. long, 10 ft. high).', attacks: [{ name: 'Bite', bonus: '+3', damage: '1d6+1', note: 'Grapple DC 11; can swallow Small target' }] },
-            { name: 'Riding Horse', cr: '1/4', ac: 10, hp: 13, speed: '60 ft.', str: 16, dex: 10, con: 12, int: 2, wis: 11, cha: 7, senses: 'Passive Perception 10', traits: '', attacks: [{ name: 'Hooves', bonus: '+5', damage: '2d4+3', note: '' }] },
-            { name: 'Crocodile', cr: '1/2', ac: 12, hp: 19, speed: '20 ft., swim 30 ft.', str: 15, dex: 10, con: 13, int: 2, wis: 10, cha: 5, senses: 'Passive Perception 10', traits: 'Hold Breath (15 min).', attacks: [{ name: 'Bite', bonus: '+4', damage: '1d10+2', note: 'Grapple DC 12, target restrained' }] },
-            { name: 'Warhorse', cr: '1/2', ac: 11, hp: 19, speed: '60 ft.', str: 18, dex: 12, con: 13, int: 2, wis: 12, cha: 7, senses: 'Passive Perception 11', traits: 'Trampling Charge: 20+ ft. then hit → DC 14 STR or prone, then bonus-action Hooves.', attacks: [{ name: 'Hooves', bonus: '+6', damage: '2d6+4', note: '' }] },
-            { name: 'Ape', cr: '1/2', ac: 12, hp: 19, speed: '30 ft., climb 30 ft.', str: 16, dex: 14, con: 14, int: 6, wis: 12, cha: 7, senses: 'Passive Perception 13', traits: '', attacks: [{ name: 'Fist', bonus: '+5', damage: '1d6+3', note: 'Multiattack: 2 fists' }, { name: 'Rock (ranged 25/50)', bonus: '+5', damage: '1d6+3', note: '' }] },
-            { name: 'Black Bear', cr: '1/2', ac: 11, hp: 19, speed: '40 ft., climb 30 ft.', str: 15, dex: 10, con: 14, int: 2, wis: 12, cha: 7, senses: 'Passive Perception 13', traits: 'Keen Smell.', attacks: [{ name: 'Bite', bonus: '+3', damage: '1d6+2', note: 'Multiattack: bite + claws' }, { name: 'Claws', bonus: '+3', damage: '2d4+2', note: '' }] },
-            { name: 'Brown Bear', cr: '1', ac: 11, hp: 34, speed: '40 ft., climb 30 ft.', str: 19, dex: 10, con: 16, int: 2, wis: 13, cha: 7, senses: 'Passive Perception 13', traits: 'Keen Smell.', attacks: [{ name: 'Bite', bonus: '+5', damage: '1d8+4', note: 'Multiattack: bite + claws' }, { name: 'Claws', bonus: '+5', damage: '2d6+4', note: '' }] },
-            { name: 'Dire Wolf', cr: '1', ac: 14, hp: 37, speed: '50 ft.', str: 17, dex: 15, con: 15, int: 3, wis: 12, cha: 7, senses: 'Passive Perception 13', traits: 'Pack Tactics. Keen Hearing & Smell.', attacks: [{ name: 'Bite', bonus: '+5', damage: '2d6+3', note: 'DC 13 STR save or knocked prone' }] },
-            { name: 'Giant Spider', cr: '1', ac: 14, hp: 26, speed: '30 ft., climb 30 ft.', str: 14, dex: 16, con: 12, int: 2, wis: 11, cha: 4, senses: 'Blindsight 10 ft., Darkvision 60 ft., Passive Perception 10', traits: 'Spider Climb. Web Sense. Web Walker.', attacks: [{ name: 'Bite', bonus: '+5', damage: '1d8+3', note: 'DC 11 CON save, 2d8 poison (half on save)' }, { name: 'Web (recharge 5-6, ranged 30/60)', bonus: '+5', damage: '', note: 'Restrained; DC 12 STR to break free' }] },
-            { name: 'Giant Eagle', cr: '1', ac: 13, hp: 26, speed: '10 ft., fly 80 ft.', str: 16, dex: 17, con: 13, int: 8, wis: 14, cha: 10, senses: 'Passive Perception 14', traits: 'Keen Sight (adv. Perception by sight).', attacks: [{ name: 'Beak', bonus: '+5', damage: '1d6+3', note: 'Multiattack: beak + talons' }, { name: 'Talons', bonus: '+5', damage: '2d6+3', note: '' }] },
-            { name: 'Giant Toad', cr: '1', ac: 11, hp: 39, speed: '20 ft., swim 40 ft.', str: 15, dex: 13, con: 13, int: 2, wis: 10, cha: 3, senses: 'Darkvision 30 ft., Passive Perception 10', traits: 'Amphibious. Standing Leap.', attacks: [{ name: 'Bite', bonus: '+4', damage: '1d10+2', note: '+1d10 poison; Grapple DC 13; can swallow' }] }
+            { name: 'Wolf', cr: '1/4', ac: 13, hp: 11, speed: '40 ft.', str: 12, dex: 15, con: 12, int: 3, wis: 12, cha: 6, weight: 65, senses: 'Passive Perception 13', traits: 'Pack Tactics. Keen Hearing & Smell (adv. Perception by hearing/smell).', attacks: [{ name: 'Bite', bonus: '+4', damage: '2d4+2', note: 'DC 11 STR save or knocked prone' }] },
+            { name: 'Panther', cr: '1/4', ac: 12, hp: 13, speed: '50 ft., climb 40 ft.', str: 14, dex: 15, con: 10, int: 3, wis: 14, cha: 7, weight: 130, senses: 'Passive Perception 14', traits: 'Pounce: 20+ ft. move then hit → DC 12 STR or prone, then bonus-action Bite. Keen Smell. Stealthy.', attacks: [{ name: 'Bite', bonus: '+4', damage: '1d6+2', note: '' }, { name: 'Claw', bonus: '+4', damage: '1d4+2', note: '' }] },
+            { name: 'Boar', cr: '1/4', ac: 11, hp: 13, speed: '40 ft.', str: 13, dex: 11, con: 12, int: 2, wis: 9, cha: 5, weight: 200, senses: 'Passive Perception 9', traits: 'Charge: 20+ ft. line then hit → +1d6 slashing, DC 11 STR or prone. Relentless (1/short rest).', attacks: [{ name: 'Tusk', bonus: '+3', damage: '1d6+1', note: '' }] },
+            { name: 'Giant Badger', cr: '1/4', ac: 10, hp: 13, speed: '30 ft., burrow 10 ft.', str: 13, dex: 10, con: 15, int: 2, wis: 12, cha: 5, weight: 200, senses: 'Passive Perception 11', traits: 'Keen Smell.', attacks: [{ name: 'Bite', bonus: '+3', damage: '1d6+1', note: 'Multiattack: bite + claws' }, { name: 'Claws', bonus: '+3', damage: '2d4+1', note: '' }] },
+            { name: 'Giant Frog', cr: '1/4', ac: 11, hp: 18, speed: '30 ft., swim 30 ft.', str: 12, dex: 13, con: 11, int: 2, wis: 10, cha: 3, weight: 100, senses: 'Darkvision 30 ft., Passive Perception 12', traits: 'Amphibious. Standing Leap (20 ft. long, 10 ft. high).', attacks: [{ name: 'Bite', bonus: '+3', damage: '1d6+1', note: 'Grapple DC 11; can swallow Small target' }] },
+            { name: 'Riding Horse', cr: '1/4', ac: 10, hp: 13, speed: '60 ft.', str: 16, dex: 10, con: 12, int: 2, wis: 11, cha: 7, weight: 900, senses: 'Passive Perception 10', traits: '', attacks: [{ name: 'Hooves', bonus: '+5', damage: '2d4+3', note: '' }] },
+            { name: 'Crocodile', cr: '1/2', ac: 12, hp: 19, speed: '20 ft., swim 30 ft.', str: 15, dex: 10, con: 13, int: 2, wis: 10, cha: 5, weight: 400, senses: 'Passive Perception 10', traits: 'Hold Breath (15 min).', attacks: [{ name: 'Bite', bonus: '+4', damage: '1d10+2', note: 'Grapple DC 12, target restrained' }] },
+            { name: 'Warhorse', cr: '1/2', ac: 11, hp: 19, speed: '60 ft.', str: 18, dex: 12, con: 13, int: 2, wis: 12, cha: 7, weight: 1300, senses: 'Passive Perception 11', traits: 'Trampling Charge: 20+ ft. then hit → DC 14 STR or prone, then bonus-action Hooves.', attacks: [{ name: 'Hooves', bonus: '+6', damage: '2d6+4', note: '' }] },
+            { name: 'Ape', cr: '1/2', ac: 12, hp: 19, speed: '30 ft., climb 30 ft.', str: 16, dex: 14, con: 14, int: 6, wis: 12, cha: 7, weight: 300, senses: 'Passive Perception 13', traits: '', attacks: [{ name: 'Fist', bonus: '+5', damage: '1d6+3', note: 'Multiattack: 2 fists' }, { name: 'Rock (ranged 25/50)', bonus: '+5', damage: '1d6+3', note: '' }] },
+            { name: 'Black Bear', cr: '1/2', ac: 11, hp: 19, speed: '40 ft., climb 30 ft.', str: 15, dex: 10, con: 14, int: 2, wis: 12, cha: 7, weight: 300, senses: 'Passive Perception 13', traits: 'Keen Smell.', attacks: [{ name: 'Bite', bonus: '+3', damage: '1d6+2', note: 'Multiattack: bite + claws' }, { name: 'Claws', bonus: '+3', damage: '2d4+2', note: '' }] },
+            { name: 'Brown Bear', cr: '1', ac: 11, hp: 34, speed: '40 ft., climb 30 ft.', str: 19, dex: 10, con: 16, int: 2, wis: 13, cha: 7, weight: 500, senses: 'Passive Perception 13', traits: 'Keen Smell.', attacks: [{ name: 'Bite', bonus: '+5', damage: '1d8+4', note: 'Multiattack: bite + claws' }, { name: 'Claws', bonus: '+5', damage: '2d6+4', note: '' }] },
+            { name: 'Dire Wolf', cr: '1', ac: 14, hp: 37, speed: '50 ft.', str: 17, dex: 15, con: 15, int: 3, wis: 12, cha: 7, weight: 200, senses: 'Passive Perception 13', traits: 'Pack Tactics. Keen Hearing & Smell.', attacks: [{ name: 'Bite', bonus: '+5', damage: '2d6+3', note: 'DC 13 STR save or knocked prone' }] },
+            { name: 'Giant Spider', cr: '1', ac: 14, hp: 26, speed: '30 ft., climb 30 ft.', str: 14, dex: 16, con: 12, int: 2, wis: 11, cha: 4, weight: 300, senses: 'Blindsight 10 ft., Darkvision 60 ft., Passive Perception 10', traits: 'Spider Climb. Web Sense. Web Walker.', attacks: [{ name: 'Bite', bonus: '+5', damage: '1d8+3', note: 'DC 11 CON save, 2d8 poison (half on save)' }, { name: 'Web (recharge 5-6, ranged 30/60)', bonus: '+5', damage: '', note: 'Restrained; DC 12 STR to break free' }] },
+            { name: 'Giant Eagle', cr: '1', ac: 13, hp: 26, speed: '10 ft., fly 80 ft.', str: 16, dex: 17, con: 13, int: 8, wis: 14, cha: 10, weight: 150, senses: 'Passive Perception 14', traits: 'Keen Sight (adv. Perception by sight).', attacks: [{ name: 'Beak', bonus: '+5', damage: '1d6+3', note: 'Multiattack: beak + talons' }, { name: 'Talons', bonus: '+5', damage: '2d6+3', note: '' }] },
+            { name: 'Giant Toad', cr: '1', ac: 11, hp: 39, speed: '20 ft., swim 40 ft.', str: 15, dex: 13, con: 13, int: 2, wis: 10, cha: 3, weight: 300, senses: 'Darkvision 30 ft., Passive Perception 10', traits: 'Amphibious. Standing Leap.', attacks: [{ name: 'Bite', bonus: '+4', damage: '1d10+2', note: '+1d10 poison; Grapple DC 13; can swallow' }] }
         ];
+
+        // Level Availability (2026-09-13, "can we add a level availability
+        // to the beast forms for druid. whats available at what level,
+        // make that number adjustable for custom rules, and for custom
+        // builds") — the real 5e rule (PHB Wild Shape): CR 1/4 and no
+        // fly/swim speed at level 2, CR 1/2 (still no fly/swim) at level
+        // 4, CR 1 and fly/swim allowed at level 8. Kept as data, not a
+        // hardcoded rule, specifically so it can be edited for a
+        // homebrew table (Circle of the Moon's own higher limits, a
+        // house-ruled early unlock, whatever) — see the Level Availability
+        // box in the Wild Shape modal. A form with no CR set (most custom
+        // builds, until you fill one in) is never gated by this at all.
+        const WILD_SHAPE_DEFAULT_RULES = {
+            thresholds: [
+                { level: 2, maxCr: '1/4' },
+                { level: 4, maxCr: '1/2' },
+                { level: 8, maxCr: '1' }
+            ],
+            swimFlyLevel: 8
+        };
+        let wildShapeRules = JSON.parse(JSON.stringify(WILD_SHAPE_DEFAULT_RULES));
+
+        function wsCrToNumber(cr) {
+            if (cr === undefined || cr === null || cr === '') return null;
+            const s = String(cr).trim();
+            if (s.includes('/')) {
+                const parts = s.split('/');
+                const n = parseFloat(parts[0]), d = parseFloat(parts[1]);
+                if (!d) return null;
+                return n / d;
+            }
+            const n = parseFloat(s);
+            return isNaN(n) ? null : n;
+        }
+        // Reverse of the above, for display — reuses the same fraction
+        // labels dm.html's own Creatures Library already shows.
+        function wsCrToLabel(num) {
+            if (num === null || num === undefined || isNaN(num)) return '';
+            const known = { 0.125: '1/8', 0.25: '1/4', 0.5: '1/2' };
+            return known[num] !== undefined ? known[num] : String(num);
+        }
+        function wsMaxCrForLevel(level) {
+            const applicable = (wildShapeRules.thresholds || [])
+                .filter(t => level >= (parseInt(t.level, 10) || 0))
+                .sort((a, b) => a.level - b.level);
+            return applicable.length ? applicable[applicable.length - 1].maxCr : null;
+        }
+        function wsSwimFlyAllowed(level) {
+            return level >= (parseInt(wildShapeRules.swimFlyLevel, 10) || 8);
+        }
+        // The lowest configured level at which a given CR is actually
+        // legal — used for the "add a beast" picker's own hint, so you
+        // can see what you're not old enough for yet before adding it.
+        function wsMinLevelForCr(crNum) {
+            if (crNum === null) return null;
+            const eligible = (wildShapeRules.thresholds || [])
+                .filter(t => (wsCrToNumber(t.maxCr) ?? -1) >= crNum)
+                .sort((a, b) => a.level - b.level);
+            return eligible.length ? eligible[0].level : null;
+        }
+        // One or more short notes on whether a form is legal at the
+        // character's current level under the current rules — informational
+        // only, never blocks adding/transforming (same "reference card, not
+        // a rules engine" philosophy as the rest of Wild Shape).
+        function wsAvailabilityNotes(form) {
+            const sb = form.stat_block || {};
+            const level = parseInt((document.getElementById('level') || {}).value, 10) || 1;
+            const crNum = wsCrToNumber(sb.cr);
+            const notes = [];
+            if (crNum === null) {
+                notes.push({ ok: true, text: 'No CR set — not level-gated' });
+            } else {
+                const maxCr = wsMaxCrForLevel(level);
+                if (maxCr === null || crNum > (wsCrToNumber(maxCr) ?? -1)) {
+                    const needed = wsMinLevelForCr(crNum);
+                    notes.push({ ok: false, text: needed ? `Needs level ${needed}+ for CR ${wsCrToLabel(crNum)}` : `CR ${wsCrToLabel(crNum)} exceeds every configured level` });
+                } else {
+                    notes.push({ ok: true, text: `Available at level ${level} (CR ${wsCrToLabel(crNum)} ≤ ${wsCrToLabel(wsCrToNumber(maxCr))})` });
+                }
+            }
+            if (/swim|fly/i.test(sb.speed || '') && !wsSwimFlyAllowed(level)) {
+                notes.push({ ok: false, text: `Swim/Fly speed needs level ${parseInt(wildShapeRules.swimFlyLevel, 10) || 8}+` });
+            }
+            return notes;
+        }
+        function renderWsAvailabilityHtml(f) {
+            return wsAvailabilityNotes(f).map(n =>
+                `<div style="font-size:11px; color:${n.ok ? '#2e7d32' : '#c25454'};">${n.ok ? '✓' : '⚠'} ${escapeHtml(n.text)}</div>`
+            ).join('');
+        }
+        // Targeted re-render of just one card's availability line — typing
+        // in that same card's CR/Speed field shouldn't re-render the whole
+        // list (every other card would lose whatever's mid-edit there).
+        function renderWildShapeAvailability(id) {
+            const f = wildShapeForms.find(x => x.id === id);
+            const el = document.getElementById('wsAvailability_' + id);
+            if (f && el) el.innerHTML = renderWsAvailabilityHtml(f);
+        }
 
         const escAttr = (s) => escapeHtml(s).replace(/"/g, '&quot;');
         const wsAbilMod = (score) => Math.floor(((parseInt(score, 10) || 10) - 10) / 2);
         const wsFmtM = (n) => (n >= 0 ? '+' : '') + n;
         const wsRandId = (p) => p + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 
+        // ============ SHARED CREATURE STAT BLOCK (2026-09-13) ============
+        // Both Wild Shape beast forms and Familiars/Companions carry a
+        // full stat_block now — the exact same shape dm.html's own
+        // Monster Editor and the Monster Generator use (per "we need to
+        // make sure familiars and companions and beast forms" match that
+        // full template) — instead of the old flat, partial field list.
+        // Same shape means a .monster file exported from either of those
+        // imports directly as either a beast form or a companion, no
+        // retyping (see csImportMonsterFile). `kind` is always 'ws'
+        // (Wild Shape forms) or 'fam' (Familiars/Companions) — the two
+        // top-level arrays these functions read and write; one set of
+        // helpers covers both instead of duplicating everything twice.
+        function csArray(kind) { return kind === 'ws' ? wildShapeForms : familiars; }
+        function csFind(kind, id) { return csArray(kind).find(x => x.id === id); }
+        function csRender(kind) { if (kind === 'ws') renderWildShapeFormList(); else renderFamiliars(); }
+        function csTouched(kind, id) {
+            if (kind === 'ws' && activeWildShapeId === id) { renderActiveWildShapeCard(); updateTotalWeight(); }
+            if (window.autoSave) autoSave();
+        }
+
+        function csTopField(kind, id, field, value) {
+            const f = csFind(kind, id);
+            if (!f) return;
+            f[field] = value;
+            csTouched(kind, id);
+        }
+        function csStatField(kind, id, field, value) {
+            const f = csFind(kind, id);
+            if (!f) return;
+            if (!f.stat_block) f.stat_block = {};
+            f.stat_block[field] = value;
+            csTouched(kind, id);
+        }
+
+        // Traits/Other Actions/Bonus Actions/Reactions/Legendary Actions/
+        // Lair Actions all share one {name, description} row shape — same
+        // reasoning dm.html's own addMonsterNamedRow/collectMonsterNamedRows
+        // already used, just kind-aware here since two features share it.
+        function csAddNamedRow(kind, id, listName) {
+            const f = csFind(kind, id);
+            if (!f) return;
+            if (!f.stat_block) f.stat_block = {};
+            if (!Array.isArray(f.stat_block[listName])) f.stat_block[listName] = [];
+            f.stat_block[listName].push({ name: '', description: '' });
+            csRender(kind);
+            csTouched(kind, id);
+        }
+        function csNamedRowField(kind, id, listName, idx, field, value) {
+            const f = csFind(kind, id);
+            if (!f || !f.stat_block || !f.stat_block[listName] || !f.stat_block[listName][idx]) return;
+            f.stat_block[listName][idx][field] = value;
+            csTouched(kind, id);
+        }
+        function csRemoveNamedRow(kind, id, listName, idx) {
+            const f = csFind(kind, id);
+            if (!f || !f.stat_block || !f.stat_block[listName]) return;
+            f.stat_block[listName].splice(idx, 1);
+            csRender(kind);
+            csTouched(kind, id);
+        }
+
+        // Attacks keep their existing {name, bonus, damage, note} shape —
+        // dm.html's own canonical attacks are {name,bonus,damage} with no
+        // note, but `note` already existed here and carries real rules
+        // text ("DC 11 STR save…"), so it's kept; a straight .monster
+        // import just leaves it blank.
+        function csAddAttack(kind, id) {
+            const f = csFind(kind, id);
+            if (!f) return;
+            if (!f.stat_block) f.stat_block = {};
+            if (!Array.isArray(f.stat_block.attacks)) f.stat_block.attacks = [];
+            f.stat_block.attacks.push({ name: 'Attack', bonus: '', damage: '', note: '' });
+            csRender(kind);
+            csTouched(kind, id);
+        }
+        function csAttackField(kind, id, idx, field, value) {
+            const f = csFind(kind, id);
+            if (!f || !f.stat_block || !f.stat_block.attacks || !f.stat_block.attacks[idx]) return;
+            f.stat_block.attacks[idx][field] = value;
+            csTouched(kind, id);
+        }
+        function csRemoveAttack(kind, id, idx) {
+            const f = csFind(kind, id);
+            if (!f || !f.stat_block || !f.stat_block.attacks) return;
+            f.stat_block.attacks.splice(idx, 1);
+            csRender(kind);
+            csTouched(kind, id);
+        }
+
+        function csNamedListHtml(kind, id, listName, label, list) {
+            const rows = Array.isArray(list) ? list : [];
+            return `
+                <div style="margin-top:8px;">
+                    <div style="font-size:11px; font-weight:bold; color:#666; margin-bottom:4px;">${escapeHtml(label)}</div>
+                    ${rows.map((r, i) => `
+                        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                            <input type="text" style="flex:1 1 140px; font-weight:bold;" value="${escAttr(r.name || '')}" placeholder="Name" oninput="csNamedRowField('${kind}','${id}','${listName}',${i},'name',this.value)">
+                            <textarea style="flex:3 1 220px; min-height:32px;" placeholder="Description" oninput="csNamedRowField('${kind}','${id}','${listName}',${i},'description',this.value)">${escapeHtml(r.description || '')}</textarea>
+                            <button type="button" class="btn" style="background:#d32f2f; padding:4px 8px; margin-top:0;" onclick="csRemoveNamedRow('${kind}','${id}','${listName}',${i})">✖</button>
+                        </div>`).join('')}
+                    <button type="button" class="btn" style="font-size:11px; padding:4px 10px; margin-top:0;" onclick="csAddNamedRow('${kind}','${id}','${listName}')">+ Add ${escapeHtml(label)}</button>
+                </div>`;
+        }
+
+        function csAttacksHtml(kind, id, attacks) {
+            const rows = Array.isArray(attacks) ? attacks : [];
+            return `
+                <div style="font-size:11px; font-weight:bold; color:#666; margin:8px 0 4px;">Attacks</div>
+                ${rows.map((a, ai) => `
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; align-items:center;">
+                        <input type="text" style="flex:2 1 130px;" value="${escAttr(a.name || '')}" placeholder="Name" oninput="csAttackField('${kind}','${id}',${ai},'name',this.value)">
+                        <input type="text" style="flex:0 1 70px;" value="${escAttr(a.bonus || '')}" placeholder="+Hit" oninput="csAttackField('${kind}','${id}',${ai},'bonus',this.value)">
+                        <input type="text" style="flex:1 1 90px;" value="${escAttr(a.damage || '')}" placeholder="2d6+3" oninput="csAttackField('${kind}','${id}',${ai},'damage',this.value)">
+                        <input type="text" style="flex:2 1 120px;" value="${escAttr(a.note || '')}" placeholder="note" oninput="csAttackField('${kind}','${id}',${ai},'note',this.value)">
+                        <button type="button" class="btn" style="background:#d32f2f; padding:4px 8px; margin-top:0;" onclick="csRemoveAttack('${kind}','${id}',${ai})">✖</button>
+                    </div>`).join('')}
+                <button type="button" class="btn" style="margin-top:2px; font-size:12px; padding:5px 10px;" onclick="csAddAttack('${kind}','${id}')">+ Add Attack</button>`;
+        }
+
+        // The shared full stat-block editor body — Name/CR/AC/HP/Speed/
+        // Weight stay in each feature's own header row (Wild Shape and
+        // Familiars lay that part out slightly differently); everything
+        // else lives here, identical between the two.
+        function csStatBlockBodyHtml(kind, id, sb) {
+            sb = sb || {};
+            return `
+                <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:8px 0;">
+                    <label style="font-size:11px;">Size<input type="text" value="${escAttr(sb.size || '')}" oninput="csStatField('${kind}','${id}','size',this.value)" style="width:100%;"></label>
+                    <label style="font-size:11px;">Type<input type="text" value="${escAttr(sb.type || '')}" oninput="csStatField('${kind}','${id}','type',this.value)" style="width:100%;"></label>
+                    <label style="font-size:11px;">Alignment<input type="text" value="${escAttr(sb.alignment || '')}" oninput="csStatField('${kind}','${id}','alignment',this.value)" style="width:100%;"></label>
+                    <label style="font-size:11px;">Environment<input type="text" value="${escAttr(sb.environment || '')}" oninput="csStatField('${kind}','${id}','environment',this.value)" style="width:100%;"></label>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:8px;">
+                    ${['str', 'dex', 'con', 'int', 'wis', 'cha'].map(k => `<label style="font-size:10px; text-transform:uppercase;">${k}<input type="number" value="${sb[k] !== undefined ? sb[k] : 10}" oninput="csStatField('${kind}','${id}','${k}',parseInt(this.value)||0)" style="width:100%;"></label>`).join('')}
+                </div>
+                <label style="font-size:11px; display:block; margin-bottom:8px;">Senses<input type="text" value="${escAttr(sb.senses || '')}" placeholder="Darkvision 60 ft., passive Perception 13" oninput="csStatField('${kind}','${id}','senses',this.value)" style="width:100%;"></label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                    <label style="font-size:11px;">Saving Throws<input type="text" value="${escAttr(sb.savingThrows || '')}" oninput="csStatField('${kind}','${id}','savingThrows',this.value)" style="width:100%;"></label>
+                    <label style="font-size:11px;">Skills<input type="text" value="${escAttr(sb.skills || '')}" oninput="csStatField('${kind}','${id}','skills',this.value)" style="width:100%;"></label>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                    <label style="font-size:11px;">Damage Vulnerabilities<input type="text" value="${escAttr(sb.damageVulnerabilities || '')}" oninput="csStatField('${kind}','${id}','damageVulnerabilities',this.value)" style="width:100%;"></label>
+                    <label style="font-size:11px;">Damage Resistances<input type="text" value="${escAttr(sb.damageResistances || '')}" oninput="csStatField('${kind}','${id}','damageResistances',this.value)" style="width:100%;"></label>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                    <label style="font-size:11px;">Damage Immunities<input type="text" value="${escAttr(sb.damageImmunities || '')}" oninput="csStatField('${kind}','${id}','damageImmunities',this.value)" style="width:100%;"></label>
+                    <label style="font-size:11px;">Condition Immunities<input type="text" value="${escAttr(sb.conditionImmunities || '')}" oninput="csStatField('${kind}','${id}','conditionImmunities',this.value)" style="width:100%;"></label>
+                </div>
+                <label style="font-size:11px; display:block; margin-bottom:8px;">Languages<input type="text" value="${escAttr(sb.languages || '')}" oninput="csStatField('${kind}','${id}','languages',this.value)" style="width:100%;"></label>
+                <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:8px;">
+                    <label style="font-size:11px;">XP<input type="text" value="${escAttr(sb.xp || '')}" oninput="csStatField('${kind}','${id}','xp',this.value)" style="width:100%;"></label>
+                    <label style="font-size:11px;">Prof. Bonus<input type="text" value="${escAttr(sb.profBonus || '')}" oninput="csStatField('${kind}','${id}','profBonus',this.value)" style="width:100%;"></label>
+                </div>
+                ${csNamedListHtml(kind, id, 'traits', 'Traits', sb.traits)}
+                <label style="font-size:11px; display:block; margin-top:8px;">Multiattack<textarea oninput="csStatField('${kind}','${id}','multiattack',this.value)" style="width:100%; min-height:32px;">${escapeHtml(sb.multiattack || '')}</textarea></label>
+                ${csAttacksHtml(kind, id, sb.attacks)}
+                ${csNamedListHtml(kind, id, 'otherActions', 'Other Actions', sb.otherActions)}
+                ${csNamedListHtml(kind, id, 'bonusActions', 'Bonus Actions', sb.bonusActions)}
+                ${csNamedListHtml(kind, id, 'reactions', 'Reactions', sb.reactions)}
+                <label style="font-size:11px; display:block; margin-top:8px;">Legendary Actions per turn <input type="text" value="${escAttr(sb.legendaryPerTurn || '')}" oninput="csStatField('${kind}','${id}','legendaryPerTurn',this.value)" style="width:80px; margin-left:6px;"></label>
+                ${csNamedListHtml(kind, id, 'legendaryActions', 'Legendary Actions', sb.legendaryActions)}
+                ${csNamedListHtml(kind, id, 'lairActions', 'Lair Actions', sb.lairActions)}
+                <label style="font-size:11px; display:block; margin-top:8px;">Regional Effects<textarea oninput="csStatField('${kind}','${id}','regionalEffects',this.value)" style="width:100%; min-height:32px;">${escapeHtml(sb.regionalEffects || '')}</textarea></label>`;
+        }
+
+        // Counterpart to dm.html's/monstergen.html's own .monster export —
+        // same {version, name, kind, stat_block} shape, so a creature built
+        // or pulled in either of those tools imports here directly, no
+        // retyping. `formKind` is 'ws' or 'fam' (which array to add to);
+        // unrelated to the imported file's own "kind" (Monster/NPC/Vendor).
+        function csImportMonsterFile(formKind, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!imported.stat_block) { alert("That file doesn't look like a valid creature export."); return; }
+                    const hp = parseInt(imported.stat_block.hp, 10) || 1;
+                    const entry = formKind === 'ws'
+                        ? { id: wsRandId('ws'), name: imported.name || 'Imported Form', weight: '', hpCur: hp, stat_block: imported.stat_block }
+                        : { id: wsRandId('fam'), name: imported.name || 'Imported Companion', species: imported.stat_block.type || '', weight: '', hpCur: hp, stat_block: imported.stat_block };
+                    csArray(formKind).push(entry);
+                    csRender(formKind);
+                    if (window.autoSave) autoSave();
+                } catch (err) {
+                    alert('Could not read that file.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // Old-shape backward compat (2026-09-13) — every Wild Shape form
+        // saved before this feature had its fields flat (f.cr, f.ac,
+        // f.hpMax, f.traits as a plain string, etc.) instead of wrapped in
+        // stat_block. Applied once, lazily, at load — nothing is lost:
+        // hpMax becomes stat_block.hp, a non-empty traits string becomes
+        // one Traits row, attacks carry over as-is (already the same
+        // {name,bonus,damage,note} shape the new stat_block still uses).
+        function wsMigrateOldForm(f) {
+            if (f.stat_block) return f;
+            return {
+                id: f.id,
+                name: f.name,
+                weight: f.weight !== undefined ? f.weight : '',
+                hpCur: f.hpCur !== undefined ? f.hpCur : (f.hpMax || 1),
+                stat_block: {
+                    cr: f.cr || '',
+                    ac: f.ac,
+                    hp: f.hpMax,
+                    speed: f.speed || '',
+                    senses: f.senses || '',
+                    str: f.str, dex: f.dex, con: f.con, int: f.int, wis: f.wis, cha: f.cha,
+                    traits: f.traits ? [{ name: 'Traits', description: f.traits }] : [],
+                    attacks: (f.attacks || []).map(a => Object.assign({}, a))
+                }
+            };
+        }
+        // Same idea for Familiars/Companions — old shape also had a plain
+        // `notes` string, which becomes stat_block.notes directly (no
+        // wrapping needed, that field already exists on stat_block).
+        function famMigrateOldForm(f) {
+            if (f.stat_block) return f;
+            return {
+                id: f.id,
+                name: f.name,
+                species: f.species || '',
+                weight: f.weight !== undefined ? f.weight : '',
+                hpCur: f.hpCur !== undefined ? f.hpCur : (f.hpMax || 1),
+                stat_block: {
+                    cr: f.cr || '',
+                    ac: f.ac,
+                    hp: f.hpMax,
+                    speed: f.speed || '',
+                    senses: f.senses || '',
+                    str: f.str, dex: f.dex, con: f.con, int: f.int, wis: f.wis, cha: f.cha,
+                    attacks: (f.attacks || []).map(a => Object.assign({}, a)),
+                    notes: f.notes || ''
+                }
+            };
+        }
+
         function openWildShapeModal() { renderWildShapeModal(); document.getElementById('wildShapeModal').style.display = 'flex'; }
         function closeWildShapeModal() { document.getElementById('wildShapeModal').style.display = 'none'; }
 
         function renderWildShapeModal() {
-            const sel = document.getElementById('wildShapeAddSelect');
-            if (sel && !sel.dataset.filled) {
-                sel.innerHTML = '<option value="">Pick a beast to add…</option>'
-                    + WILD_SHAPE_BEASTS.map(b => `<option value="${escAttr(b.name)}">${escapeHtml(b.name)} (CR ${b.cr})</option>`).join('')
-                    + '<option value="__custom__">Custom (blank) form</option>';
-                sel.dataset.filled = '1';
-            }
+            renderWildShapeAddSelect();
+            renderWildShapeRulesBox();
             renderWildShapeFormList();
+        }
+
+        // Rebuilt every time the modal opens (not cached like it used to
+        // be) since the "Lv N+" hint on each option depends on the
+        // character's current level and the current rules, both of which
+        // can change between visits.
+        function renderWildShapeAddSelect() {
+            const sel = document.getElementById('wildShapeAddSelect');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Pick a beast to add…</option>'
+                + WILD_SHAPE_BEASTS.map(b => {
+                    const crNum = wsCrToNumber(b.cr);
+                    const minLevel = wsMinLevelForCr(crNum);
+                    const swimFly = /swim|fly/i.test(b.speed || '');
+                    const hint = minLevel ? ` — Lv ${minLevel}+${swimFly ? ', swim/fly' : ''}` : '';
+                    return `<option value="${escAttr(b.name)}">${escapeHtml(b.name)} (CR ${b.cr})${hint}</option>`;
+                }).join('')
+                + '<option value="__custom__">Custom (blank) form</option>';
         }
 
         function addWildShapeFormFromPicker() {
@@ -6916,11 +8071,19 @@
             sel.value = '';
             let form;
             if (val === '__custom__') {
-                form = { id: wsRandId('ws'), name: 'New Form', cr: '', ac: 10, hpMax: 1, hpCur: 1, speed: '30 ft.', str: 10, dex: 10, con: 10, int: 2, wis: 10, cha: 5, senses: '', traits: '', attacks: [] };
+                form = { id: wsRandId('ws'), name: 'New Form', weight: '', hpCur: 1, stat_block: { cr: '', ac: 10, hp: 1, speed: '30 ft.', str: 10, dex: 10, con: 10, int: 2, wis: 10, cha: 5, senses: '', type: 'Beast', traits: [], attacks: [] } };
             } else {
                 const b = WILD_SHAPE_BEASTS.find(x => x.name === val);
                 if (!b) return;
-                form = { id: wsRandId('ws'), name: b.name, cr: b.cr, ac: b.ac, hpMax: b.hp, hpCur: b.hp, speed: b.speed, str: b.str, dex: b.dex, con: b.con, int: b.int, wis: b.wis, cha: b.cha, senses: b.senses || '', traits: b.traits || '', attacks: (b.attacks || []).map(a => Object.assign({}, a)) };
+                form = {
+                    id: wsRandId('ws'), name: b.name, weight: b.weight !== undefined ? b.weight : '', hpCur: b.hp,
+                    stat_block: {
+                        cr: b.cr, ac: b.ac, hp: b.hp, speed: b.speed, type: 'Beast',
+                        str: b.str, dex: b.dex, con: b.con, int: b.int, wis: b.wis, cha: b.cha, senses: b.senses || '',
+                        traits: b.traits ? [{ name: 'Traits', description: b.traits }] : [],
+                        attacks: (b.attacks || []).map(a => Object.assign({}, a))
+                    }
+                };
             }
             wildShapeForms.push(form);
             renderWildShapeFormList();
@@ -6936,10 +8099,80 @@
             if (window.autoSave) autoSave();
         }
 
+        // ---------- Level Availability rules (editable, homebrew-friendly) ----------
+        function renderWildShapeRulesBox() {
+            const wrap = document.getElementById('wildShapeThresholdList');
+            if (!wrap) return;
+            const thresholds = wildShapeRules.thresholds || [];
+            wrap.innerHTML = thresholds.map((t, i) => `
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                    <span style="font-size:11px; color:#666;">Level</span>
+                    <input type="number" min="1" value="${t.level}" style="width:50px;" oninput="updateWildShapeThreshold(${i},'level',this.value)">
+                    <span style="font-size:11px; color:#666;">Max CR</span>
+                    <input type="text" value="${escAttr(t.maxCr)}" placeholder="1/4" style="width:60px;" oninput="updateWildShapeThreshold(${i},'maxCr',this.value)">
+                    <button type="button" class="btn" style="background:#d32f2f; padding:3px 8px; margin-top:0; font-size:11px;" onclick="removeWildShapeThreshold(${i})">✖</button>
+                </div>`).join('');
+            const swimFlyInput = document.getElementById('wildShapeSwimFlyLevel');
+            if (swimFlyInput) swimFlyInput.value = wildShapeRules.swimFlyLevel;
+            renderWildShapeAvailabilitySummary();
+        }
+
+        function renderWildShapeAvailabilitySummary() {
+            const summary = document.getElementById('wildShapeAvailabilitySummary');
+            if (!summary) return;
+            const level = parseInt((document.getElementById('level') || {}).value, 10) || 1;
+            const maxCr = wsMaxCrForLevel(level);
+            const swimFly = wsSwimFlyAllowed(level);
+            summary.textContent = maxCr
+                ? `At level ${level}: max CR ${maxCr}, swim/fly speed ${swimFly ? 'allowed' : `needs level ${parseInt(wildShapeRules.swimFlyLevel, 10) || 8}+`}`
+                : `At level ${level}: no Wild Shape form available yet under these rules`;
+        }
+
+        // Re-renders the form list too — every form's own availability
+        // note depends on these rules, not just this box.
+        function updateWildShapeThreshold(i, field, value) {
+            const t = wildShapeRules.thresholds[i];
+            if (!t) return;
+            t[field] = field === 'level' ? (parseInt(value, 10) || 1) : value;
+            renderWildShapeAvailabilitySummary();
+            renderWildShapeFormList();
+            renderWildShapeAddSelect();
+            if (window.autoSave) autoSave();
+        }
+        function addWildShapeThreshold() {
+            const last = wildShapeRules.thresholds[wildShapeRules.thresholds.length - 1];
+            wildShapeRules.thresholds.push({ level: last ? last.level + 2 : 2, maxCr: '' });
+            renderWildShapeRulesBox();
+            if (window.autoSave) autoSave();
+        }
+        function removeWildShapeThreshold(i) {
+            wildShapeRules.thresholds.splice(i, 1);
+            renderWildShapeRulesBox();
+            renderWildShapeFormList();
+            renderWildShapeAddSelect();
+            if (window.autoSave) autoSave();
+        }
+        function updateWildShapeSwimFlyLevel(value) {
+            wildShapeRules.swimFlyLevel = parseInt(value, 10) || 8;
+            renderWildShapeAvailabilitySummary();
+            renderWildShapeFormList();
+            renderWildShapeAddSelect();
+            if (window.autoSave) autoSave();
+        }
+        function resetWildShapeRules() {
+            if (!confirm('Reset Level Availability back to the real 5e rules? Any custom thresholds you set will be lost.')) return;
+            wildShapeRules = JSON.parse(JSON.stringify(WILD_SHAPE_DEFAULT_RULES));
+            renderWildShapeRulesBox();
+            renderWildShapeFormList();
+            renderWildShapeAddSelect();
+            if (window.autoSave) autoSave();
+        }
+
         function activateWildShape(id) {
             activeWildShapeId = id;
             renderActiveWildShapeCard();
             renderWildShapeFormList();
+            updateTotalWeight(); // this form's own weight (if set) now stands in for body weight — see updateTotalWeight()
             if (window.autoSave) autoSave();
             closeWildShapeModal();
         }
@@ -6947,38 +8180,13 @@
             activeWildShapeId = null;
             renderActiveWildShapeCard();
             renderWildShapeFormList();
+            updateTotalWeight(); // back to the character's own #weight
             if (window.autoSave) autoSave();
         }
 
-        function wsField(id, field, value) {
-            const f = wildShapeForms.find(x => x.id === id);
-            if (!f) return;
-            f[field] = value;
-            if (activeWildShapeId === id) renderActiveWildShapeCard();
-            if (window.autoSave) autoSave();
-        }
-        function wsAttackField(id, ai, field, value) {
-            const f = wildShapeForms.find(x => x.id === id);
-            if (!f || !f.attacks[ai]) return;
-            f.attacks[ai][field] = value;
-            if (activeWildShapeId === id) renderActiveWildShapeCard();
-            if (window.autoSave) autoSave();
-        }
-        function wsAddAttack(id) {
-            const f = wildShapeForms.find(x => x.id === id);
-            if (!f) return;
-            f.attacks.push({ name: 'Attack', bonus: '', damage: '', note: '' });
-            renderWildShapeFormList();
-            if (window.autoSave) autoSave();
-        }
-        function wsRemoveAttack(id, ai) {
-            const f = wildShapeForms.find(x => x.id === id);
-            if (!f) return;
-            f.attacks.splice(ai, 1);
-            renderWildShapeFormList();
-            if (activeWildShapeId === id) renderActiveWildShapeCard();
-            if (window.autoSave) autoSave();
-        }
+        // Per-field/attack setters for Wild Shape forms are now the shared
+        // csTopField/csStatField/csAttackField/etc. above (2026-09-13) —
+        // this used to be its own separate copy of all of them.
 
         function renderWildShapeFormList() {
             const wrap = document.getElementById('wildShapeFormList');
@@ -6989,32 +8197,21 @@
             }
             wrap.innerHTML = wildShapeForms.map(f => {
                 const active = f.id === activeWildShapeId;
+                const sb = f.stat_block || {};
                 return `
                 <div class="ws-form-card" style="border:1px solid ${active ? 'var(--theme-blue-dark)' : '#ddd'}; border-radius:10px; padding:12px; margin-bottom:12px; ${active ? 'background:rgba(102,126,234,0.06);' : ''}">
                     <div style="display:flex; gap:8px; align-items:flex-end; margin-bottom:8px;">
-                        <label style="font-size:11px; flex:1;">Name<input type="text" value="${escAttr(f.name)}" placeholder="Form name" oninput="wsField('${f.id}','name',this.value)" style="width:100%; font-weight:bold;"></label>
-                        <label style="font-size:11px; width:64px;">CR<input type="text" value="${escAttr(f.cr || '')}" placeholder="CR" oninput="wsField('${f.id}','cr',this.value)" style="width:100%;"></label>
+                        <label style="font-size:11px; flex:1;">Name<input type="text" value="${escAttr(f.name)}" placeholder="Form name" oninput="csTopField('ws','${f.id}','name',this.value)" style="width:100%; font-weight:bold;"></label>
+                        <label style="font-size:11px; width:64px;">CR<input type="text" value="${escAttr(sb.cr || '')}" placeholder="CR" oninput="csStatField('ws','${f.id}','cr',this.value); renderWildShapeAvailability('${f.id}')" style="width:100%;"></label>
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px;">
-                        <label style="font-size:11px;">AC<input type="number" value="${f.ac}" oninput="wsField('${f.id}','ac',parseInt(this.value)||0)" style="width:100%;"></label>
-                        <label style="font-size:11px;">Max HP<input type="number" value="${f.hpMax}" oninput="wsField('${f.id}','hpMax',parseInt(this.value)||0)" style="width:100%;"></label>
-                        <label style="font-size:11px;">Speed<input type="text" value="${escAttr(f.speed || '')}" oninput="wsField('${f.id}','speed',this.value)" style="width:100%;"></label>
+                    <div style="margin-bottom:8px;" id="wsAvailability_${f.id}">${renderWsAvailabilityHtml(f)}</div>
+                    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:8px;">
+                        <label style="font-size:11px;">AC<input type="number" value="${sb.ac}" oninput="csStatField('ws','${f.id}','ac',parseInt(this.value)||0)" style="width:100%;"></label>
+                        <label style="font-size:11px;">Max HP<input type="number" value="${sb.hp}" oninput="csStatField('ws','${f.id}','hp',parseInt(this.value)||0)" style="width:100%;"></label>
+                        <label style="font-size:11px;">Speed<input type="text" value="${escAttr(sb.speed || '')}" oninput="csStatField('ws','${f.id}','speed',this.value); renderWildShapeAvailability('${f.id}')" style="width:100%;"></label>
+                        <label style="font-size:11px;" title="Approximate reference weight, for roleplay — feeds into Total Global Weight while this form is active, standing in for your own body weight. Blank if unknown.">Weight (lb)<input type="number" step="1" value="${f.weight !== undefined && f.weight !== null ? f.weight : ''}" placeholder="—" oninput="csTopField('ws','${f.id}','weight',this.value)" style="width:100%;"></label>
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:8px;">
-                        ${['str', 'dex', 'con', 'int', 'wis', 'cha'].map(k => `<label style="font-size:10px; text-transform:uppercase;">${k}<input type="number" value="${f[k]}" oninput="wsField('${f.id}','${k}',parseInt(this.value)||0)" style="width:100%;"></label>`).join('')}
-                    </div>
-                    <input type="text" value="${escAttr(f.senses || '')}" placeholder="Senses / passive Perception" oninput="wsField('${f.id}','senses',this.value)" style="width:100%; margin-bottom:8px;">
-                    <textarea placeholder="Traits (Pack Tactics, Keen Smell, etc.)" oninput="wsField('${f.id}','traits',this.value)" style="width:100%; min-height:44px; margin-bottom:8px;">${escapeHtml(f.traits || '')}</textarea>
-                    <div style="font-size:11px; font-weight:bold; color:#666; margin-bottom:4px;">Attacks</div>
-                    ${f.attacks.map((a, ai) => `
-                        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; align-items:center;">
-                            <input type="text" style="flex:2 1 130px;" value="${escAttr(a.name || '')}" placeholder="Name" oninput="wsAttackField('${f.id}',${ai},'name',this.value)">
-                            <input type="text" style="flex:0 1 70px;" value="${escAttr(a.bonus || '')}" placeholder="+Hit" oninput="wsAttackField('${f.id}',${ai},'bonus',this.value)">
-                            <input type="text" style="flex:1 1 90px;" value="${escAttr(a.damage || '')}" placeholder="2d6+3" oninput="wsAttackField('${f.id}',${ai},'damage',this.value)">
-                            <input type="text" style="flex:2 1 120px;" value="${escAttr(a.note || '')}" placeholder="note" oninput="wsAttackField('${f.id}',${ai},'note',this.value)">
-                            <button type="button" class="btn" style="background:#d32f2f; padding:4px 8px; margin-top:0;" onclick="wsRemoveAttack('${f.id}',${ai})">✖</button>
-                        </div>`).join('')}
-                    <button type="button" class="btn" style="margin-top:2px; font-size:12px; padding:5px 10px;" onclick="wsAddAttack('${f.id}')">+ Add Attack</button>
+                    ${csStatBlockBodyHtml('ws', f.id, sb)}
                     <div style="display:flex; gap:8px; margin-top:10px;">
                         ${active
                         ? `<button type="button" class="btn" style="flex:1; background:#888;" onclick="revertWildShape()">Revert (currently active)</button>`
@@ -7031,32 +8228,36 @@
             const f = wildShapeForms.find(x => x.id === activeWildShapeId);
             if (!f) { card.style.display = 'none'; card.innerHTML = ''; return; }
             card.style.display = 'block';
-            const abilRow = ['str', 'dex', 'con', 'int', 'wis', 'cha'].map(k => `<span style="display:inline-block; min-width:66px;"><b>${k.toUpperCase()}</b> ${f[k]} (${wsFmtM(wsAbilMod(f[k]))})</span>`).join(' ');
-            const attacks = (f.attacks || []).map((a, ai) => {
+            const sb = f.stat_block || {};
+            const abilRow = ['str', 'dex', 'con', 'int', 'wis', 'cha'].map(k => `<span style="display:inline-block; min-width:66px;"><b>${k.toUpperCase()}</b> ${sb[k]} (${wsFmtM(wsAbilMod(sb[k]))})</span>`).join(' ');
+            const attacks = (sb.attacks || []).map((a, ai) => {
                 const dmg = a.damage ? ` ${escapeHtml(a.damage)}` : '';
                 const note = a.note ? ` <span style="color:#888;">(${escapeHtml(a.note)})</span>` : '';
                 return `<div style="margin:3px 0;"><b>${escapeHtml(a.name || 'Attack')}</b> ${escapeHtml(a.bonus || '')}${dmg}${note} <button type="button" class="btn" style="margin-top:0; padding:2px 8px; font-size:11px;" onclick="rollWildShapeAttack('${f.id}',${ai})">Roll</button> <span id="wsAtkResult_${f.id}_${ai}" style="font-weight:bold; color:var(--theme-blue-dark);"></span></div>`;
             }).join('');
+            const traitsHtml = (sb.traits || []).map(t => `<div><b>${escapeHtml(t.name || 'Trait')}.</b> ${escapeHtml(t.description || '')}</div>`).join('');
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px;">
-                    <div style="font-weight:bold; font-size:15px;">🐾 ${escapeHtml(f.name)}${f.cr ? ` <span style="color:#888; font-weight:normal;">CR ${escapeHtml(f.cr)}</span>` : ''}</div>
+                    <div style="font-weight:bold; font-size:15px;">🐾 ${escapeHtml(f.name)}${sb.cr ? ` <span style="color:#888; font-weight:normal;">CR ${escapeHtml(sb.cr)}</span>` : ''}</div>
                     <button type="button" class="btn" style="margin-top:0; background:#888; padding:4px 12px;" onclick="revertWildShape()">Revert</button>
                 </div>
                 <div style="font-size:13px; margin-bottom:4px;">
-                    <b>AC</b> ${f.ac} &nbsp; <b>HP</b> <input type="number" value="${f.hpCur}" oninput="wsField('${f.id}','hpCur',parseInt(this.value)||0)" style="width:52px;"> / ${f.hpMax} &nbsp; <b>Speed</b> ${escapeHtml(f.speed || '—')}
+                    <b>AC</b> ${sb.ac} &nbsp; <b>HP</b> <input type="number" value="${f.hpCur}" oninput="csTopField('ws','${f.id}','hpCur',parseInt(this.value)||0)" style="width:52px;"> / ${sb.hp} &nbsp; <b>Speed</b> ${escapeHtml(sb.speed || '—')}
                 </div>
                 <div style="font-size:12px; margin-bottom:4px;">${abilRow}</div>
-                ${f.senses ? `<div style="font-size:12px; color:#555; margin-bottom:4px;">${escapeHtml(f.senses)}</div>` : ''}
+                ${sb.senses ? `<div style="font-size:12px; color:#555; margin-bottom:4px;">${escapeHtml(sb.senses)}</div>` : ''}
+                ${sb.multiattack ? `<div style="font-size:12px; margin-top:4px;"><b>Multiattack.</b> ${escapeHtml(sb.multiattack)}</div>` : ''}
                 ${attacks ? `<div style="font-size:12.5px; margin-top:6px;">${attacks}</div>` : ''}
-                ${f.traits ? `<div style="font-size:11.5px; color:#666; margin-top:6px; white-space:pre-wrap;">${escapeHtml(f.traits)}</div>` : ''}
-                <div style="font-size:10.5px; color:#999; margin-top:8px;">Your own INT/WIS/CHA, saves, skills, features and personality are unchanged. Damage past 0 beast HP carries to your normal HP.</div>
+                ${traitsHtml ? `<div style="font-size:11.5px; color:#666; margin-top:6px;">${traitsHtml}</div>` : ''}
+                <div style="font-size:10.5px; color:#999; margin-top:8px;">Your own INT/WIS/CHA, saves, skills, features and personality are unchanged. Damage past 0 beast HP carries to your normal HP. Full stat block (Saving Throws, Skills, Legendary Actions, etc.) is in the Wild Shape pop-out.</div>
             `;
         }
 
         function rollWildShapeAttack(formId, ai) {
             const f = wildShapeForms.find(x => x.id === formId);
-            if (!f || !f.attacks[ai]) return;
-            const a = f.attacks[ai];
+            const attacks = f && f.stat_block && f.stat_block.attacks;
+            if (!attacks || !attacks[ai]) return;
+            const a = attacks[ai];
             const out = document.getElementById(`wsAtkResult_${formId}_${ai}`);
             if (!out) return;
             const bonus = parseInt(String(a.bonus || '').replace(/[^\d+-]/g, ''), 10) || 0;
@@ -7071,9 +8272,16 @@
             out.textContent = ` → hit ${d20 + bonus} (d20 ${d20}${wsFmtM(bonus)})${dmgText}`;
         }
 
-        // ---------- Familiars (Mounts tab) ----------
+        // ---------- Familiars & Companions (Mounts tab) ----------
+        // Full stat_block now too (2026-09-13, same as Wild Shape above) —
+        // per-field/attack/named-list setters are the shared cs* helpers;
+        // this just builds the card and the two fields (name, species)
+        // that live outside stat_block.
         function addFamiliar() {
-            familiars.push({ id: wsRandId('fam'), name: 'New Familiar', species: '', ac: 12, hpCur: 1, hpMax: 1, speed: '30 ft.', senses: '', str: 3, dex: 15, con: 10, int: 2, wis: 12, cha: 7, cr: '0', attacks: [], notes: '' });
+            familiars.push({
+                id: wsRandId('fam'), name: 'New Companion', species: '', weight: '', hpCur: 1,
+                stat_block: { cr: '0', ac: 12, hp: 1, speed: '30 ft.', str: 3, dex: 15, con: 10, int: 2, wis: 12, cha: 7, senses: '', traits: [], attacks: [] }
+            });
             renderFamiliars();
             if (window.autoSave) autoSave();
         }
@@ -7084,69 +8292,34 @@
             renderFamiliars();
             if (window.autoSave) autoSave();
         }
-        function famField(id, field, value) {
-            const f = familiars.find(x => x.id === id);
-            if (!f) return;
-            f[field] = value;
-            if (window.autoSave) autoSave();
-        }
-        function famAttackField(id, ai, field, value) {
-            const f = familiars.find(x => x.id === id);
-            if (!f || !f.attacks[ai]) return;
-            f.attacks[ai][field] = value;
-            if (window.autoSave) autoSave();
-        }
-        function famAddAttack(id) {
-            const f = familiars.find(x => x.id === id);
-            if (!f) return;
-            f.attacks.push({ name: 'Attack', bonus: '', damage: '', note: '' });
-            renderFamiliars();
-            if (window.autoSave) autoSave();
-        }
-        function famRemoveAttack(id, ai) {
-            const f = familiars.find(x => x.id === id);
-            if (!f) return;
-            f.attacks.splice(ai, 1);
-            renderFamiliars();
-            if (window.autoSave) autoSave();
-        }
         function renderFamiliars() {
             const wrap = document.getElementById('dynamicFamiliarList');
             if (!wrap) return;
             if (!familiars.length) {
-                wrap.innerHTML = '<p style="color:#888; text-align:center; padding:14px 0; font-size:13px;">No familiars — add one above.</p>';
+                wrap.innerHTML = '<p style="color:#888; text-align:center; padding:14px 0; font-size:13px;">No familiars or companions yet — add one above.</p>';
                 return;
             }
-            wrap.innerHTML = familiars.map(f => `
+            wrap.innerHTML = familiars.map(f => {
+                const sb = f.stat_block || {};
+                return `
                 <div class="familiar-card" style="border:1px solid #ddd; border-radius:10px; padding:12px; margin-bottom:12px;">
                     <div style="display:flex; gap:8px; margin-bottom:8px;">
-                        <input type="text" value="${escAttr(f.name)}" placeholder="Name" oninput="famField('${f.id}','name',this.value)" style="flex:1; font-weight:bold;">
-                        <input type="text" value="${escAttr(f.species || '')}" placeholder="Species (owl, imp…)" oninput="famField('${f.id}','species',this.value)" style="flex:1;">
-                        <input type="text" value="${escAttr(f.cr || '')}" placeholder="CR" oninput="famField('${f.id}','cr',this.value)" style="width:56px;">
+                        <label style="font-size:11px; flex:1;">Name<input type="text" value="${escAttr(f.name)}" placeholder="Name" oninput="csTopField('fam','${f.id}','name',this.value)" style="width:100%; font-weight:bold;"></label>
+                        <label style="font-size:11px; flex:1;">Creature Type<input type="text" value="${escAttr(f.species || '')}" placeholder="Owl, Imp, Panther…" oninput="csTopField('fam','${f.id}','species',this.value)" style="width:100%;"></label>
+                        <label style="font-size:11px; width:56px;">CR Lvl<input type="text" value="${escAttr(sb.cr || '')}" placeholder="CR" oninput="csStatField('fam','${f.id}','cr',this.value)" style="width:100%;"></label>
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:8px;">
-                        <label style="font-size:11px;">AC<input type="number" value="${f.ac}" oninput="famField('${f.id}','ac',parseInt(this.value)||0)" style="width:100%;"></label>
-                        <label style="font-size:11px;">HP<input type="number" value="${f.hpCur}" oninput="famField('${f.id}','hpCur',parseInt(this.value)||0)" style="width:100%;"></label>
-                        <label style="font-size:11px;">Max HP<input type="number" value="${f.hpMax}" oninput="famField('${f.id}','hpMax',parseInt(this.value)||0)" style="width:100%;"></label>
-                        <label style="font-size:11px;">Speed<input type="text" value="${escAttr(f.speed || '')}" oninput="famField('${f.id}','speed',this.value)" style="width:100%;"></label>
+                    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:8px;">
+                        <label style="font-size:11px;">AC<input type="number" value="${sb.ac}" oninput="csStatField('fam','${f.id}','ac',parseInt(this.value)||0)" style="width:100%;"></label>
+                        <label style="font-size:11px;">HP<input type="number" value="${f.hpCur}" oninput="csTopField('fam','${f.id}','hpCur',parseInt(this.value)||0)" style="width:100%;"></label>
+                        <label style="font-size:11px;">Max HP<input type="number" value="${sb.hp}" oninput="csStatField('fam','${f.id}','hp',parseInt(this.value)||0)" style="width:100%;"></label>
+                        <label style="font-size:11px;">Speed<input type="text" value="${escAttr(sb.speed || '')}" oninput="csStatField('fam','${f.id}','speed',this.value)" style="width:100%;"></label>
+                        <label style="font-size:11px;" title="Approximate reference weight, for roleplay. Blank if unknown — not currently used in Total Global Weight (a companion isn't carried, it travels alongside you).">Weight (lb)<input type="number" step="1" value="${f.weight !== undefined && f.weight !== null ? f.weight : ''}" placeholder="—" oninput="csTopField('fam','${f.id}','weight',this.value)" style="width:100%;"></label>
                     </div>
-                    <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:8px;">
-                        ${['str', 'dex', 'con', 'int', 'wis', 'cha'].map(k => `<label style="font-size:10px; text-transform:uppercase;">${k}<input type="number" value="${f[k]}" oninput="famField('${f.id}','${k}',parseInt(this.value)||0)" style="width:100%;"></label>`).join('')}
-                    </div>
-                    <input type="text" value="${escAttr(f.senses || '')}" placeholder="Senses / passive Perception" oninput="famField('${f.id}','senses',this.value)" style="width:100%; margin-bottom:8px;">
-                    <div style="font-size:11px; font-weight:bold; color:#666; margin-bottom:4px;">Attacks</div>
-                    ${f.attacks.map((a, ai) => `
-                        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; align-items:center;">
-                            <input type="text" style="flex:2 1 130px;" value="${escAttr(a.name || '')}" placeholder="Name" oninput="famAttackField('${f.id}',${ai},'name',this.value)">
-                            <input type="text" style="flex:0 1 70px;" value="${escAttr(a.bonus || '')}" placeholder="+Hit" oninput="famAttackField('${f.id}',${ai},'bonus',this.value)">
-                            <input type="text" style="flex:1 1 90px;" value="${escAttr(a.damage || '')}" placeholder="1d4+2" oninput="famAttackField('${f.id}',${ai},'damage',this.value)">
-                            <input type="text" style="flex:2 1 120px;" value="${escAttr(a.note || '')}" placeholder="note" oninput="famAttackField('${f.id}',${ai},'note',this.value)">
-                            <button type="button" class="btn" style="background:#d32f2f; padding:4px 8px; margin-top:0;" onclick="famRemoveAttack('${f.id}',${ai})">✖</button>
-                        </div>`).join('')}
-                    <button type="button" class="btn" style="margin-top:2px; font-size:12px; padding:5px 10px;" onclick="famAddAttack('${f.id}')">+ Add Attack</button>
-                    <textarea placeholder="Notes (special abilities, spell delivery, etc.)" oninput="famField('${f.id}','notes',this.value)" style="width:100%; min-height:44px; margin-top:8px;">${escapeHtml(f.notes || '')}</textarea>
-                    <div style="margin-top:8px;"><button type="button" class="btn" style="background:#d32f2f;" onclick="deleteFamiliar('${f.id}')">Delete Familiar</button></div>
-                </div>`).join('');
+                    ${csStatBlockBodyHtml('fam', f.id, sb)}
+                    <textarea placeholder="Notes (special abilities, spell delivery, etc.)" oninput="csStatField('fam','${f.id}','notes',this.value)" style="width:100%; min-height:44px; margin-top:8px;">${escapeHtml(sb.notes || '')}</textarea>
+                    <div style="margin-top:8px;"><button type="button" class="btn" style="background:#d32f2f;" onclick="deleteFamiliar('${f.id}')">Delete</button></div>
+                </div>`;
+            }).join('');
         }
 
         function addNewTracker(name = "", current = 0, max = 6) {
@@ -7433,7 +8606,7 @@
                 document.getElementById('recipeCardsList').innerHTML = '';
                 document.getElementById('attacksList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 2fr 55px 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; text-align: center;"><div>Equip</div><div style="text-align: left;">Weapon/Attack</div><div>Attack Die</div><div>Attack Bonus</div><div>Damage</div><div>Type</div><div></div></div>';
                 document.getElementById('list-potions').innerHTML = '<div style="display: grid; grid-template-columns: 60px 2fr 1fr 1fr 1fr 40px; gap: 10px; margin-bottom: 8px; font-size: 11px; font-weight: bold; color: #666; padding: 0 5px; text-align: center;"><div>Qty</div><div style="text-align: left;">Potion Name</div><div>Price</div><div>Unit Wt</div><div>Total Wt</div><div></div></div>';
-                document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 50px 50px 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 8px; font-weight: bold; font-size: 11px; color: #666; background: transparent; order: -1;"><div>Prep</div><div>Used</div><div>Level</div><div>Spell Name</div><div></div></div>';
+                document.getElementById('spellsList').innerHTML = '<div style="display: grid; grid-template-columns: 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; order: -1;"><div>Level</div><div>Spell Name</div><div></div></div>';
                 document.getElementById('cantripsList').innerHTML = '<div style="display: grid; grid-template-columns: 100px 1fr 40px; gap: 8px; margin-bottom: 8px; padding: 0 5px; font-weight: bold; font-size: 11px; color: #666; order: -1;"><div>Level</div><div>Cantrip Name</div><div></div></div>';
                 document.getElementById('bonusActionsList').innerHTML = '';
                 document.getElementById('reactionsList').innerHTML = '';
@@ -7486,6 +8659,7 @@
                 if (typeof initCalendarWidget === 'function') initCalendarWidget();
                 wildShapeForms = [];
                 activeWildShapeId = null;
+                wildShapeRules = JSON.parse(JSON.stringify(WILD_SHAPE_DEFAULT_RULES));
                 familiars = [];
                 renderActiveWildShapeCard();
                 renderFamiliars();
@@ -12464,6 +13638,11 @@
                     c.campaignPassword = c.campaignPassword || '';
                     c.wildShapeForms = Array.isArray(c.wildShapeForms) ? c.wildShapeForms : [];
                     c.activeWildShapeId = c.activeWildShapeId || null;
+                    // Same default-fallback setCharacterData() itself uses
+                    // (2026-09-13) — an old save missing this key entirely
+                    // is genuinely equivalent to the real 5e defaults, not
+                    // "different," so it shouldn't trip a false conflict.
+                    c.wildShapeRules = (c.wildShapeRules && Array.isArray(c.wildShapeRules.thresholds)) ? c.wildShapeRules : WILD_SHAPE_DEFAULT_RULES;
                     c.familiars = Array.isArray(c.familiars) ? c.familiars : [];
                     return c;
                 };
