@@ -17,6 +17,72 @@ if (!myUniqueId) {
     localStorage.setItem('rpg_browser_id', myUniqueId);
 }
 
+// --- PER-USER LOCAL DATA (2026-10-11) ---
+// Characters and a few other per-person settings live in localStorage, which
+// belongs to the BROWSER, not the account. Before this, logging in as a
+// different person on the same device left the previous person's characters
+// on screen and openable — and, worse, cloud autosave would then push them
+// into the NEW person's cloud account. Now the local data is tagged with the
+// email that owns it (dataOwnerEmail). When a different email is logged in,
+// the previous owner's data is moved aside (not deleted) under
+// userStash::<email>::<key>, and moved back the next time that person logs in
+// on this device. Data with no recorded owner (everything from before this
+// change) is adopted by whoever logs in first.
+const PER_USER_KEY_PATTERNS = [
+    /^character_/, /^characterList$/, /^lastActiveCharacter$/, /^autosave_char$/,
+    /^localEditedAt_/, /^cloudSyncedAt_/, /^charBackup::/,
+    /^lastJoinedCampaign(Code|Password)$/, /^lastActiveCampaignId$/,
+    /^playerRealName$/, /^rpg_character_notes$/, /^rpg_dice_log$/, /^dm_dice_log$/
+];
+function isPerUserKey(k) { return PER_USER_KEY_PATTERNS.some(re => re.test(k)); }
+
+function reconcileLocalDataOwner() {
+    try {
+        const email = (localStorage.getItem('licenseEmail') || '').trim().toLowerCase();
+        if (!email) return; // logged out / trial — nothing to decide yet
+        const owner = (localStorage.getItem('dataOwnerEmail') || '').trim().toLowerCase();
+        if (owner === email) return;
+        if (owner) {
+            // Move the previous owner's data aside. Copy first, remove only
+            // after every copy succeeded, so a full-storage failure can't lose it.
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (isPerUserKey(k)) keys.push(k);
+            }
+            const copied = [];
+            try {
+                keys.forEach(k => {
+                    localStorage.setItem('userStash::' + owner + '::' + k, localStorage.getItem(k));
+                    copied.push(k);
+                });
+            } catch (e) {
+                // Out of space: undo the copies and leave everything as it was.
+                copied.forEach(k => localStorage.removeItem('userStash::' + owner + '::' + k));
+                console.warn('Could not stash previous user data:', e);
+                return;
+            }
+            keys.forEach(k => localStorage.removeItem(k));
+        }
+        // Bring back anything this person left on this device earlier.
+        const prefix = 'userStash::' + email + '::';
+        const back = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k.startsWith(prefix)) back.push(k);
+        }
+        back.forEach(sk => {
+            localStorage.setItem(sk.slice(prefix.length), localStorage.getItem(sk));
+            localStorage.removeItem(sk);
+        });
+        localStorage.setItem('dataOwnerEmail', email);
+    } catch (e) {
+        console.warn('reconcileLocalDataOwner failed:', e);
+    }
+}
+// Runs as soon as shared.js loads — before any page code reads characterList.
+reconcileLocalDataOwner();
+
 // entitlements (2026-09-08, license tier split, DM-Tester only for now) —
 // {has_character, has_dm} from verify-license's own response. Optional so
 // every EXISTING call site (this function predates the split) still works
