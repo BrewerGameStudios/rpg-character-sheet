@@ -2491,6 +2491,7 @@
             <div class="menu-dropdown-panel" id="fileMenuPanel">
                 <button onclick="closeSaveMenuDropdowns(); if(!restrictedFeature('Exporting')) return; exportCharacter()">Export File</button>
                 <button onclick="closeSaveMenuDropdowns(); if(!restrictedFeature('Importing')) return; document.getElementById('importFile').click()">Import File</button>
+                <button onclick="closeSaveMenuDropdowns(); openRecoverModal()">Recover Earlier Version</button>
                 <button onclick="closeSaveMenuDropdowns(); if(!restrictedFeature('Printing')) return; window.print()" style="background: #4caf50;">Print</button>
             </div>
         </div>
@@ -4590,6 +4591,359 @@
         };
 
         let currentCharacterKey = null;
+
+        // ============ CHARACTER-SWITCH SAFETY (2026-10-11) ============
+        // Reported: "when changing from one character to another it can
+        // clear the old character stats to the new, or wipe the new to
+        // match the old" — a character built over 2 years was lost. Real
+        // causes found (all fixed below):
+        //  1. Loading a character never reset the sheet first, and
+        //     setCharacterData() only overwrites fields the incoming save
+        //     actually HAS — so any field an older save lacked kept the
+        //     PREVIOUS character's value on screen, and the next autosave
+        //     then wrote that blend into the new character's slot.
+        //  2. The screen and currentCharacterKey were swapped in two steps
+        //     with autosave/cloud-push still live between them — anything
+        //     that threw partway left the new character's data bound to
+        //     the OLD character's save slot.
+        //  3. New Character blanked the sheet, THEN called removePortrait()
+        //     (which autosaves) while still bound to the old character —
+        //     writing a blank sheet over it.
+        //  4. File ▸ Import saved the imported character through
+        //     migrateSaveKeyIfRenamed(), which treats any name mismatch as
+        //     a rename — deleting the open character's local save.
+        //  5. The startup/online cloud check captured the character name
+        //     before its network call and applied the result afterward
+        //     without checking the sheet hadn't changed in between — a
+        //     slow response pasted the OLD character onto the NEW sheet.
+        // Defenses: the sheet is reset to blank before every load; every
+        // screen swap is atomic (all persistence is paused until the new
+        // character is fully loaded AND bound, and a failed swap restores
+        // the old character); autosave/cloud push refuse to overwrite a
+        // save that the screen clearly isn't a version of; and rolling
+        // local backups are kept automatically (File ▸ Recover Earlier
+        // Version) so a bad overwrite is always recoverable.
+        window.__screenInFlux = false;   // true = sheet mid-swap/untrusted: NOTHING may persist
+        let screenGeneration = 0;        // bumps on every whole-sheet replace (stale async results check it)
+
+        const CHARACTER_FIELD_SKIP_IDS = ['characterList', 'characterName', 'importFile', 'portraitInput', 'license-email', 'license-password', 'new-password', 'new-password-confirm', 'remember-password-checkbox', 'submitCampaignCode', 'submitCampaignPassword', 'submitPlayerName', 'diceCustomSides', 'diceCustomCount', 'diceCustomModifier', 'diceModeNormal', 'diceModeAdvantage', 'diceModeDisadvantage'];
+        const CHARACTER_LIST_CONTAINERS = '#attunementList, #attacksList, #spellsList, #cantripsList, #bonusActionsList, #reactionsList, #customSkillsList, #resourceTrackersList, #craftingList, #list-potions, #coinStacksList, #recipeCardsList';
+
+        // Puts every character field back to its markup default BEFORE a
+        // different character's data is applied, so nothing from the
+        // previous character can survive into the next one (see cause 1).
+        // Same field set getCharacterData() captures; the dynamic lists are
+        // rebuilt by setCharacterData() itself. Deliberately does NOT call
+        // removePortrait()/newCharacter() — those confirm() and autosave.
+        function resetSheetToBaseline() {
+            document.querySelectorAll('input, textarea, select').forEach(el => {
+                if (!el.id || CHARACTER_FIELD_SKIP_IDS.includes(el.id)) return;
+                if (el.closest(CHARACTER_LIST_CONTAINERS)) return;
+                if (el.type === 'file') return;
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    el.checked = el.defaultChecked;
+                } else if (el.tagName === 'SELECT') {
+                    const def = Array.from(el.options).findIndex(o => o.defaultSelected);
+                    el.selectedIndex = def >= 0 ? def : 0;
+                } else {
+                    el.value = el.defaultValue;
+                }
+            });
+            document.querySelectorAll('input[data-effect]').forEach(cb => { cb.checked = false; });
+            const tc = document.getElementById('trackerContainer');
+            if (tc) tc.innerHTML = '';
+            clearPortraitUI();
+        }
+        function clearPortraitUI() {
+            const img = document.getElementById('portraitImg');
+            if (img) { img.removeAttribute('src'); img.style.display = 'none'; }
+            const ph = document.getElementById('portraitPlaceholder');
+            if (ph) ph.style.display = 'block';
+            const rb = document.getElementById('removePortraitBtn');
+            if (rb) rb.style.display = 'none';
+            const pi = document.getElementById('portraitInput');
+            if (pi) pi.value = '';
+        }
+
+        // ---- Rolling local backups (kept automatically; see Recover Earlier Version) ----
+        const CHAR_BACKUP_PREFIX = 'charBackup::';
+        const CHAR_BACKUP_KEEP = 5;
+        window.__lastBackupAt = {};
+
+        function parseBackupKey(k) {
+            if (!k || !k.startsWith(CHAR_BACKUP_PREFIX)) return null;
+            const rest = k.slice(CHAR_BACKUP_PREFIX.length);
+            const i = rest.indexOf('::');
+            if (i < 0) return null;
+            return { ts: parseInt(rest.slice(0, i), 10) || 0, name: rest.slice(i + 2) };
+        }
+        function listCharacterBackups(nameFilter) {
+            const out = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                const p = parseBackupKey(k);
+                if (p && (nameFilter === undefined || p.name === nameFilter)) out.push({ key: k, ts: p.ts, name: p.name });
+            }
+            return out.sort((a, b) => b.ts - a.ts);
+        }
+        // `jsonString` is the exact stored text of a character save.
+        function snapshotCharacterBackup(name, jsonString, reason) {
+            if (!name || !jsonString) return;
+            try {
+                const existing = listCharacterBackups(name);
+                if (existing.length) {
+                    const latest = JSON.parse(localStorage.getItem(existing[0].key) || 'null');
+                    if (latest && latest.json === jsonString) return; // identical to the newest backup
+                }
+                const ts = Date.now();
+                const key = `${CHAR_BACKUP_PREFIX}${ts}::${name}`;
+                const value = JSON.stringify({ name, ts, reason: reason || '', json: jsonString });
+                try {
+                    localStorage.setItem(key, value);
+                } catch (quota) {
+                    // Storage full — drop the OLDEST backups (any character) until it fits.
+                    let saved = false;
+                    for (const old of listCharacterBackups().reverse()) {
+                        localStorage.removeItem(old.key);
+                        try { localStorage.setItem(key, value); saved = true; break; } catch (e2) { /* keep trimming */ }
+                    }
+                    if (!saved) return;
+                }
+                window.__lastBackupAt[name] = ts;
+                listCharacterBackups(name).slice(CHAR_BACKUP_KEEP).forEach(o => localStorage.removeItem(o.key));
+            } catch (e) {
+                console.warn('Backup snapshot failed:', e);
+            }
+        }
+        // Guarantees a reasonably recent good copy always exists: at most
+        // every 20 min of editing, the save about to be overwritten is kept.
+        function maybePeriodicBackup(name, existingStr) {
+            let last = window.__lastBackupAt[name];
+            if (last === undefined) {
+                const l = listCharacterBackups(name);
+                last = l.length ? l[0].ts : 0;
+                window.__lastBackupAt[name] = last;
+            }
+            if (Date.now() - last > 20 * 60 * 1000) snapshotCharacterBackup(name, existingStr, 'periodic');
+        }
+
+        // True when `incoming` (what's on screen) is so unlike `existing`
+        // (what's saved in that slot) that it's almost certainly a
+        // DIFFERENT character, not an edit. Normal editing changes one to
+        // three of these nine fields at a time, never six.
+        const CHARACTER_IDENTITY_FIELDS = ['class', 'race', 'level', 'str', 'dex', 'con', 'int', 'wis', 'cha'];
+        function looksLikeDifferentCharacter(existing, incoming) {
+            if (!existing || !incoming) return false;
+            const named = String(existing.class || '').trim() || String(existing.race || '').trim();
+            if (!named) return false; // nothing identifying saved yet — can't judge
+            let diff = 0;
+            CHARACTER_IDENTITY_FIELDS.forEach(f => {
+                if (String(existing[f] === undefined ? '' : existing[f]).trim() !== String(incoming[f] === undefined ? '' : incoming[f]).trim()) diff++;
+            });
+            return diff >= 6;
+        }
+        function slotWriteLooksSafe(name, data) {
+            try {
+                const existingStr = localStorage.getItem(`character_${name}`);
+                if (!existingStr) return true;
+                if (looksLikeDifferentCharacter(JSON.parse(existingStr), data)) {
+                    snapshotCharacterBackup(name, existingStr, 'before suspected overwrite');
+                    return false;
+                }
+            } catch (e) { /* unreadable slot — don't block */ }
+            return true;
+        }
+        // Stops ALL persistence (local + cloud) and keeps what was on
+        // screen, rather than overwriting a save with a different character.
+        function haltPersistence(name, data) {
+            window.__screenInFlux = true;
+            clearTimeout(window.saveTimeout);
+            clearTimeout(window.cloudSaveTimeout);
+            try { snapshotCharacterBackup(`${name} (what was on screen)`, JSON.stringify(data), 'autosave stopped'); } catch (e) { /* best effort */ }
+            if (!window.__persistenceHaltAlerted) {
+                window.__persistenceHaltAlerted = true;
+                setTimeout(() => alert(`Autosave was stopped to protect "${name}".\n\nWhat's on screen doesn't look like that saved character, so nothing was written over it — "${name}" is intact.\n\nReload this page to continue. What was on screen has been kept (File ▾ Recover Earlier Version).`), 0);
+            }
+        }
+
+        // Writes the character currently on screen to its OWN slot (and the
+        // cloud) and snapshots it, BEFORE the screen is replaced by anything.
+        // `opts.cloud === false` skips the cloud push — required when the
+        // replace is itself a cloud PULL (pushing the stale local copy first
+        // would overwrite the newer cloud copy about to be pulled). Otherwise
+        // the push only happens if there are real unsynced edits, so merely
+        // opening and leaving a character never overwrites a newer cloud copy.
+        function persistOutgoingBeforeReplace(reason, opts) {
+            clearTimeout(window.saveTimeout);
+            clearTimeout(window.cloudSaveTimeout);
+            const key = currentCharacterKey;
+            const hadEdits = !!key && (hasUnsavedChanges ||
+                (parseInt(localStorage.getItem('localEditedAt_' + key) || '0', 10) > parseInt(localStorage.getItem('cloudSyncedAt_' + key) || '0', 10)));
+            if (!window.__screenInFlux && typeof window.autoSave === 'function') {
+                try { window.autoSave(); } catch (e) { /* fall through to the halted check */ }
+                if (!window.__screenInFlux && hadEdits && !(opts && opts.cloud === false)) { try { cloudAutoSavePush(); } catch (e) { /* offline */ } }
+            }
+            if (currentCharacterKey) {
+                const s = localStorage.getItem(`character_${currentCharacterKey}`);
+                if (s) snapshotCharacterBackup(currentCharacterKey, s, reason);
+            }
+            return !window.__screenInFlux;
+        }
+
+        // The one atomic character switch. Returns {ok:true} or {ok:false, reason, ...}.
+        function loadCharacterIntoSheet(charName) {
+            const dataString = localStorage.getItem(`character_${charName}`);
+            if (!dataString) return { ok: false, reason: 'missing' };
+            let incoming;
+            try { incoming = JSON.parse(dataString); } catch (e) { return { ok: false, reason: 'corrupt' }; }
+
+            const outgoingKey = currentCharacterKey;
+            if (!persistOutgoingBeforeReplace('before switching')) return { ok: false, reason: 'halted' };
+            snapshotCharacterBackup(charName, dataString, 'before opening');
+
+            screenGeneration++;
+            window.__screenInFlux = true;
+            try {
+                resetSheetToBaseline();
+                setCharacterData(incoming);
+                // The dropdown/slot name is always authoritative for the name
+                // shown — never the stored data's own charName (see the
+                // 2026-08-30 note this replaces).
+                document.getElementById('charName').value = charName;
+                currentCharacterKey = charName;
+                syncSaveNameFromCharName();
+                pendingRenameFrom = null;
+                hasUnsavedChanges = false;
+                localStorage.setItem('lastActiveCharacter', charName);
+                updateModifiers();
+                window.__screenInFlux = false;
+                return { ok: true };
+            } catch (err) {
+                console.error('Character switch failed:', err);
+                return { ok: false, reason: 'swap-failed', error: err, outgoingKey };
+            }
+        }
+
+        // A switch threw partway: put the previous character back from its
+        // own (already flushed) save. Persistence stays blocked unless that works.
+        function recoverAfterFailedSwitch(outgoingKey, attemptedName, err) {
+            let restored = false;
+            if (outgoingKey) {
+                try {
+                    const s = localStorage.getItem(`character_${outgoingKey}`);
+                    if (s) {
+                        resetSheetToBaseline();
+                        setCharacterData(JSON.parse(s));
+                        document.getElementById('charName').value = outgoingKey;
+                        currentCharacterKey = outgoingKey;
+                        syncSaveNameFromCharName();
+                        hasUnsavedChanges = false;
+                        const dd = document.getElementById('characterList');
+                        if (dd) dd.value = outgoingKey;
+                        window.__screenInFlux = false;
+                        restored = true;
+                    }
+                } catch (e2) { console.error('Recovery after failed switch also failed:', e2); }
+            }
+            const detail = err && err.message ? ` (${err.message})` : '';
+            alert(restored
+                ? `Couldn't open "${attemptedName}"${detail}.\n\nYour sheet was put back to "${outgoingKey}" and nothing was overwritten.`
+                : `Couldn't open "${attemptedName}"${detail}.\n\nNothing was overwritten, but saving is paused so it can't be. Reload this page — your characters are intact (File ▾ Recover Earlier Version also keeps earlier copies).`);
+        }
+
+        // ---- File ▸ Recover Earlier Version ----
+        function closeRecoverModal() {
+            const m = document.getElementById('recoverModal');
+            if (m) m.remove();
+        }
+        function backupSummary(rec) {
+            try {
+                const d = JSON.parse(rec.json);
+                const bits = [];
+                if (d.level) bits.push('Lv ' + d.level);
+                if (d.race) bits.push(d.race);
+                if (d.class) bits.push(d.class);
+                if (d.maxHp) bits.push(d.maxHp + ' HP');
+                return bits.join(' · ');
+            } catch (e) { return ''; }
+        }
+        function openRecoverModal() {
+            closeRecoverModal();
+            const backups = listCharacterBackups();
+            const rows = backups.map(b => {
+                let rec = null;
+                try { rec = JSON.parse(localStorage.getItem(b.key)); } catch (e) { /* skip */ }
+                if (!rec) return '';
+                const when = new Date(rec.ts).toLocaleString();
+                return `<div style="border:1px solid #ddd; border-radius:8px; padding:10px; margin-bottom:8px;">
+                    <div style="font-weight:bold;">${escapeHtml(rec.name)}</div>
+                    <div style="font-size:12px; color:#666;">${escapeHtml(when)}${rec.reason ? ' — ' + escapeHtml(rec.reason) : ''}</div>
+                    <div style="font-size:12px; color:#666; margin-bottom:6px;">${escapeHtml(backupSummary(rec))}</div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn" style="margin-top:0;" onclick="restoreCharacterBackup('${escAttr(b.key)}')">Restore as new copy</button>
+                        <button type="button" class="btn" style="margin-top:0; background:#888;" onclick="downloadCharacterBackup('${escAttr(b.key)}')">Download file</button>
+                    </div>
+                </div>`;
+            }).join('');
+            const wrap = document.createElement('div');
+            wrap.id = 'recoverModal';
+            wrap.style.cssText = 'position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center;';
+            wrap.onclick = (e) => { if (e.target === wrap) closeRecoverModal(); };
+            wrap.innerHTML = `<div style="background:var(--theme-white,#fff); color:#222; max-width:560px; width:94%; max-height:86vh; overflow-y:auto; border-radius:10px; padding:20px; position:relative;">
+                <button onclick="closeRecoverModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer;">✖</button>
+                <h2 style="margin-top:0;">Recover Earlier Version</h2>
+                <p style="font-size:12.5px; color:#666;">Copies of your characters this device kept automatically — before every character switch, import, cloud download and overwrite, plus a recent copy every ~20 minutes of editing. "Restore as new copy" never overwrites anything: it adds a new character you can compare with and keep.</p>
+                ${rows || '<p style="color:#888; text-align:center; padding:20px 0;">No automatic backups on this device yet.</p>'}
+            </div>`;
+            document.body.appendChild(wrap);
+        }
+        function restoreCharacterBackup(key) {
+            let rec;
+            try { rec = JSON.parse(localStorage.getItem(key)); } catch (e) { rec = null; }
+            if (!rec) { alert('That backup could not be read.'); return; }
+            const base = String(rec.name).replace(/ \((what was on screen)\)$/, '');
+            const stamp = new Date(rec.ts);
+            const pad = n => String(n).padStart(2, '0');
+            let label = `${base} (recovered ${pad(stamp.getMonth() + 1)}-${pad(stamp.getDate())} ${pad(stamp.getHours())}:${pad(stamp.getMinutes())})`;
+            const characters = JSON.parse(localStorage.getItem('characterList') || '[]');
+            let n = 2;
+            const unique = label;
+            while (characters.includes(label)) label = `${unique} #${n++}`;
+            let data;
+            try { data = JSON.parse(rec.json); } catch (e) { alert('That backup could not be read.'); return; }
+            try {
+                localStorage.setItem(`character_${label}`, JSON.stringify(Object.assign({}, data, { charName: label })));
+            } catch (e) { alert('Not enough browser storage space to restore this copy.'); return; }
+            characters.push(label);
+            localStorage.setItem('characterList', JSON.stringify(characters));
+            updateCharacterList();
+            const res = loadCharacterIntoSheet(label);
+            if (res.ok) {
+                document.getElementById('characterList').value = label;
+                closeRecoverModal();
+                alert(`Restored as "${label}". Your other characters were not touched.`);
+            } else if (res.reason === 'swap-failed') {
+                recoverAfterFailedSwitch(res.outgoingKey, label, res.error);
+            } else {
+                alert(`"${label}" was saved as a new character in your list, but couldn't be opened right now (saving is paused). Reload this page, then pick it from the character list.`);
+            }
+        }
+        function downloadCharacterBackup(key) {
+            let rec;
+            try { rec = JSON.parse(localStorage.getItem(key)); } catch (e) { rec = null; }
+            if (!rec) { alert('That backup could not be read.'); return; }
+            // Same file format as File ▾ Export File, so File ▾ Import File reads it back.
+            const exportData = { version: '1.0', characterName: rec.name, data: JSON.parse(rec.json), exportDate: new Date(rec.ts).toISOString() };
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${String(rec.name).replace(/[^a-z0-9]/gi, '_')}_${rec.ts}.char`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
 
         // Which campaign THIS character belongs to (2026-09-09). Was only
         // ever a device-global localStorage pair
@@ -7024,9 +7378,9 @@
             // save data right alongside everything else, which is a real
             // privacy problem, not just clutter.
             document.querySelectorAll('input, textarea, select').forEach(el => {
-                if (el.id && !['characterList', 'characterName', 'importFile', 'portraitInput', 'license-email', 'license-password', 'new-password', 'new-password-confirm', 'remember-password-checkbox', 'submitCampaignCode', 'submitCampaignPassword', 'submitPlayerName', 'diceCustomSides', 'diceCustomCount', 'diceCustomModifier', 'diceModeNormal', 'diceModeAdvantage', 'diceModeDisadvantage'].includes(el.id)) {
+                if (el.id && !CHARACTER_FIELD_SKIP_IDS.includes(el.id)) {
                     // Skip dynamic list items to handle them separately
-                    if (el.closest('#attunementList') || el.closest('#attacksList') || el.closest('#spellsList') || el.closest('#cantripsList') || el.closest('#bonusActionsList') || el.closest('#reactionsList') || el.closest('#customSkillsList') || el.closest('#resourceTrackersList') || el.closest('#craftingList') || el.closest('#list-potions') || el.closest('#coinStacksList') || el.closest('#recipeCardsList')) return;
+                    if (el.closest(CHARACTER_LIST_CONTAINERS)) return;
                     data[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
                 }
             });
@@ -8432,6 +8786,8 @@
                 currentCharacterKey = newName; // nothing saved under the old name — just follow the rename
                 return;
             }
+            // Keep a recoverable copy before the old slot is removed (2026-10-11).
+            snapshotCharacterBackup(currentCharacterKey, localStorage.getItem(`character_${currentCharacterKey}`), 'before rename');
             localStorage.removeItem(`character_${currentCharacterKey}`);
             let characters = JSON.parse(localStorage.getItem('characterList') || '[]');
             characters = characters.filter(n => n !== currentCharacterKey);
@@ -8453,6 +8809,15 @@
                 alert("Please enter a Character Name first (Main tab, top of the sheet)!");
                 return;
             }
+
+            if (window.__screenInFlux) {
+                alert('Saving is paused because the sheet is in an uncertain state (a character switch was interrupted, or autosave stopped to protect a save). Nothing was written. Reload this page, then save.');
+                return;
+            }
+            // A manual Save can legitimately replace a slot's contents —
+            // keep the previous version recoverable (2026-10-11).
+            const priorSlot = localStorage.getItem(`character_${saveName}`);
+            if (priorSlot) snapshotCharacterBackup(saveName, priorSlot, 'before manual save');
 
             migrateSaveKeyIfRenamed(saveName);
             pendingRenameFrom = null; // this Save just resolved it — don't also pop the rename-decision nag on the next click
@@ -8521,70 +8886,54 @@
             alert(`New character "${charName}" created and added to the menu!`);
         }
 
+        // Atomic since 2026-10-11 — see the CHARACTER-SWITCH SAFETY block near
+        // the top of this script for what used to go wrong here. The old
+        // version also discarded any pending autosave (clearTimeout) instead
+        // of flushing it, losing up to a second of edits to the character
+        // being left.
         function loadSelectedCharacter() {
-            const charName = document.getElementById('characterList').value;
+            const dropdown = document.getElementById('characterList');
+            const charName = dropdown.value;
             if (!charName) return;
+            const revert = () => { dropdown.value = currentCharacterKey || ''; };
 
-            // Selecting a character here immediately overwrites the whole
-            // sheet with whatever was last saved for it. Warn first if the
-            // current screen has edits that haven't been saved anywhere yet,
-            // so switching characters can't silently wipe out work in
-            // progress.
-            if (hasUnsavedChanges) {
-                const proceed = confirm(`You have unsaved changes on the current sheet. Loading "${charName}" will discard them. Continue?`);
-                if (!proceed) {
-                    // Put the dropdown back to whatever is actually loaded.
-                    document.getElementById('characterList').value = currentCharacterKey || '';
-                    return;
-                }
+            if (window.__screenInFlux) {
+                alert('Switching is paused because the sheet is in an uncertain state (an earlier switch was interrupted, or autosave stopped to protect a save). Nothing was changed. Reload this page first.');
+                revert();
+                return;
             }
 
-            // Clear the "autosave" memory temporarily so it doesn't
-            // overwrite the new character with the old one's data during the swap
-            clearTimeout(window.saveTimeout);
-
-            const key = `character_${charName}`;
-            const dataString = localStorage.getItem(key);
-
-            if (dataString) {
-                const data = JSON.parse(dataString);
-                // CRITICAL: Ensure the UI resets before injecting new data
-                // This is why your changes weren't showing up correctly
-                setCharacterData(data);
-
-                // BUG FIX (2026-08-30): the dropdown selection is always
-                // authoritative for the name shown here — never trust the
-                // stored data's OWN charName field instead. Autosave can
-                // legitimately leave an in-progress, not-yet-decided rename
-                // sitting inside an otherwise-untouched record (it protects
-                // the ORIGINAL key while you're mid-typing, but the data it
-                // writes is still a live snapshot of the screen — see
-                // autoSave()), so picking "Thorin" from the list must always
-                // show "Thorin", even if what's saved under that key
-                // happens to have "Thorin Backup" typed into its own
-                // charName field from an interrupted rename attempt.
-                document.getElementById('charName').value = charName;
-                // currentCharacterKey must update BEFORE syncSaveNameFromCharName()
-                // runs below — that function compares the new name against
-                // currentCharacterKey to decide whether a rename is pending
-                // (see checkPendingRenameDecision()), and loading a
-                // DIFFERENT character is never itself a rename.
-                currentCharacterKey = charName;
-                // setCharacterData() (and the .value assignment above) set
-                // #charName directly, which never fires an 'input' event —
-                // so the hidden #characterName mirror needs an explicit
-                // sync here, it won't happen on its own.
-                syncSaveNameFromCharName();
-
-                hasUnsavedChanges = false;
-                localStorage.setItem('lastActiveCharacter', charName);
-
-                updateModifiers();
+            // A sheet bound to a saved character is already autosaved (and is
+            // flushed to its own slot below), so there's nothing to lose. Only
+            // an unbound sheet with edits has no save slot to fall back on.
+            if (hasUnsavedChanges && !currentCharacterKey) {
+                const proceed = confirm(`This sheet hasn't been saved under a name yet. Opening "${charName}" will replace it. Continue?`);
+                if (!proceed) { revert(); return; }
             }
+
+            const res = loadCharacterIntoSheet(charName);
+            if (res.ok) return;
+            revert();
+            if (res.reason === 'missing') {
+                alert(`"${charName}" isn't saved on this device. If it's in your cloud backups, use Tools ▾ Cloud Backups to bring it down. Nothing was changed.`);
+            } else if (res.reason === 'corrupt') {
+                alert(`The saved data for "${charName}" on this device couldn't be read, so it wasn't opened. Nothing was changed. File ▾ Recover Earlier Version may have an earlier copy.`);
+            } else if (res.reason === 'swap-failed') {
+                recoverAfterFailedSwitch(res.outgoingKey, charName, res.error);
+            }
+            // 'halted': persistHaltAlert already explained it.
         }
 
         function newCharacter() {
             if (confirm('This will clear the screen! Any unsaved changes will be lost. Do you want to continue?')) {
+                // 2026-10-11: save the character being left to its OWN slot first,
+                // then UNBIND before anything is cleared. This used to blank the
+                // sheet and then call removePortrait() — which autosaves — while
+                // still bound to the old character, writing a blank sheet over it.
+                if (!persistOutgoingBeforeReplace('before new character')) return;
+                currentCharacterKey = null;
+                screenGeneration++;
+                window.__screenInFlux = true;
                 pendingRenameFrom = null; // starting fresh — any unresolved rename decision no longer applies
                 // 1. Physically unlock the top bar (Crucial for .exe)
                 const nameInput = document.getElementById('characterName');
@@ -8636,8 +8985,8 @@
                     }
                 });
 
-                // 4. Remove Portrait
-                removePortrait();
+                // 4. Remove Portrait (no confirm/autosave — see the note at the top of this function)
+                clearPortraitUI();
 
                 // 5. Add back one blank starting row for basic lists
                 addAttack();
@@ -8677,6 +9026,9 @@
 
                 // Ensure textareas visually shrink back to default size
                 document.querySelectorAll('textarea').forEach(tx => tx.style.height = 'inherit');
+
+                // Fresh, unbound sheet fully built — persistence may resume (2026-10-11).
+                window.__screenInFlux = false;
             }
         }
 
@@ -8689,6 +9041,9 @@
 
             if (confirm(`Are you sure you want to delete "${charName}"? This cannot be undone.`)) {
                 const key = `character_${charName}`;
+                // 2026-10-11: still undoable from File > Recover Earlier Version.
+                const doomed = localStorage.getItem(key);
+                if (doomed) snapshotCharacterBackup(charName, doomed, 'before delete');
                 localStorage.removeItem(key);
 
                 let characters = JSON.parse(localStorage.getItem('characterList') || '[]');
@@ -9675,6 +10030,15 @@
                     const imported = JSON.parse(e.target.result);
 
                     if (imported.version && imported.data) {
+                        // 2026-10-11: importing used to leave the OPEN character's key
+                        // bound, so saveCharacter() below treated the imported name as a
+                        // RENAME of it and deleted its local save. Flush + snapshot the
+                        // open character, unbind, and swap atomically instead.
+                        if (!persistOutgoingBeforeReplace('before import')) { alert('Import cancelled — saving is paused. Reload this page and try again.'); return; }
+                        currentCharacterKey = null;
+                        screenGeneration++;
+                        window.__screenInFlux = true;
+                        resetSheetToBaseline();
                         setCharacterData(imported.data);
                         // The save slot name is the Character Name field now
                         // (see syncSaveNameFromCharName()) — the file's own
@@ -9685,6 +10049,7 @@
                             charNameInput.value = imported.characterName || 'Imported Character';
                         }
                         syncSaveNameFromCharName();
+                        window.__screenInFlux = false;
 
                         // ADD THIS: Save immediately so it appears in the dropdown list
                         saveCharacter();
@@ -10837,6 +11202,9 @@
 
             // --- 7. AUTO-SAVE / AUTO-LOAD ---
             window.autoSave = function () {
+                // 2026-10-11: nothing may persist while a character swap is in
+                // progress or after one failed — see CHARACTER-SWITCH SAFETY.
+                if (window.__screenInFlux) return;
                 const data = getCharacterData();
 
                 // Generic safety-net backup, kept for anyone mid-edit with no
@@ -10857,6 +11225,19 @@
                 // whatever slot is ALREADY bound safely up to date,
                 // regardless of what's currently typed in the name field.
                 if (currentCharacterKey) {
+                    // Never overwrite a save with what is clearly a DIFFERENT
+                    // character (2026-10-11) — keeps the save, stops persisting.
+                    const existingStr = localStorage.getItem(`character_${currentCharacterKey}`);
+                    if (existingStr) {
+                        let existing = null;
+                        try { existing = JSON.parse(existingStr); } catch (e) { /* unreadable — don't block */ }
+                        if (existing && looksLikeDifferentCharacter(existing, data)) {
+                            snapshotCharacterBackup(currentCharacterKey, existingStr, 'before suspected overwrite');
+                            haltPersistence(currentCharacterKey, data);
+                            return;
+                        }
+                        maybePeriodicBackup(currentCharacterKey, existingStr);
+                    }
                     // Stamp the bound slot's OWN name into what actually
                     // gets written — an in-progress, not-yet-decided rename
                     // sitting in the live #charName field otherwise leaks
@@ -10881,6 +11262,7 @@
                 // without a manual Save click first.
                 const saveName = document.getElementById('characterName').value.trim();
                 if (saveName) {
+                    if (!slotWriteLooksSafe(saveName, data)) { haltPersistence(saveName, data); return; }
                     localStorage.setItem(`character_${saveName}`, JSON.stringify(data));
 
                     let characters = JSON.parse(localStorage.getItem('characterList') || '[]');
@@ -10921,6 +11303,8 @@
                 const lastActiveData = lastActive ? localStorage.getItem(`character_${lastActive}`) : null;
 
                 if (lastActive && lastActiveData) {
+                    window.__screenInFlux = true; // 2026-10-11: blocked until fully loaded + bound
+                    try {
                     setCharacterData(JSON.parse(lastActiveData));
                     document.getElementById('characterList').value = lastActive;
                     // The save-slot key is always authoritative for the
@@ -10934,6 +11318,11 @@
                     syncSaveNameFromCharName();
                     currentCharacterKey = lastActive;
                     hasUnsavedChanges = false;
+                    window.__screenInFlux = false;
+                    } catch (err) {
+                        console.error('Auto-load failed:', err);
+                        setTimeout(() => alert('Your last character could not be fully opened, so saving is paused to protect it — nothing was overwritten. Reload the page; if this keeps happening, File ▾ Recover Earlier Version has earlier copies.'), 0);
+                    }
                     return;
                 }
 
@@ -13465,7 +13854,14 @@
                 // the character list entirely. Clearing it here first
                 // makes this a fresh slot, same as a character that was
                 // never saved yet, so nothing existing gets touched.
+                // 2026-10-11: flush + snapshot the open character, then replace
+                // the sheet atomically (reset to blank first so nothing of the
+                // previous character survives into this one).
+                if (!persistOutgoingBeforeReplace('before cloud download', { cloud: false })) { alert('Download cancelled — saving is paused. Reload this page and try again.'); return; }
                 currentCharacterKey = null;
+                screenGeneration++;
+                window.__screenInFlux = true;
+                resetSheetToBaseline();
                 setCharacterData(data.char_data);
                 // Save slot name is the Character Name field now (see
                 // syncSaveNameFromCharName()) — the cloud record's own name
@@ -13476,6 +13872,7 @@
                     charNameInput.value = name;
                 }
                 syncSaveNameFromCharName();
+                window.__screenInFlux = false;
 
                 saveCharacter();
 
@@ -13557,6 +13954,14 @@
         // "saved successfully" alert that doesn't belong in a background
         // sync or a resolution the player just explicitly asked for).
         function applyCloudPull(name, cloudCharData, cloudTime) {
+            // 2026-10-11: whatever's on the sheet now is kept recoverable, and
+            // the replace is atomic with a blank baseline (see CHARACTER-
+            // SWITCH SAFETY). Callers must have checked this pull still
+            // targets the character on screen.
+            if (!persistOutgoingBeforeReplace('before cloud pull', { cloud: false })) return;
+            screenGeneration++;
+            window.__screenInFlux = true;
+            resetSheetToBaseline();
             setCharacterData(cloudCharData);
             currentCharacterKey = name;
             const charNameInput = document.getElementById('charName');
@@ -13577,6 +13982,7 @@
             localStorage.setItem('cloudSyncedAt_' + name, cloudTime);
             localStorage.setItem('localEditedAt_' + name, cloudTime);
             hasUnsavedChanges = false;
+            window.__screenInFlux = false;
         }
 
         // Order-independent JSON stringify (2026-09-09) — used only to
@@ -13595,7 +14001,8 @@
         async function cloudAutoLoadCheck() {
             const email = localStorage.getItem('licenseEmail');
             const name = cloudSyncName();
-            if (!email || !name || window.__cloudConflictOpen) return;
+            if (!email || !name || window.__cloudConflictOpen || window.__screenInFlux) return;
+            const startGeneration = screenGeneration;
 
             try {
                 const { data, error } = await _supabase
@@ -13606,6 +14013,12 @@
                     .maybeSingle();
 
                 if (error || !data) return;
+
+                // 2026-10-11: this request took real time. If a different
+                // character was opened (or the sheet was replaced) while it was
+                // in flight, this result belongs to the OLD sheet — applying it
+                // would paste the old character onto the new one.
+                if (window.__screenInFlux || screenGeneration !== startGeneration || cloudSyncName() !== name) return;
 
                 const cloudTime = new Date(data.updated_at).getTime();
                 const syncedAt = parseInt(localStorage.getItem('cloudSyncedAt_' + name) || '0', 10);
@@ -13702,6 +14115,11 @@
         function resolveCloudConflictUseCloud() {
             const info = window.__cloudConflictInfo;
             if (!info) return;
+            if (cloudSyncName() !== info.name || window.__screenInFlux) {
+                closeCloudConflictModal();
+                alert('The character on screen changed since this conflict was detected, so nothing was replaced. Re-open the character and try again.');
+                return;
+            }
             applyCloudPull(info.name, info.cloudCharData, info.cloudTime);
             closeCloudConflictModal();
             alert(`Loaded the cloud version of "${info.name}". The offline changes on this device have been replaced.`);
@@ -13723,7 +14141,14 @@
             const email = localStorage.getItem('licenseEmail');
             const name = cloudSyncName();
             if (!email || !name) return false;
+            if (window.__screenInFlux) return false; // mid-swap / untrusted sheet — never push (2026-10-11)
             if (navigator.onLine === false) return false; // don't even try — save the round trip
+
+            // Name and data are captured together, synchronously, right here —
+            // and the data is refused if it clearly isn't a version of the
+            // character saved under this name (2026-10-11).
+            const pushData = getCharacterData();
+            if (!slotWriteLooksSafe(name, pushData)) { haltPersistence(name, pushData); return false; }
 
             const ts = new Date();
             try {
@@ -13732,7 +14157,7 @@
                     .upsert({
                         user_email: email.toLowerCase(),
                         char_name: name,
-                        char_data: getCharacterData(),
+                        char_data: pushData,
                         updated_at: ts
                     }, { onConflict: 'user_email, char_name' });
 
