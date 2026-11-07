@@ -32,3 +32,5 @@ supabase/.branches/
 # OS cruft
 .DS_Store
 Thumbs.db
+# admin.html embeds a live Supabase service_role key (bypasses RLS). Local-only: never commit or host it.
+admin.html

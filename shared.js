@@ -1135,7 +1135,16 @@ function restrictedFeature(featureName) {
     // OTHER feature name is unaffected; this only ever blocks the literal
     // string 'DM Tools'.
     if (email) {
+        // 30-day DM Tools trial for a Character-Sheet-only license (2026-10-31): the first time they open DM Tools the clock starts
+        // (dm_trial_start, kept across log out), and DM Tools is open to them until it runs out; after that the upgrade prompt below.
         if (featureName === 'DM Tools' && localStorage.getItem('licenseHasDM') !== 'true') {
+            let dmStart = parseInt(localStorage.getItem('dm_trial_start'), 10);
+            if (!dmStart) {
+                dmStart = Date.now();
+                localStorage.setItem('dm_trial_start', String(dmStart));
+                alert('Your 30-day DM Tools trial has started. You can use all of DM Tools until it ends.');
+            }
+            if (Date.now() - dmStart <= 30 * 24 * 60 * 60 * 1000) return true;
             // A dedicated message/link here instead of the lock modal's own
             // generic "enter your email to activate" — that's meaningless
             // to someone who's ALREADY activated (for Character Sheet);
@@ -1149,7 +1158,7 @@ function restrictedFeature(featureName) {
             // undoes this swap when the modal is closed, so the full picker
             // is back next time it opens for an unrelated reason.
             const lockMsg = document.getElementById('lock-message');
-            if (lockMsg) lockMsg.innerHTML = "Your license covers the Character Sheet — DM Tools needs its own upgrade on top of it.";
+            if (lockMsg) lockMsg.innerHTML = localStorage.getItem('dm_trial_start') ? "Your 30-day DM Tools trial has ended — DM Tools needs its own upgrade on top of your Character Sheet license." : "Your license covers the Character Sheet — DM Tools needs its own upgrade on top of it.";
             const pricingWrap = document.getElementById('pricing-picker-wrap');
             if (pricingWrap) pricingWrap.style.display = 'none';
             const upgradeWrap = document.getElementById('dm-upgrade-only-wrap');
@@ -1189,12 +1198,15 @@ function restrictedFeature(featureName) {
     // trial, blocked only by the hard lock above once the 30 days are up.
     // Creating/managing a campaign as a DM, on the other hand, is bundled
     // into the paid license the same way Cloud Backups is.)
-    const lockedDuringTrial = ['Importing', 'Exporting', 'Printing', 'Cloud Backups', 'DM Tools', 'Potion Book', 'My Spellbook'];
-    if (lockedDuringTrial.includes(featureName)) {
-        alert(`${featureName} is locked during the trial. Activate the full version to unlock all features.`);
-        const lock = document.getElementById('license-lock');
-        if (lock) lock.style.display = 'flex';
-        return false;
-    }
+    //
+    // 2026-10-31: the per-feature trial blockers are switched off for now, so a trial player can use the whole sheet for the 30 days
+    // (only the hard lock above still applies). Switch them back on by un-commenting this block.
+    // const lockedDuringTrial = ['Importing', 'Exporting', 'Printing', 'Cloud Backups', 'DM Tools', 'Potion Book', 'My Spellbook'];
+    // if (lockedDuringTrial.includes(featureName)) {
+    //     alert(`${featureName} is locked during the trial. Activate the full version to unlock all features.`);
+    //     const lock = document.getElementById('license-lock');
+    //     if (lock) lock.style.display = 'flex';
+    //     return false;
+    // }
     return true;
 }

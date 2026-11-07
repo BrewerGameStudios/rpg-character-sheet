@@ -1,0 +1,16 @@
+Sound credits
+=============
+
+tavern-crowd.mp3
+  Title:    Busy Bar and Restaurant Ambience with Crowd and Background Chatter
+  Author:   jadeallencook
+  Source:   Pixabay (Pixabay file id 339222, original file name
+            jadeallencook-busy-bar-and-restaurant-ambience-with-crowd-and-background-chatter-339222.mp3)
+  Licence:  Pixabay Content License. Royalty free; commercial use and changes allowed;
+            no attribution required (given here anyway). Not to be sold or distributed
+            on its own in substantially the same form.
+  Obtained: 2026-11-04
+  Used in:  the Tavern crowd sound of the ambience demo (looped and crossfaded, filtered
+            and mixed by planning/ambience-demo.html).
+
+Do not offer the .mp3 as a separate download. The full licence text is on pixabay.com.

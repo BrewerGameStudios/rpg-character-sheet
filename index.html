@@ -1937,6 +1937,14 @@
             background-color: #8a6a45;
             background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 12px, rgba(107,79,48,0.85) 12px, rgba(107,79,48,0.85) 13px);
         }
+        #mapViewGrid .map-cell.floor-dirt {
+            background-color: #9a7a54;
+            background-image: radial-gradient(circle at 22% 30%, rgba(70,48,26,0.28) 0%, transparent 40%), radial-gradient(circle at 74% 68%, rgba(190,160,116,0.25) 0%, transparent 38%), radial-gradient(circle at 60% 22%, rgba(54,36,18,0.22) 0 2px, transparent 3px);
+        }
+        #mapViewGrid .map-cell.floor-pebble {
+            background-color: #8b8478;
+            background-image: radial-gradient(circle at 25% 28%, #c9c0ae 0 4px, transparent 5px), radial-gradient(circle at 68% 24%, #a79f8e 0 4px, transparent 5px), radial-gradient(circle at 46% 62%, #d3cab8 0 4.5px, transparent 5.5px), radial-gradient(circle at 80% 72%, #b4ab99 0 4px, transparent 5px), radial-gradient(circle at 18% 78%, #9c9484 0 3.5px, transparent 4.5px);
+        }
         #mapViewGrid .map-cell.floor-tile-a { background-color: #e8e2d0; }
         #mapViewGrid .map-cell.floor-tile-b { background-color: #cfc4a8; }
         #mapViewGrid .map-cell.floor-stone-0, #mapViewGrid .map-cell.floor-stone-1, #mapViewGrid .map-cell.floor-stone-2, #mapViewGrid .map-cell.floor-stone-3 { background-color: #8f8a7d; }
@@ -2286,6 +2294,10 @@
         body.dark-mode .dice-clear-log-btn { background: #1e1e2e; border-color: #4a4a5e; color: #ccc; }
     </style>
     <script src="shared.js"></script>
+    <script src="map-style.js"></script>
+    <script src="map-marks.js"></script>
+    <script src="map-weather.js"></script>
+    <script src="map-fog.js"></script>
 </head>
 <body>
     <!-- The splash video, How-To popup, and Help/Privacy/ToS modals all
@@ -2520,6 +2532,7 @@
                      kind. See openMapPicker(). -->
                 <button onclick="closeSaveMenuDropdowns(); openMapPicker()">View Maps</button>
                 <button onclick="closeSaveMenuDropdowns(); openReputationView()">View Reputation</button>
+                <button onclick="closeSaveMenuDropdowns(); openQuestView()">View Quests</button>
                 <!-- Was a standalone "Menu" link/button in the bar itself;
                      folded in here (2026-08-20) as the one remaining way to
                      reach menu.html from this bar — briefly relabeled
@@ -2530,6 +2543,10 @@
                 <button onclick="closeSaveMenuDropdowns(); window.location.href='menu.html'" style="background: var(--theme-blue-dark);">Menu</button>
             </div>
         </div>
+
+        <!-- Which campaign this character is in (2026-10-31): always visible, and opens the list of every campaign it has been submitted
+             to so the active one can be switched. See renderCampaignChip() and openCampaignSwitcher(). -->
+        <button id="campaignChip" type="button" onclick="openCampaignSwitcher()" title="The campaign this character is in. Click to see them all or switch." style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: var(--theme-blue-dark);">No campaign</button>
         </div>
 
         <!-- Log Out and Unlock Full Version moved to menu.html entirely
@@ -2622,6 +2639,19 @@
         </div>
     </div>
 
+    <!-- Your campaigns (2026-10-31): every campaign this character has been submitted to, with the active one marked. No input boxes here on
+         purpose (getCharacterData() walks every input with an id on the page into the character's own save). -->
+    <div id="campaignSwitchModal" onclick="if(event.target===this) closeCampaignSwitcher()" style="display:none; position:fixed; z-index:4000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items:center; justify-content:center;">
+        <div class="text-box" style="max-width: 460px; width: 90%; max-height: 85vh; overflow-y: auto; background: white; padding: 25px; border: 3px solid #4a4ba2; border-radius: 10px; position: relative;">
+            <button onclick="closeCampaignSwitcher()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer; color: #666;">✖</button>
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">Your Campaigns</h2>
+            <p style="font-size: 13px; color: #555; margin-bottom: 12px;">The campaign marked Active is the one this sheet uses for maps, loot, reputation, quests, roll requests and the calendar. Switch to another one you have joined, or join a new one.</p>
+            <div id="campaignSwitchList"></div>
+            <button class="btn" style="width: 100%; margin-top: 14px; background: var(--theme-blue-dark);" onclick="ccJoinAnother()">Join another campaign</button>
+            <div id="campaignSwitchStatus" style="margin-top: 12px; font-weight: bold; font-size: 13px; text-align: center; color: #666;"></div>
+        </div>
+    </div>
+
     <div id="submitCampaignModal" onclick="if(event.target===this) closeSubmitToCampaignModal()" style="display:none; position:fixed; z-index:4000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items:center; justify-content:center;">
         <div class="text-box" style="max-width: 420px; width: 90%; background: white; padding: 25px; border: 3px solid #4a4ba2; border-radius: 10px; position: relative;">
             <button onclick="closeSubmitToCampaignModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer; color: #666;">✖</button>
@@ -2672,6 +2702,19 @@
 
             <div id="claimLootList"></div>
             <div id="claimLootStatus" style="margin-top: 12px; font-weight: bold; font-size: 13px; text-align: center;"></div>
+        </div>
+    </div>
+
+    <!-- Read-only copy of dm.html's Quest Log and Clocks (Tools ▾ → View Quests, 2026-10-31). Only what the DM ticked Show on is
+         fetched into the page at all: a quest, and inside it just the goals and clues marked Show. The DM's private notes are
+         never read. See openQuestView(). -->
+    <div id="questViewModal" onclick="if(event.target===this) closeQuestView()" style="display:none; position:fixed; z-index:4000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items:center; justify-content:center;">
+        <div class="text-box" style="max-width: 560px; width: 90%; max-height: 85vh; overflow-y: auto; background: white; padding: 25px; border: 3px solid #667eea; border-radius: 10px; position: relative;">
+            <button onclick="closeQuestView()" style="position:absolute; right:10px; top:10px; background:none; border:none; font-size:20px; cursor:pointer; color: #666;">✖</button>
+            <h2 style="color: #4a4ba2; border-bottom: 2px solid #667eea; margin-bottom: 15px;">Quests</h2>
+            <p style="font-size: 13px; color: #555; margin-bottom: 15px;">What your party is chasing, as far as your DM has let on.</p>
+            <div id="questViewList"></div>
+            <div id="questViewStatus" style="margin-top: 12px; font-weight: bold; font-size: 13px; text-align: center; color: #666;"></div>
         </div>
     </div>
 
@@ -2887,6 +2930,19 @@
         </div>
     </div>
 
+    <!-- Stairs, spiral stairs and hatches: clicking one asks whether to take it (2026-10-31). Buttons only, no inputs. -->
+    <div id="mapStairsModal" onclick="if(event.target===this) closeMapStairs()" style="display:none; position:fixed; z-index:4100; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.6); align-items:center; justify-content:center;">
+        <div class="text-box" style="max-width: 380px; width: 88%; padding: 26px; border-radius: 10px; border-top: 6px solid #667eea; text-align: center;">
+            <h2 id="mapStairsTitle" style="margin-bottom: 10px;"></h2>
+            <p id="mapStairsBody" style="font-size: 14px; color: #555; margin-bottom: 20px;"></p>
+            <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+                <button type="button" id="mapStairsGoBtn" class="btn" style="padding: 10px 22px; font-size: 14px;">Go</button>
+                <button type="button" id="mapStairsMoveBtn" class="btn" style="padding: 10px 22px; font-size: 14px; display:none;">Move my token</button>
+                <button type="button" class="btn" onclick="closeMapStairs()" style="padding: 10px 22px; font-size: 14px; background:#888;">Stay here</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= BATTLE MAP (view) ================= -->
     <!-- Player-side half of dm.html's Battle Map — read-mostly: no
          building tools, fog stays covered until the DM's own line-of-sight
@@ -2952,15 +3008,43 @@
             <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
                 <span id="mapViewHint" style="font-size: 12.5px; color: #888;"></span>
                 <span id="mapViewCoord" style="font-size: 12.5px; font-weight: bold;"></span>
+                <button type="button" id="mapViewLabelsBtn" class="map-style-toggle" onclick="toggleMapViewLabels()" title="Show or hide the row and column labels">Labels: On</button>
+                <span style="display:inline-flex; gap:2px; align-items:center;">
+                    <button type="button" class="map-style-toggle" onclick="MapStyle.zoomStep(-1)" title="Zoom out (Ctrl + mouse wheel also zooms)" aria-label="Zoom out">&minus;</button>
+                    <button type="button" class="map-style-toggle map-zoom-label" onclick="MapStyle.zoomReset()" title="Back to 100%" style="min-width:48px;">100%</button>
+                    <button type="button" class="map-style-toggle" onclick="MapStyle.zoomStep(1)" title="Zoom in (Ctrl + mouse wheel also zooms)" aria-label="Zoom in">+</button>
+                </span>
             </div>
+            <!-- Only for a map bigger than the 20 x 20 window: move the window around by hand (2026-10-31). -->
+            <div id="mapViewPanBar" style="display:none; gap:4px; align-items:center; flex-wrap:wrap; margin-bottom:8px;">
+                <span style="font-size:12px; color:#888;">View:</span>
+                <button type="button" class="map-style-toggle" onclick="mapViewPanBy(-1, 0)" title="Look further left" aria-label="Pan left">&larr;</button>
+                <button type="button" class="map-style-toggle" onclick="mapViewPanBy(0, -1)" title="Look further up" aria-label="Pan up">&uarr;</button>
+                <button type="button" class="map-style-toggle" onclick="mapViewPanBy(0, 1)" title="Look further down" aria-label="Pan down">&darr;</button>
+                <button type="button" class="map-style-toggle" onclick="mapViewPanBy(1, 0)" title="Look further right" aria-label="Pan right">&rarr;</button>
+                <button type="button" class="map-style-toggle" id="mapViewPanFollow" onclick="mapViewPanReset()" title="Go back to following the party" style="display:none;">Follow party</button>
+                <span id="mapViewPanInfo" style="font-size:12px; color:#888;"></span>
+            </div>
+            <div id="mapViewMarksBar" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;"></div>
+            <div id="mapViewViewer" style="position:relative; display:inline-block; max-width:100%;">
+            <div id="mapViewCompass" class="map-compass bl"></div>
             <div style="overflow-x:auto; padding-bottom:4px;">
-                <div style="position:relative; display:inline-block;">
+                <div class="map-paper" style="position:relative; display:inline-block;">
                     <!-- Mirrors dm.html's #mapTerrainCanvas — seamless
                          Wilderness terrain/road/landmark painting behind
                          the interactive (and windowed/scrolling) grid, see
                          renderMapViewTerrainCanvas(). -->
                     <canvas id="mapViewTerrainCanvas" style="position:absolute; top:0; left:0; z-index:0; pointer-events:none;"></canvas>
+                    <div id="mapViewObjLayer" style="position:absolute; top:0; left:0; pointer-events:none; z-index:0;"></div>
+                    <div id="mapViewObjTopLayer" style="position:absolute; top:0; left:0; pointer-events:none; z-index:2;"></div>
+                    <div id="mapViewNoteLayer" style="position:absolute; top:0; left:0; pointer-events:none; z-index:5;"></div>
                     <div id="mapViewGrid" class="map-cell-grid" style="position:relative; z-index:1;"></div>
+                    <div id="mapViewTodTint" style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; mix-blend-mode:multiply;"></div>
+                    <canvas id="mapViewLightLayer" style="position:absolute; top:0; left:0; z-index:1; pointer-events:none; filter:blur(6px); display:none;"></canvas>
+                    <svg width="0" height="0" style="position:absolute;" aria-hidden="true"><defs><filter id="mapFogGoo" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="7"/><feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 12 -5.5"/></filter></defs></svg>
+                    <canvas id="mapViewFogLayer" style="position:absolute; top:0; left:0; z-index:1; pointer-events:none; display:none;"></canvas>
+                    <!-- Weather the DM chose for this map (2026-10-31), drawn by map-weather.js. -->
+                    <canvas id="mapViewWeatherLayer" style="position:absolute; top:0; left:0; z-index:1; pointer-events:none; display:none;"></canvas>
                     <!-- Explicit z-index on each (2026-08-31) — introducing
                          one on #mapViewGrid above means these can no
                          longer rely on plain DOM order to paint on top of
@@ -2970,6 +3054,7 @@
                     <div id="mapViewAoeOverlay" style="position:absolute; top:0; left:0; z-index:3; pointer-events:none;"></div>
                     <div id="mapViewConeOverlay" style="position:absolute; top:0; left:0; z-index:4; pointer-events:none;"></div>
                 </div>
+            </div>
             </div>
         </div>
     </div>
@@ -3130,6 +3215,32 @@
                  own crit rule is specifically about attack rolls. -->
             <div id="diceCritDamageArea" style="display:none; margin-bottom: 16px;"></div>
             <button id="diceCritOkBtn" class="btn" onclick="closeDiceCritModal()" style="padding: 10px 28px; font-size: 14px; margin-top: 16px;">Nice!</button>
+        </div>
+    </div>
+
+    <!-- Roll request from the DM (2026-10-31). The DM taps "everyone roll
+         Perception" in dm.html's Roll Request window; this opens, the player
+         rolls with their own bonus, and the result goes back over the
+         campaign's live channel. See initRollRequests() below. z-index 5000:
+         above the Dice Roller (4000) and its crit popup (4100). -->
+    <div id="rollRequestModal" onclick="if(event.target===this) closeRollRequestModal()" style="display:none; position:fixed; z-index:5000; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.6); align-items:center; justify-content:center;">
+        <div class="text-box" style="max-width: 380px; width: 88%; padding: 24px; border-radius: 10px; border-top: 6px solid #667eea; text-align: center; max-height: 86vh; overflow-y: auto;">
+            <div id="rqKicker" style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em; color: #888;">Your DM asks for</div>
+            <h2 id="rqTitle" style="margin: 6px 0 4px; font-size: 22px;"></h2>
+            <p id="rqDcLine" style="margin: 0 0 6px; font-size: 14px; color: #555; min-height: 1.2em;"></p>
+            <div id="rqRollArea">
+                <p id="rqModLine" style="margin: 0 0 10px; font-size: 13.5px;"></p>
+                <div style="display:flex; gap:12px; justify-content:center; font-size:13px; margin-bottom:12px; flex-wrap:wrap;">
+                    <label><input type="radio" name="rqMode" value="normal" checked> Normal</label>
+                    <label><input type="radio" name="rqMode" value="advantage"> Advantage</label>
+                    <label><input type="radio" name="rqMode" value="disadvantage"> Disadvantage</label>
+                </div>
+                <button id="rqRollBtn" class="btn" onclick="rqDoRoll()" style="padding: 10px 30px; font-size: 15px;">Roll</button>
+                <div id="rqResult" style="font-size: 44px; font-weight: bold; min-height: 56px; margin-top: 10px;"></div>
+                <p id="rqResultNote" style="margin: 0; font-size: 13px; color: #555; min-height: 1.3em;"></p>
+            </div>
+            <div id="rqListArea" style="display:none; text-align:left; margin-top:6px;"></div>
+            <button class="btn" onclick="closeRollRequestModal()" style="margin-top: 16px; padding: 8px 20px; font-size: 13px;">Close</button>
         </div>
     </div>
 
@@ -4957,6 +5068,10 @@
         // it back onto the same localStorage keys every campaign-aware
         // feature already reads, so none of those had to change.
         let currentCharacterCampaign = { code: '', password: '' };
+        // Every campaign this character has been submitted to (2026-10-31): [{ code, password, name }]. currentCharacterCampaign above stays
+        // the ACTIVE one, which is what every campaign-aware feature already reads; switching just changes which entry that is.
+        let characterCampaigns = [];
+        const ccStatus = {};   // code -> 'ok' | 'archived' | 'missing', learned when the window opens
 
         // Druid Wild Shape beast forms + Familiars (2026-09-09). Both are
         // plain arrays that ARE the source of truth (loaded in
@@ -7350,6 +7465,8 @@
                 // device, not just the one that ran "Submit to Campaign".
                 campaignCode: currentCharacterCampaign.code || '',
                 campaignPassword: currentCharacterCampaign.password || '',
+                // every campaign this character has been submitted to (2026-10-31); the one above is the active one
+                campaignList: characterCampaigns,
                 // Druid Wild Shape beast tracker (2026-09-09) — saved beast
                 // forms live only in the pop-out; activeWildShapeId is
                 // whichever one (if any) is currently shown on the sheet as
@@ -7744,6 +7861,10 @@
                 localStorage.removeItem('lastJoinedCampaignCode');
                 localStorage.removeItem('lastJoinedCampaignPassword');
             }
+            // the list of campaigns this character has joined; a character saved before the list existed gets its one campaign put in it
+            characterCampaigns = ccSanitize(data.campaignList);
+            if (currentCharacterCampaign.code && currentCharacterCampaign.password && !characterCampaigns.some(c => c.code === currentCharacterCampaign.code)) characterCampaigns.push({ code: currentCharacterCampaign.code, password: currentCharacterCampaign.password, name: '' });
+            renderCampaignChip(); ccFillNames();
             // Re-evaluate the floating Calendar & Weather widget for the
             // newly-loaded character (shows it, hides it, or re-points its
             // realtime subscription as needed).
@@ -9003,6 +9124,7 @@
                 // too or a fresh character inherits the last one's campaign,
                 // Wild Shape forms and familiars.
                 currentCharacterCampaign = { code: '', password: '' };
+                characterCampaigns = []; renderCampaignChip();
                 localStorage.removeItem('lastJoinedCampaignCode');
                 localStorage.removeItem('lastJoinedCampaignPassword');
                 if (typeof initCalendarWidget === 'function') initCalendarWidget();
@@ -11442,11 +11564,110 @@
             });
         });
 
+        // ---------- Which campaign this character is in, and switching (2026-10-31) ----------
+        function ccSanitize(list) {
+            const seen = new Set(), out = [];
+            (Array.isArray(list) ? list : []).forEach(c => {
+                if (!c || typeof c !== 'object') return;
+                const code = String(c.code || '').trim().toUpperCase().slice(0, 24), password = String(c.password || '').slice(0, 80);
+                if (!code || !password || seen.has(code)) return;
+                seen.add(code); out.push({ code, password, name: String(c.name || '').slice(0, 80) });
+            });
+            return out.slice(0, 12);
+        }
+        function ccNote(code, password, name) {
+            const e = characterCampaigns.find(c => c.code === code);
+            if (e) { e.password = password; if (name) e.name = String(name).slice(0, 80); }
+            else characterCampaigns.push({ code, password, name: String(name || '').slice(0, 80) });
+            if (characterCampaigns.length > 12) characterCampaigns = characterCampaigns.filter(c => c.code === code).concat(characterCampaigns.filter(c => c.code !== code)).slice(0, 12);
+        }
+        function ccActive() { return characterCampaigns.find(c => c.code === currentCharacterCampaign.code) || null; }
+        function renderCampaignChip() {
+            const chip = document.getElementById('campaignChip'); if (!chip) return;
+            const a = ccActive();
+            chip.textContent = a ? 'Campaign: ' + (a.name || a.code) : 'No campaign';
+            chip.title = a ? 'This character is in "' + (a.name || a.code) + '" (code ' + a.code + '). Click to see your campaigns or switch.' : 'This character has not joined a campaign. Click to join one.';
+        }
+        // Learns a campaign's name (and whether it is still there) from the join code and password. Names are saved with the character.
+        async function ccLookup(entry) {
+            try {
+                const { data, error } = await _supabase.from('campaigns').select('campaign_name, status').eq('campaign_code', entry.code).eq('campaign_password', entry.password).maybeSingle();
+                if (error) return false;
+                if (!data) { ccStatus[entry.code] = 'missing'; return true; }
+                ccStatus[entry.code] = data.status === 'active' ? 'ok' : 'archived';
+                if (data.campaign_name && data.campaign_name !== entry.name) { entry.name = String(data.campaign_name).slice(0, 80); return 'renamed'; }
+                return true;
+            } catch (e) { return false; }
+        }
+        async function ccFillNames() {
+            const missing = characterCampaigns.filter(c => !c.name);
+            if (!missing.length) return;
+            let changed = false;
+            for (const e of missing) { if ((await ccLookup(e)) === 'renamed') changed = true; }
+            if (changed) { renderCampaignChip(); if (window.autoSave) autoSave(); }
+        }
+        function openCampaignSwitcher() {
+            document.getElementById('campaignSwitchModal').style.display = 'flex';
+            ccRenderList(); ccRefreshAll();
+        }
+        function closeCampaignSwitcher() { document.getElementById('campaignSwitchModal').style.display = 'none'; }
+        async function ccRefreshAll() {
+            let changed = false;
+            for (const e of characterCampaigns.slice()) { if ((await ccLookup(e)) === 'renamed') changed = true; }
+            if (changed) { renderCampaignChip(); if (window.autoSave) autoSave(); }
+            ccRenderList();
+        }
+        function ccRenderList() {
+            const box = document.getElementById('campaignSwitchList'), e = escapeHtml, active = currentCharacterCampaign.code;
+            if (!characterCampaigns.length) { box.innerHTML = '<p style="text-align:center; color:#888;">This character has not joined a campaign yet.</p>'; return; }
+            box.innerHTML = characterCampaigns.map(c => {
+                const st = ccStatus[c.code], isActive = c.code === active;
+                const note = st === 'missing' ? '<span style="color:#c0392b;">not found (the DM may have deleted it or changed the password)</span>' : st === 'archived' ? '<span style="color:#888;">archived by the DM</span>' : '';
+                return '<div style="border:1px solid #ddd; border-left:4px solid ' + (isActive ? '#2e7d32' : '#667eea') + '; border-radius:8px; padding:10px; margin-top:8px; text-align:left;">' +
+                    '<div style="font-weight:bold;">' + e(c.name || c.code) + (isActive ? ' <span style="font-weight:normal; color:#2e7d32; font-size:12px;">Active</span>' : '') + '</div>' +
+                    '<div style="font-size:12px; color:#777; margin-top:2px;">Join code ' + e(c.code) + (note ? ', ' + note : '') + '</div>' +
+                    '<div style="display:flex; gap:8px; margin-top:8px;">' +
+                    (isActive ? '' : '<button class="btn" style="padding:6px 14px; font-size:13px;" onclick="ccSwitch(\'' + e(c.code) + '\')">Switch to this one</button>') +
+                    '<button class="btn" style="padding:6px 14px; font-size:13px; background:#888;" onclick="ccForget(\'' + e(c.code) + '\')" title="Take it off this character\'s list. Your DM keeps your submission.">Forget</button></div></div>';
+            }).join('');
+        }
+        function ccStatusMsg(text) { const el = document.getElementById('campaignSwitchStatus'); if (el) el.textContent = text; }
+        // everything campaign-aware reads the active campaign from the two device keys and currentCharacterCampaign, so changing those is the switch
+        function ccApplyActive() {
+            if (currentCharacterCampaign.code && currentCharacterCampaign.password) {
+                localStorage.setItem('lastJoinedCampaignCode', currentCharacterCampaign.code);
+                localStorage.setItem('lastJoinedCampaignPassword', currentCharacterCampaign.password);
+            } else {
+                localStorage.removeItem('lastJoinedCampaignCode');
+                localStorage.removeItem('lastJoinedCampaignPassword');
+            }
+            renderCampaignChip(); ccRenderList();
+            if (window.autoSave) autoSave();
+            if (typeof cloudAutoSavePush === 'function') cloudAutoSavePush();
+            if (typeof initCalendarWidget === 'function') initCalendarWidget();   // also re-points the roll-request channel
+            if (typeof checkForPendingLoot === 'function') checkForPendingLoot();
+        }
+        function ccSwitch(code) {
+            const c = characterCampaigns.find(x => x.code === code); if (!c) return;
+            currentCharacterCampaign = { code: c.code, password: c.password };
+            ccApplyActive();
+            ccStatusMsg('Now playing in "' + (c.name || c.code) + '". Submit your character there again whenever you want your DM to see your latest sheet.');
+        }
+        function ccForget(code) {
+            const c = characterCampaigns.find(x => x.code === code); if (!c) return;
+            if (!confirm('Forget "' + (c.name || c.code) + '" on this character? Your DM keeps the submission; you can join again with the code and password.')) return;
+            characterCampaigns = characterCampaigns.filter(x => x.code !== code);
+            if (currentCharacterCampaign.code === code) currentCharacterCampaign = characterCampaigns.length ? { code: characterCampaigns[0].code, password: characterCampaigns[0].password } : { code: '', password: '' };
+            ccApplyActive();
+            ccStatusMsg(currentCharacterCampaign.code ? 'Switched to "' + ((ccActive() || {}).name || currentCharacterCampaign.code) + '".' : 'This character is not in a campaign now.');
+        }
+        function ccJoinAnother() { closeCampaignSwitcher(); openSubmitToCampaignModal(true); }
+
         // --- Submit to Campaign (player side) ---
         // Deliberately NOT locked during the trial (see restrictedFeature's
         // lockedDuringTrial list in shared.js) — a player shouldn't have to
         // buy a license just to send their sheet to their DM.
-        function openSubmitToCampaignModal() {
+        function openSubmitToCampaignModal(blank) {
             if (!restrictedFeature('Submit to Campaign')) return;
 
             const charName = document.getElementById('charName').value.trim();
@@ -11455,8 +11676,8 @@
                 return;
             }
 
-            document.getElementById('submitCampaignCode').value = localStorage.getItem('lastJoinedCampaignCode') || '';
-            document.getElementById('submitCampaignPassword').value = localStorage.getItem('lastJoinedCampaignPassword') || '';
+            document.getElementById('submitCampaignCode').value = blank === true ? '' : (localStorage.getItem('lastJoinedCampaignCode') || '');
+            document.getElementById('submitCampaignPassword').value = blank === true ? '' : (localStorage.getItem('lastJoinedCampaignPassword') || '');
             document.getElementById('submitPlayerName').value = localStorage.getItem('playerRealName') || '';
             document.getElementById('submitCampaignStatus').textContent = '';
             document.getElementById('submitCampaignModal').style.display = 'flex';
@@ -11515,7 +11736,9 @@
             // (2026-09-09) so the campaign link is part of what gets saved
             // and cloud-synced — that's what makes it show up when the
             // same character is opened on another device.
+            const previousCampaign = currentCharacterCampaign;
             currentCharacterCampaign = { code, password };
+            ccNote(code, password, campaign.campaign_name);
 
             const charData = getCharacterData();
             const deviceId = localStorage.getItem('rpg_browser_id');
@@ -11536,6 +11759,9 @@
                 }, { onConflict: 'campaign_id, player_name, character_name' });
 
             if (submitError) {
+                // the submission did not go through, so this character stays in the campaign it was in (and does not keep the new one listed)
+                currentCharacterCampaign = previousCampaign;
+                if (!previousCampaign || previousCampaign.code !== code) characterCampaigns = characterCampaigns.filter(c => c.code !== code);
                 statusDiv.style.color = '#d32f2f';
                 statusDiv.textContent = 'Submit failed: ' + submitError.message;
                 return;
@@ -11557,6 +11783,7 @@
 
             statusDiv.style.color = '#2e7d32';
             statusDiv.textContent = `Submitted to "${campaign.campaign_name}"!`;
+            renderCampaignChip();
             setTimeout(closeSubmitToCampaignModal, 1500);
 
             // Calendar & Weather widget (2026-09-09) — show it immediately
@@ -11692,7 +11919,7 @@
         // own grid too (see mapTerrainTooltip in dm.html).
         async function handleMapViewDiscovery(destState, key) {
             if (destState.terrain === 'trap') {
-                openMapDiscoveryModal(destState.trapName || 'Trap Triggered!', 'You triggered it at ' + key + '.', MAP_VIEW_DISCOVER_COLOR.trap);
+                openMapDiscoveryModal(destState.trapName || 'Trap Triggered!', 'You triggered it at ' + key + '.' + (destState.trapDc ? ' Make a DC ' + destState.trapDc + ' saving throw (ask your DM which one).' : ''), MAP_VIEW_DISCOVER_COLOR.trap);
                 return;
             }
             if (destState.terrain !== 'treasure') return;
@@ -11871,11 +12098,16 @@
         // against a token's owner_player_name/owner_character_name.
         let mapViewCampaign = null, mapViewMap = null;
         let mapViewCellData = {}, mapViewEdgeData = {}, mapViewTokens = [], mapViewMyToken = null;
+        // Freehand walls the DM drew (campaign_maps.ink_walls): lists of [x, y] points in cell units, see map-style.js
+        let mapViewInkWalls = [];
         let mapViewPickedUp = false, mapViewPollTimer = null, mapViewGridBuilt = false;
         let mapViewChosenColor = null; // picked but not yet placed
         let mapViewAoeMarkers = [];
         let mapViewConeMarkers = [];
-        const MAP_VIEW_COLS = 20, MAP_VIEW_ROWS = 20;
+        // The size of the drawn window. 20 x 20 normally; the whole map when it is bigger than that and zoomed out below 100%
+        // (mapViewApplyViewSize, 2026-10-31).
+        const MAP_VIEW_BASE = 20;
+        let MAP_VIEW_COLS = 20, MAP_VIEW_ROWS = 20;
         // The underlying map can now be bigger than the player's own
         // fixed 20x20 window (see dm.html's Import Generated Layout,
         // which can bring in a full-size generator map) — MAP_VIEW_COLS/
@@ -11892,11 +12124,13 @@
         // "player side should still only ever show a 20x20 grid, no
         // scrolling" + "auto-follows the party").
         let mapViewColOffset = 0, mapViewRowOffset = 1;
+        // Where the player has panned the window to by hand ({col, row} offsets), or null to follow the party (2026-10-31).
+        let mapViewPan = null;
         // Which offset the DOM grid was actually last built for — the
         // grid only needs tearing down and rebuilt when this stops
         // matching the current offset (see ensureMapViewGridBuilt), not
         // on every 5s refreshMapView() poll.
-        let mapViewGridBuiltColOffset = null, mapViewGridBuiltRowOffset = null;
+        let mapViewGridBuiltColOffset = null, mapViewGridBuiltRowOffset = null, mapViewGridBuiltCols = null, mapViewGridBuiltRows = null;
         const MAP_VIEW_CELL_STEP = 27; // 26px cell + 1px grid gap
         // Mirrors dm.html's MAP_TILE_SVG — see its own comment there.
         function mapViewTileSVG(inner, w, h) {
@@ -11936,6 +12170,16 @@
                 pattern: mapViewTileSVG("<path d='M0,10 Q8,0 16,10 Z' fill='white' opacity='.22'/>", 16, 10),
                 bgSize: '16px 10px'
             },
+            lava: {
+                label: 'Lv', bg: '#d9480f', color: '#fff',
+                pattern: mapViewTileSVG("<path d='M0,3 Q4,0 8,3 T16,3' fill='none' stroke='%23ffd166' stroke-width='1.3' opacity='.75'/><path d='M0,11 Q4,8 8,11 T16,11' fill='none' stroke='%23ffd166' stroke-width='1.3' opacity='.75'/><circle cx='11' cy='7' r='2.4' fill='%237a1f06' opacity='.35'/><circle cx='3' cy='14' r='1.8' fill='%237a1f06' opacity='.3'/>", 16, 16),
+                bgSize: '16px 16px'
+            },
+            sky: {
+                label: 'Sk', bg: '#9fd2f2', color: '#234',
+                pattern: mapViewTileSVG("<ellipse cx='6' cy='6' rx='5' ry='2.4' fill='white' opacity='.55'/><ellipse cx='12' cy='13' rx='4' ry='2' fill='white' opacity='.45'/>", 16, 16),
+                bgSize: '16px 16px'
+            },
             deadfloor: { label: '', bg: '#000000', color: '#fff' }
         };
         // Mirrors dm.html's MAP_TERRAIN_FULL_FILL — Wall/Water/the biome
@@ -11948,7 +12192,7 @@
         // mapDoorTileHTML (see the comments there), same "follows the
         // gridline" look the standalone generator (mapgen.html) uses,
         // instead of a flat filled cell.
-        const MAP_VIEW_TERRAIN_FULL_FILL = ['water', 'forest', 'mountain', 'peak', 'plains', 'hills', 'deadfloor'];
+        const MAP_VIEW_TERRAIN_FULL_FILL = ['water', 'forest', 'mountain', 'peak', 'plains', 'hills', 'lava', 'sky', 'deadfloor'];
         const MAP_VIEW_EDGE_DIR_TO_SIDE = { '0,-1': 'top', '0,1': 'bottom', '-1,0': 'left', '1,0': 'right' };
         const MAP_VIEW_OPPOSITE_SIDE = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
         function mapViewEdgeFacesOpen(col, row, dc, dr) {
@@ -11986,7 +12230,7 @@
             return css;
         }
         function mapViewWallBorderStyle(key) {
-            const col = key.charCodeAt(0) - 65, row = parseInt(key.slice(1), 10);
+            const col = mapKeyCol(key), row = mapKeyRow(key);
             return 'background:#555;' + mapViewWallBorderCss(col, row);
         }
         // Mirrors dm.html's diagonalWallHTML and its MAP_WALL_CORNER_*
@@ -12036,7 +12280,7 @@
                 'transform:translate(-50%,-50%) rotate(' + rotate + 'deg); pointer-events:none;"></div>';
         }
         function mapViewDoorBarSide(key) {
-            const col = key.charCodeAt(0) - 65, row = parseInt(key.slice(1), 10);
+            const col = mapKeyCol(key), row = mapKeyRow(key);
             const wallN = !mapViewEdgeFacesOpen(col, row, 0, -1), wallS = !mapViewEdgeFacesOpen(col, row, 0, 1);
             const wallW = !mapViewEdgeFacesOpen(col, row, -1, 0), wallE = !mapViewEdgeFacesOpen(col, row, 1, 0);
             const candidates = [];
@@ -12079,7 +12323,152 @@
             wood: { bg: '#a0703c', border: '#6b4423', knob: '#f0d78c' },
             metal: { bg: '#8a8f99', border: '#4a4e57', knob: '#e8e8e8' }
         };
+        // the compass star, if the DM put one on this map
+        function renderMapViewCompass() {
+            const el = document.getElementById('mapViewCompass');
+            if (!el) return;
+            const c = mapViewInkWalls.find(w => w && !Array.isArray(w) && w.t === 'compass');
+            el.className = 'map-compass ' + (c && c.corner ? c.corner : 'bl');
+            el.innerHTML = c && c.show !== false && window.MapStyle && MapStyle.compassSvg ? MapStyle.compassSvg(c.rot || 0) : '';
+        }
+        // rugs and props the DM placed, wherever a square under them has been revealed
+        function renderMapViewObjects() {
+            const layer = document.getElementById('mapViewObjLayer');
+            if (!layer || !window.MapStyle || !MapStyle.objectHtml) return;
+            layer.style.zIndex = MapStyle.isOn() ? '0' : '2';
+            if (MapStyle.setImages) MapStyle.setImages((mapViewInkWalls.find(w => w && !Array.isArray(w) && w.t === 'imgs') || {}).list);
+            const S = MAP_VIEW_CELL_STEP;
+            const top = document.getElementById('mapViewObjTopLayer');
+            if (top) {
+                let html = '';
+                if (MapStyle.isOn()) mapViewInkWalls.filter(o => o && !Array.isArray(o) && o.t === 'obj' && (o.land ? false : o.kind === 'darkness' ? false : (o.kind !== 'light' || o.show))).forEach(o => {
+                    for (let c = Math.floor(o.x); c < Math.ceil(o.x + o.w); c++) for (let r = Math.floor(o.y) + 1; r <= Math.ceil(o.y + o.h); r++) {
+                        const st = mapViewCellData[mapViewCellKey(c, r)];
+                        if (!st || !st.fogRevealed || !st.furniture || ['building', 'castle', 'cave', 'road-stone', 'road-dirt'].includes(st.furniture) || !((o.z || 0) > (st.fz || 0))) continue;
+                        const cx = (c - mapViewColOffset + 1) * S, cy = (r - mapViewRowOffset + 1) * S;
+                        html += '<div style="position:absolute; left:' + cx + 'px; top:' + cy + 'px; width:' + S + 'px; height:' + S + 'px; overflow:hidden;"><div style="position:absolute; left:' + ((o.x - mapViewColOffset + 1) * S - cx) + 'px; top:' + ((o.y - (mapViewRowOffset - 1) + 1) * S - cy) + 'px; width:' + (o.w * S) + 'px; height:' + (o.h * S) + 'px;">' + MapStyle.objectHtml(o, S) + '</div></div>';
+                    }
+                });
+                top.innerHTML = html;
+            }
+            // labels and pins the DM put on the map (not the DM-only ones), where the player has uncovered a square under them
+            const noteLayer = document.getElementById('mapViewNoteLayer');
+            if (noteLayer) {
+                noteLayer.innerHTML = mapViewInkWalls.filter(o => o && !Array.isArray(o) && o.t === 'obj' && (o.kind === 'label' || o.kind === 'pin') && !o.dm).filter(o => {
+                    for (let c = Math.floor(o.x); c < Math.ceil(o.x + o.w); c++) for (let r = Math.floor(o.y) + 1; r <= Math.ceil(o.y + o.h); r++) { const st = mapViewCellData[mapViewCellKey(c, r)]; if (st && st.fogRevealed) return true; }
+                    return false;
+                }).map(o => '<div' + (o.kind === 'pin' ? ' onclick="mapViewShowPinNote(' + (o.n | 0) + ')" title="' + (o.share ? 'Click to read the notes' : 'Click to see what this is') + '" style="pointer-events:auto; cursor:pointer; ' : ' style="') + 'position:absolute; left:' + ((o.x - mapViewColOffset + 1) * S) + 'px; top:' + ((o.y - (mapViewRowOffset - 1) + 1) * S) + 'px; width:' + (o.w * S) + 'px; height:' + (o.h * S) + 'px;">' + MapStyle.noteHtml(o, S) + '</div>').join('');
+            }
+            // Things the DM has allowed players to identify (a prop, rug, free furniture, a door, a piece of furniture in a square).
+            // Each is clickable only on a square the players have uncovered, never while a rug placed over it hides it, never while a
+            // creature stands on it, and a hidden door is never clickable.
+            mapViewIdentifiable = [];
+            if (noteLayer) {
+                const tokenCells = new Set(mapViewTokens.map(t => t.cell));
+                const rugs = mapViewInkWalls.filter(o => o && !Array.isArray(o) && o.t === 'obj' && o.kind === 'rug');
+                const revealed = k => { const st = mapViewCellData[k]; return !!(st && st.fogRevealed); };
+                const covered = (x, y, w, h2, z) => rugs.some(r => (r.z || 0) > z && r.x < x + w && r.x + r.w > x && r.y < y + h2 && r.y + r.h > y);
+                const addHit = (name, x, y, w, h2) => {
+                    mapViewIdentifiable.push({ name });
+                    noteLayer.insertAdjacentHTML('beforeend', '<div class="map-ident-hit" onclick="mapViewShowObjectName(' + (mapViewIdentifiable.length - 1) + ')" style="left:' + x + 'px; top:' + y + 'px; width:' + w + 'px; height:' + h2 + 'px;"></div>');
+                };
+                // props, rugs and free furniture: one box for each uncovered square the item lies on
+                mapViewInkWalls.forEach(o => {
+                    if (!o || Array.isArray(o) || o.t !== 'obj' || !o.share || o.dm || o.kind === 'label' || o.kind === 'pin' || o.kind === 'light' || o.kind === 'darkness' || o.land) return;
+                    if (covered(o.x, o.y, o.w, o.h, o.z || 0)) return;
+                    const name = o.pname || (window.MapStyle && MapStyle.objectName ? MapStyle.objectName(o.kind) : o.kind);
+                    for (let c = Math.floor(o.x); c < Math.ceil(o.x + o.w); c++) for (let r = Math.floor(o.y) + 1; r <= Math.ceil(o.y + o.h); r++) {
+                        const k = mapViewCellKey(c, r);
+                        if (!revealed(k) || tokenCells.has(k)) continue;
+                        const x0 = Math.max(o.x, c), x1 = Math.min(o.x + o.w, c + 1), y0 = Math.max(o.y, r - 1), y1 = Math.min(o.y + o.h, r);
+                        addHit(name, (x0 - mapViewColOffset + 1) * S, (y0 - (mapViewRowOffset - 1) + 1) * S, (x1 - x0) * S, (y1 - y0) * S);
+                    }
+                });
+                // furniture placed in the squares
+                const canvasPieces = ['building', 'castle', 'cave', 'road-stone', 'road-dirt'];
+                Object.keys(mapViewCellData).forEach(k => {
+                    const st = mapViewCellData[k];
+                    if (!st || !st.fogRevealed || !st.furniture || st.fshare !== st.furniture || canvasPieces.includes(st.furniture) || !isMapViewFurnitureVisible(st.terrain) || tokenCells.has(k)) return;
+                    const c = mapKeyCol(k), r = mapKeyRow(k);
+                    if (c < mapViewColOffset || c >= mapViewColOffset + MAP_VIEW_COLS || r < mapViewRowOffset || r >= mapViewRowOffset + MAP_VIEW_ROWS) return;
+                    if (covered(c, r - 1, 1, 1, st.fz || 0)) return;
+                    addHit(st.fpname || (window.MapStyle && MapStyle.objectName ? MapStyle.objectName(st.furniture) : st.furniture), (c - mapViewColOffset + 1) * S, (r - mapViewRowOffset + 1) * S, S, S);
+                });
+                // doors: the line must be drawn for the player (one side uncovered) and not a hidden door
+                const doorNames = { wood: 'Door', metal: 'Metal door', jail: 'Jail door' };
+                Object.keys(mapViewEdgeData).forEach(k => {
+                    const e = mapViewEdgeData[k];
+                    if (!e || e.type !== 'door' || !e.share || e.hidden) return;
+                    const [type, coords] = k.split(':'), [col, row] = coords.split(',').map(Number);
+                    if (!(revealed(type === 'H' ? mapViewCellKey(col, row - 1) : mapViewCellKey(col - 1, row)) || revealed(mapViewCellKey(col, row)))) return;
+                    const vCol = col - mapViewColOffset, vRow = row - mapViewRowOffset + 1;
+                    if (vCol < 0 || vCol >= MAP_VIEW_COLS || vRow < 1 || vRow > MAP_VIEW_ROWS) return;
+                    const x = (vCol + 1) * S, y = vRow * S, name = e.pname || doorNames[e.material || 'wood'] || 'Door';
+                    if (type === 'H') addHit(name, x, y - 6, S, 12); else addHit(name, x - 6, y, 12, S);
+                });
+            }
+            layer.innerHTML = mapViewInkWalls.filter(o => o && !Array.isArray(o) && o.t === 'obj' && o.kind !== 'label' && o.kind !== 'pin' && (o.land ? false : o.kind === 'darkness' ? false : (o.kind !== 'light' || o.show))).filter(o => {
+                for (let c = Math.floor(o.x); c < Math.ceil(o.x + o.w); c++) for (let r = Math.floor(o.y) + 1; r <= Math.ceil(o.y + o.h); r++) { const st = mapViewCellData[mapViewCellKey(c, r)]; if (st && st.fogRevealed) return true; }
+                return false;
+            }).map(o => '<div style="position:absolute; left:' + ((o.x - mapViewColOffset + 1) * S) + 'px; top:' + ((o.y - (mapViewRowOffset - 1) + 1) * S) + 'px; width:' + (o.w * S) + 'px; height:' + (o.h * S) + 'px;">' + MapStyle.objectHtml(o, S) + '</div>').join('');
+        }
+        // the glow of every torch, campfire and fireplace, only where the player has uncovered the map (mirrors dm.html's renderMapLight)
+        function renderMapViewLight() {
+            const cv = document.getElementById('mapViewLightLayer');
+            if (!cv || !window.MapStyle || !MapStyle.lightAlpha) return;
+            const srcs = mapViewLightSources(), dz = mapViewDarkZones();
+            if (!srcs.length && !dz.length) { cv.style.display = 'none'; return; }
+            const S = MAP_VIEW_CELL_STEP;
+            cv.style.display = '';
+            cv.width = (MAP_VIEW_COLS + 1) * S; cv.height = (MAP_VIEW_ROWS + 1) * S;
+            const revealed = (c, r) => { const st = mapViewCellData[mapViewCellKey(c, r)]; return !!(st && st.fogRevealed); };
+            MapStyle.paintLights(cv, { S, ox: mapViewColOffset, oy: mapViewRowOffset, sources: srcs, zones: dz, darkAlpha: 0.72,
+                usable: (c, r) => c >= 0 && c < mapViewTotalCols && r >= 1 && r <= mapViewTotalRows && revealed(c, r), los: mapViewLosClear, darkCell: revealed });
+        }
+        // the fog, as a soft shape (parchment look; see paintFog in map-style.js)
+        function renderMapViewFog() {
+            const cv = document.getElementById('mapViewFogLayer');
+            if (!cv || !window.MapStyle || !MapStyle.paintFog) return;
+            const on = MapStyle.isOn();
+            document.body.classList.toggle('map-fog-canvas', on);
+            cv.style.display = on ? '' : 'none';
+            if (!on) return;
+            MapStyle.paintFog(cv, { S: MAP_VIEW_CELL_STEP, cols: MAP_VIEW_COLS, rows: MAP_VIEW_ROWS, color: '#231c14', opacity: 1, fogged: (c, r) => { const st = mapViewCellData[mapViewCellKey(mapViewColOffset + c, mapViewRowOffset + r)]; return !(st && st.fogRevealed) && !(st && st.terrain === 'deadfloor'); } });
+        }
+        // the name of something the DM allowed players to identify (see renderMapViewObjects)
+        let mapViewIdentifiable = [];
+        document.head.insertAdjacentHTML('beforeend', '<style>.map-ident-hit{position:absolute; pointer-events:auto; cursor:pointer;} .map-ident-hit:hover{background:rgba(242,180,90,.28); outline:2px solid rgba(242,180,90,.9); outline-offset:-1px;}</style>');
+        function mapViewShowObjectName(i) {
+            const o = mapViewIdentifiable[i];
+            if (!o) return;
+            let pop = document.getElementById('mapViewPinPop');
+            if (pop) pop.remove();
+            pop = document.createElement('div');
+            pop.id = 'mapViewPinPop';
+            pop.style.cssText = 'position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:4500; max-width:min(420px, 90vw); background:#efe6d2; color:#2a2118; border:2px solid #2a2118; border-radius:10px; padding:16px 18px; box-shadow:0 8px 30px rgba(0,0,0,.45); font-family:Georgia, serif;';
+            pop.innerHTML = '<b style="font-size:17px;">' + escapeHtml(o.name) + '</b>' +
+                '<div style="text-align:right; margin-top:12px;"><button type="button" onclick="document.getElementById(\'mapViewPinPop\').remove()" style="padding:5px 14px; border-radius:14px; border:1px solid #2a2118; background:#e5d8bb; cursor:pointer; font-family:inherit;">Close</button></div>';
+            document.body.appendChild(pop);
+        }
+        // click a pin to see its title, and its notes too when the DM has shared them
+        function mapViewShowPinNote(n) {
+            const o = mapViewInkWalls.find(w => w && !Array.isArray(w) && w.t === 'obj' && w.kind === 'pin' && w.n === n && !w.dm);
+            if (!o) return;
+            let pop = document.getElementById('mapViewPinPop');
+            if (pop) pop.remove();
+            pop = document.createElement('div');
+            pop.id = 'mapViewPinPop';
+            pop.style.cssText = 'position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:4500; max-width:min(420px, 90vw); max-height:70vh; overflow:auto; background:#efe6d2; color:#2a2118; border:2px solid #2a2118; border-radius:10px; padding:16px 18px; box-shadow:0 8px 30px rgba(0,0,0,.45); font-family:Georgia, serif;';
+            pop.innerHTML = '<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;"><span style="flex:none; width:26px; height:26px; border-radius:50%; background:#8b2d1e; border:2px solid #efe6d2; outline:1.5px solid #2a2118; color:#fff; font-weight:700; display:flex; align-items:center; justify-content:center;">' + o.n + '</span><b style="font-size:17px;">' + escapeHtml(o.title || 'Pin ' + o.n) + '</b></div>' +
+                '<div style="white-space:pre-wrap; line-height:1.45;">' + (o.share && o.note ? escapeHtml(o.note) : '') + '</div>' +
+                '<div style="text-align:right; margin-top:12px;"><button type="button" onclick="document.getElementById(\'mapViewPinPop\').remove()" style="padding:5px 14px; border-radius:14px; border:1px solid #2a2118; background:#e5d8bb; cursor:pointer; font-family:inherit;">Close</button></div>';
+            document.body.appendChild(pop);
+        }
         function renderMapViewWallOverlay() {
+            renderMapViewCompass();
+            renderMapViewTod();
+            renderMapViewLight();
+            renderMapViewObjects();
             const overlay = document.getElementById('mapViewWallOverlay');
             if (!overlay) return;
             const wallWidth = 6, doorThick = 3, wallExtend = wallWidth / 2;
@@ -12102,6 +12491,28 @@
             // outside the window edge could still produce one).
             function toViewCol(col) { return col - mapViewColOffset; }
             function toViewRow(row) { return row - mapViewRowOffset + 1; }
+            // Parchment style: rough ink walls/doors (map-style.js). Secret
+            // walls are plain walls here — players never see the DM's marker.
+            if (window.MapStyle && MapStyle.isOn()) {
+                const inkEdges = [];
+                visible.forEach(edgeKey => {
+                    const edge = mapViewEdgeData[edgeKey];
+                    const [type, coords] = edgeKey.split(':');
+                    const [col, row] = coords.split(',').map(Number);
+                    const vCol = toViewCol(col), vRow = toViewRow(row);
+                    if (vCol < -1 || vCol > MAP_VIEW_COLS || vRow < 0 || vRow > MAP_VIEW_ROWS + 1) return;
+                    const horizontal = type === 'H';
+                    inkEdges.push({
+                        i1: vCol + 1, j1: vRow, i2: horizontal ? vCol + 2 : vCol + 1, j2: horizontal ? vRow : vRow + 1,
+                        kind: edge.type === 'door' ? 'door' : edge.type === 'window' ? 'window' : 'wall', thick: !!edge.thick, secret: !!(edge.secret && edge.reveal), open: (edge.type === 'door' || edge.type === 'window') && edge.state === 'open', material: edge.material, round: edge.round ? 2 : (edge.diag ? 1 : 0), rc: edge.rc || null, rs: edge.rs || null
+                    });
+                });
+                overlay.innerHTML = MapStyle.edgesSvg(inkEdges, {
+                    step: MAP_VIEW_CELL_STEP, ox: mapViewColOffset, oy: mapViewRowOffset,
+                    width: (MAP_VIEW_COLS + 1) * MAP_VIEW_CELL_STEP, height: (MAP_VIEW_ROWS + 1) * MAP_VIEW_CELL_STEP
+                }, { showSecret: true, ink: mapViewInkPixelStrokes(), thick: mapViewThickPixelStrokes(), rcCells: mapViewRcCells(), rcOffset: [-mapViewColOffset, -(mapViewRowOffset - 1)], shapes: mapViewRoomShapeMap() });
+                return;
+            }
             let html = '';
             visible.filter(k => mapViewEdgeData[k].type === 'wall').forEach(edgeKey => {
                 const [type, coords] = edgeKey.split(':');
@@ -12113,7 +12524,7 @@
                 const style = horizontal
                     ? 'left:' + (x - wallExtend) + 'px; top:' + (y - wallWidth / 2) + 'px; width:' + (MAP_VIEW_CELL_STEP + wallExtend * 2) + 'px; height:' + wallWidth + 'px;'
                     : 'left:' + (x - wallWidth / 2) + 'px; top:' + (y - wallExtend) + 'px; width:' + wallWidth + 'px; height:' + (MAP_VIEW_CELL_STEP + wallExtend * 2) + 'px;';
-                html += '<div style="position:absolute; ' + style + ' background:#2b2b2b;"></div>';
+                html += '<div style="position:absolute; ' + style + ' background:' + (mapViewEdgeData[edgeKey].secret && mapViewEdgeData[edgeKey].reveal ? 'repeating-linear-gradient(45deg, #2b2b2b, #2b2b2b 4px, #764ba2 4px, #764ba2 8px)' : '#2b2b2b') + ';"></div>';
             });
             visible.filter(k => mapViewEdgeData[k].type === 'door').forEach(edgeKey => {
                 const edge = mapViewEdgeData[edgeKey];
@@ -12140,7 +12551,62 @@
                 html += '<div style="position:absolute; ' + style + ' background:' + colors.bg + '; border:1px solid ' + colors.border + ';">' +
                     '<div style="position:absolute; ' + knobStyle + ' width:3px; height:3px; border-radius:50%; background:' + colors.knob + ';"></div></div>';
             });
-            overlay.innerHTML = html;
+            visible.filter(k => mapViewEdgeData[k].type === 'window').forEach(edgeKey => {
+                const [type, coords] = edgeKey.split(':');
+                const [col, row] = coords.split(',').map(Number);
+                const vCol = toViewCol(col), vRow = toViewRow(row);
+                if (vCol < -1 || vCol > MAP_VIEW_COLS || vRow < 0 || vRow > MAP_VIEW_ROWS + 1) return;
+                const x = (vCol + 1) * MAP_VIEW_CELL_STEP, y = vRow * MAP_VIEW_CELL_STEP;
+                const horizontal = type === 'H';
+                const style = horizontal
+                    ? 'left:' + x + 'px; top:' + (y - wallWidth / 2) + 'px; width:' + MAP_VIEW_CELL_STEP + 'px; height:' + wallWidth + 'px;'
+                    : 'left:' + (x - wallWidth / 2) + 'px; top:' + y + 'px; width:' + wallWidth + 'px; height:' + MAP_VIEW_CELL_STEP + 'px;';
+                html += '<div style="position:absolute; ' + style + ' background:linear-gradient(' + (horizontal ? 'to bottom' : 'to right') + ', #2b2b2b 1.5px, #cfe3ec 1.5px, #cfe3ec 4.5px, #2b2b2b 4.5px);"></div>';
+            });
+            overlay.innerHTML = html + (window.MapStyle ? MapStyle.inkClassicSvg(mapViewInkPixelStrokes(), (MAP_VIEW_COLS + 1) * MAP_VIEW_CELL_STEP, (MAP_VIEW_ROWS + 1) * MAP_VIEW_CELL_STEP, mapViewThickPixelStrokes()) : '');
+        }
+        // Revealed cells that belong to a true-circle room (see map-style.js), with their circle.
+        function mapViewRcCells() {
+            const out = [];
+            Object.keys(mapViewCellData).forEach(k => { const st = mapViewCellData[k]; if (st && (st.rc || st.rs) && st.fogRevealed) out.push({ c: mapKeyCol(k), r: mapKeyRow(k), rc: st.rc, rs: st.rs }); });
+            return out;
+        }
+        // Outlines of polygon / freehand rooms by id, as the DM drew them.
+        function mapViewRoomShapeMap() {
+            const out = {};
+            mapViewInkWalls.forEach(w => { if (w && !Array.isArray(w) && w.t === 'room') out[w.id] = w; });
+            return out;
+        }
+        function mapViewRoomShapeOrder() { return mapViewInkWalls.filter(w => w && !Array.isArray(w) && w.t === 'room').map(w => w.id); }
+        // Freehand walls the players can see, in overlay pixels for the scrolled window: a wall shows once
+        // any point of it sits in (or right next to) a cell the party has revealed.
+        function mapViewInkPixelStrokes() {
+            if (!mapViewInkWalls.length) return [];
+            const revealedNear = (x, y) => {
+                const c = Math.floor(x), r = Math.floor(y) + 1;
+                for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 1; dr++) {
+                    const st = mapViewCellData[mapViewCellKey(c + dc, r + dr)];
+                    if (st && st.fogRevealed) return true;
+                }
+                return false;
+            };
+            return mapViewInkWalls.filter(w => Array.isArray(w) && w.some(p => revealedNear(p[0], p[1])))
+                .map(w => w.map(p => [(p[0] - mapViewColOffset + 1) * MAP_VIEW_CELL_STEP, (p[1] - (mapViewRowOffset - 1) + 1) * MAP_VIEW_CELL_STEP]));
+        }
+        // castle (thick) walls, the same way
+        function mapViewThickPixelStrokes() {
+            const thick = mapViewInkWalls.filter(w => w && !Array.isArray(w) && w.t === 'wall' && Array.isArray(w.p));
+            if (!thick.length) return [];
+            const revealedNear = (x, y) => {
+                const c = Math.floor(x), r = Math.floor(y) + 1;
+                for (let dc = -1; dc <= 1; dc++) for (let dr = -1; dr <= 1; dr++) {
+                    const st = mapViewCellData[mapViewCellKey(c + dc, r + dr)];
+                    if (st && st.fogRevealed) return true;
+                }
+                return false;
+            };
+            return thick.filter(w => w.p.some(p => revealedNear(p[0], p[1])))
+                .map(w => w.p.map(p => [(p[0] - mapViewColOffset + 1) * MAP_VIEW_CELL_STEP, (p[1] - (mapViewRowOffset - 1) + 1) * MAP_VIEW_CELL_STEP]));
         }
         // Same discoverable-terrain concept as dm.html — a hidden trap or
         // treasure reveals itself the instant this player's move lands on
@@ -12162,7 +12628,11 @@
         const MAP_VIEW_FACING_DEGREES = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 };
         const MAP_VIEW_FACING_ORDER = ['NW', 'N', 'NE', 'W', null, 'E', 'SW', 'S', 'SE'];
         const MAP_VIEW_FACING_ARROWS = { N: '↑', NE: '↗', E: '→', SE: '↘', S: '↓', SW: '↙', W: '←', NW: '↖' };
-        function mapViewColLabel(i) { return String.fromCharCode(65 + i); }
+        // Cell keys are a column label then a row number ("A1", "Z9", "AB12"). Columns run A-Z, then AA, AB, ...
+        // (like a spreadsheet) so a map can be wider than 26 columns; a single-letter key means exactly what it always did.
+        function mapViewColLabel(i) { let n = i + 1, s = ''; while (n > 0) { n--; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); } return s; }
+        function mapKeyCol(key) { const m = /^[A-Z]+/.exec(key); if (!m) return -1; let n = 0; for (let i = 0; i < m[0].length; i++) n = n * 26 + (m[0].charCodeAt(i) - 64); return n - 1; }
+        function mapKeyRow(key) { return parseInt(String(key).replace(/^[A-Z]+/, ''), 10); }
         function mapViewCellKey(c, r) { return mapViewColLabel(c) + r; }
 
         // Auto-centers the player's fixed 20x20 window on wherever the
@@ -12171,23 +12641,83 @@
         // scrolling" + "auto-follows the party"). No-op — offset always
         // (0,1) — for any map that already fits inside 20x20, which is
         // every map from before this feature existed.
+        // On a map bigger than 20 x 20, zooming out below 100% shows the whole map; at 100% it is the 20 x 20 window again.
+        function mapViewApplyViewSize() {
+            const z = (window.MapStyle && MapStyle.zoom && MapStyle.zoom()) || 1;
+            const whole = z < 1 && (mapViewTotalCols > MAP_VIEW_BASE || mapViewTotalRows > MAP_VIEW_BASE);
+            MAP_VIEW_COLS = whole ? Math.max(MAP_VIEW_BASE, mapViewTotalCols) : MAP_VIEW_BASE;
+            MAP_VIEW_ROWS = whole ? Math.max(MAP_VIEW_BASE, mapViewTotalRows) : MAP_VIEW_BASE;
+            return whole;
+        }
         function mapViewRecomputeOffset() {
+            mapViewApplyViewSize();
             if (mapViewTotalCols <= MAP_VIEW_COLS && mapViewTotalRows <= MAP_VIEW_ROWS) {
                 mapViewColOffset = 0; mapViewRowOffset = 1;
                 return;
             }
-            const partyTokens = mapViewTokens.filter(t => t.kind === 'player' && t.cell);
+            if (mapViewPan) {
+                mapViewColOffset = Math.max(0, Math.min(mapViewTotalCols - MAP_VIEW_COLS, mapViewPan.col));
+                mapViewRowOffset = Math.max(1, Math.min(mapViewTotalRows - MAP_VIEW_ROWS + 1, mapViewPan.row));
+                return;
+            }
+            let partyTokens = mapViewTokens.filter(t => t.kind === 'player' && t.cell);
+            // Nobody has a token on this map yet (2026-10-31): centre on what the DM has uncovered, e.g. with the Spawn tool. A map bigger than
+            // 20 x 20 is shown one 20 x 20 window at a time, and with nobody on it the window used to sit at the top-left corner, so a
+            // Spawn area anywhere else was uncovered but out of sight.
+            if (!partyTokens.length) {
+                const seen = [];
+                Object.keys(mapViewCellData).forEach(k => { const st = mapViewCellData[k]; if (st && st.fogRevealed && /^[A-Za-z]{1,3}\d{1,3}$/.test(k)) seen.push({ cell: k }); });
+                partyTokens = seen;
+            }
             if (!partyTokens.length) { mapViewColOffset = 0; mapViewRowOffset = 1; return; }
             let sumCol = 0, sumRow = 0;
             partyTokens.forEach(t => {
-                sumCol += t.cell.charCodeAt(0) - 65;
-                sumRow += parseInt(t.cell.slice(1), 10);
+                sumCol += mapKeyCol(t.cell);
+                sumRow += mapKeyRow(t.cell);
             });
             const avgCol = sumCol / partyTokens.length, avgRow = sumRow / partyTokens.length;
             const col = Math.round(avgCol - MAP_VIEW_COLS / 2);
             const row = Math.round(avgRow - MAP_VIEW_ROWS / 2);
             mapViewColOffset = Math.max(0, Math.min(mapViewTotalCols - MAP_VIEW_COLS, col));
             mapViewRowOffset = Math.max(1, Math.min(mapViewTotalRows - MAP_VIEW_ROWS + 1, row));
+        }
+
+        // Pan buttons for a map bigger than the 20 x 20 window. A pan sticks (the 5s refresh keeps it) until "Follow party".
+        function mapViewSyncPanBar() {
+            const bar = document.getElementById('mapViewPanBar');
+            if (!bar) return;
+            const big = mapViewTotalCols > MAP_VIEW_BASE || mapViewTotalRows > MAP_VIEW_BASE;
+            bar.style.display = big ? 'flex' : 'none';
+            if (!big) return;
+            const whole = MAP_VIEW_COLS >= mapViewTotalCols && MAP_VIEW_ROWS >= mapViewTotalRows && (MAP_VIEW_COLS > MAP_VIEW_BASE || MAP_VIEW_ROWS > MAP_VIEW_BASE);
+            bar.querySelectorAll('button').forEach(b => { b.style.display = whole ? 'none' : ''; });
+            if (whole) { document.getElementById('mapViewPanInfo').textContent = 'Showing the whole map. Zoom back to 100% to follow the party.'; return; }
+            document.getElementById('mapViewPanFollow').style.display = mapViewPan ? '' : 'none';
+            document.getElementById('mapViewPanInfo').textContent = 'showing ' + mapViewColLabel(mapViewColOffset) + (mapViewRowOffset) + ' to ' +
+                mapViewColLabel(Math.min(mapViewTotalCols, mapViewColOffset + MAP_VIEW_COLS) - 1) + (Math.min(mapViewTotalRows, mapViewRowOffset + MAP_VIEW_ROWS - 1)) +
+                ' of ' + mapViewColLabel(mapViewTotalCols - 1) + mapViewTotalRows;
+        }
+        function mapViewRerenderAfterPan() {
+            mapViewRecomputeOffset();
+            ensureMapViewGridBuilt();
+            mapViewSyncPanBar();
+            renderMapViewGrid();
+            renderMapViewWallOverlay();
+            renderMapViewAoeOverlay();
+            renderMapViewConeOverlay();
+        }
+        function mapViewPanBy(dc, dr) {
+            const step = 5;
+            const cur = mapViewPan || { col: mapViewColOffset, row: mapViewRowOffset };
+            mapViewPan = {
+                col: Math.max(0, Math.min(Math.max(0, mapViewTotalCols - MAP_VIEW_COLS), cur.col + dc * step)),
+                row: Math.max(1, Math.min(Math.max(1, mapViewTotalRows - MAP_VIEW_ROWS + 1), cur.row + dr * step))
+            };
+            mapViewRerenderAfterPan();
+        }
+        function mapViewPanReset() {
+            mapViewPan = null;
+            mapViewRerenderAfterPan();
         }
 
         // ---------- Map picker ----------
@@ -12277,6 +12807,7 @@
                 mapViewMap = maps[0];
             }
 
+            mapViewPan = null;
             ensureMapViewGridBuilt();
             await refreshMapView();
             statusEl.textContent = '';
@@ -12286,6 +12817,8 @@
         }
 
         function closeMapView() {
+            if (window.MapMarks) MapMarks.stop();
+            if (window.MapFog) MapFog.stop();
             document.getElementById('mapViewModal').style.display = 'none';
             clearInterval(mapViewPollTimer);
             mapViewPollTimer = null;
@@ -12336,6 +12869,40 @@
         }
         function closeReputationView() {
             document.getElementById('reputationViewModal').style.display = 'none';
+        }
+
+        // Read-only copy of dm.html's Quest Log (2026-10-31): see the modal's own HTML comment. Shown quests only, and inside each only the
+        // goals and clues the DM ticked Show on; the DM's private notes are never used here. Same one-shot fetch as Reputation above.
+        const QUEST_STATUS_LABEL = { active: 'Active', completed: 'Completed', failed: 'Failed', hold: 'On hold' };
+        const QUEST_STATUS_COLOR = { active: '#667eea', completed: '#2e7d32', failed: '#c0392b', hold: '#888' };
+        async function openQuestView() {
+            const modal = document.getElementById('questViewModal'), list = document.getElementById('questViewList'), status = document.getElementById('questViewStatus');
+            modal.style.display = 'flex'; list.innerHTML = ''; status.textContent = 'Loading…';
+            const code = localStorage.getItem('lastJoinedCampaignCode'), password = localStorage.getItem('lastJoinedCampaignPassword');
+            if (!code || !password) { status.textContent = 'Submit this character to a campaign first (Tools ▾ → Submit to Campaign).'; return; }
+            const { data: campaign, error } = await _supabase.from('campaigns').select('quest_log').eq('campaign_code', code).eq('campaign_password', password).maybeSingle();
+            if (error || !campaign) { status.textContent = "Couldn't load the quest log. Check the join code/password with your DM."; return; }
+            const log = campaign.quest_log && typeof campaign.quest_log === 'object' ? campaign.quest_log : {};
+            const order = { active: 0, hold: 1, completed: 2, failed: 3 };
+            const quests = (Array.isArray(log.quests) ? log.quests : []).filter(q => q && q.shown).sort((a, b) => (order[a.status] || 0) - (order[b.status] || 0));
+            const clocks = (Array.isArray(log.clocks) ? log.clocks : []).filter(c => c && c.shown);
+            status.textContent = '';
+            if (!quests.length && !clocks.length) { list.innerHTML = '<p style="text-align:center; color:#888;">Nothing revealed yet.</p>'; return; }
+            const e = escapeHtml;
+            list.innerHTML = quests.map(q => {
+                const st = QUEST_STATUS_LABEL[q.status] ? q.status : 'active';
+                const items = (Array.isArray(q.entries) ? q.entries : []).filter(x => x && x.shown).map(x => '<div style="font-size:13px; margin-top:5px;' + (x.done ? ' color:#888;' : '') + '"><span style="display:inline-block; width:18px;">' + (x.done ? '✓' : '○') + '</span><span style="font-size:10.5px; font-weight:bold; text-transform:uppercase; color:#888; margin-right:6px;">' + (x.kind === 'clue' ? 'Clue' : 'Goal') + '</span><span' + (x.done ? ' style="text-decoration:line-through;"' : '') + '>' + e(String(x.text || '').slice(0, 400)) + '</span></div>').join('');
+                return '<div style="border:1px solid #ddd; border-left:4px solid ' + QUEST_STATUS_COLOR[st] + '; border-radius:8px; padding:10px; margin-top:10px; text-align:left;">' +
+                    '<div style="font-weight:bold;">' + e(String(q.title || 'Untitled quest').slice(0, 120)) + ' <span style="font-weight:normal; color:' + QUEST_STATUS_COLOR[st] + '; font-size:11.5px;">' + QUEST_STATUS_LABEL[st] + '</span></div>' +
+                    (q.summary ? '<div style="font-size:13px; color:#555; margin-top:4px; white-space:pre-wrap;">' + e(String(q.summary).slice(0, 2000)) + '</div>' : '') + items + '</div>';
+            }).join('') + (clocks.length ? '<div style="margin-top:16px; font-size:12px; font-weight:bold; text-transform:uppercase; color:#888;">Clocks</div>' + clocks.map(c => {
+                const seg = [4, 6, 8, 10, 12].indexOf(parseInt(c.segments, 10)) >= 0 ? parseInt(c.segments, 10) : 6, filled = Math.max(0, Math.min(seg, parseInt(c.filled, 10) || 0));
+                return '<div style="border:1px solid #ddd; border-radius:8px; padding:10px; margin-top:8px; text-align:left;"><div style="font-weight:bold; font-size:13.5px;">' + e(String(c.name || 'Clock').slice(0, 80)) + '</div><div style="display:flex; gap:4px; margin-top:6px; align-items:center; flex-wrap:wrap;">' +
+                    Array.from({ length: seg }, (_, i) => '<span style="display:inline-block; width:26px; height:18px; border-radius:4px; border:1px solid ' + (i < filled ? '#c0392b' : '#aaa') + '; background:' + (i < filled ? '#c0392b' : 'transparent') + ';"></span>').join('') + '<span style="font-size:12px; color:#888; margin-left:4px;">' + filled + ' / ' + seg + '</span></div></div>';
+            }).join('') : '');
+        }
+        function closeQuestView() {
+            document.getElementById('questViewModal').style.display = 'none';
         }
 
         // ================= CALENDAR / WEATHER WIDGET (2026-09-09) =================
@@ -12424,6 +12991,7 @@
         }
 
         async function initCalendarWidget() {
+            initRollRequests();
             const code = localStorage.getItem('lastJoinedCampaignCode');
             const password = localStorage.getItem('lastJoinedCampaignPassword');
             // No campaign for the character in view — make sure any widget
@@ -12684,6 +13252,122 @@
             }
         }
 
+        // ---------- Roll requests from the DM (2026-10-31) ----------
+        // The DM asks for a roll from dm.html (Roster > Roll Request). Nothing is stored: it rides a campaign-wide Realtime broadcast
+        // channel, so this only works while the sheet is open and joined to a campaign. On arrival (and whenever the character changes)
+        // the sheet says hello, so a DM with a request still open sends it again to someone who opens the sheet late.
+        let rqChannel = null, rqChannelId = null, rqActive = null, rqRolled = false;
+        const rqAnswered = new Set();
+        const RQ_KINDS = ['skill', 'ability', 'save', 'initiative', 'flat'];
+
+        function rqCharName() { return (document.getElementById('charName').value || '').trim(); }
+        function rqTeardown() {
+            if (rqChannel) { try { _supabase.removeChannel(rqChannel); } catch (e) { /* already gone */ } }
+            rqChannel = null; rqChannelId = null; rqActive = null;
+            closeRollRequestModal();
+        }
+        function rqHello() {
+            const name = rqCharName();
+            if (rqChannel && name) { try { rqChannel.send({ type: 'broadcast', event: 'rollhello', payload: { char: name } }); } catch (e) { /* the DM can resend */ } }
+        }
+        async function initRollRequests() {
+            const code = localStorage.getItem('lastJoinedCampaignCode');
+            const password = localStorage.getItem('lastJoinedCampaignPassword');
+            if (!code || !password) { rqTeardown(); return; }
+            try {
+                const { data: campaign, error } = await _supabase.from('campaigns').select('id').eq('campaign_code', code).eq('campaign_password', password).maybeSingle();
+                if (error || !campaign) { rqTeardown(); return; }
+                if (rqChannel && rqChannelId === campaign.id) { rqHello(); return; }
+                rqTeardown();
+                rqChannelId = campaign.id;
+                rqChannel = _supabase.channel('roll-requests-' + campaign.id, { config: { broadcast: { self: false } } })
+                    .on('broadcast', { event: 'rollreq' }, m => rqReceive(m.payload))
+                    .on('broadcast', { event: 'rollcancel' }, m => rqCancelled(m.payload))
+                    .on('broadcast', { event: 'rolllist' }, m => rqShowList(m.payload))
+                    .subscribe(status => { if (status === 'SUBSCRIBED') rqHello(); });
+            } catch (err) {
+                console.log('Roll requests unavailable (offline?).');
+            }
+        }
+
+        // Where this character's bonus lives for each kind of request; the same fields the Dice Roller itself reads.
+        function rqBonus(req) {
+            if (req.kind === 'skill' && DICE_SKILL_LABELS[req.key]) return readBonus(req.key + 'Bonus');
+            if (req.kind === 'ability' && DICE_ABILITY_LABELS[req.key]) return readBonus(abilities[req.key].mod);
+            if (req.kind === 'save' && DICE_ABILITY_LABELS[req.key]) return readBonus('sav' + req.key.charAt(0).toUpperCase() + req.key.slice(1) + 'Bonus');
+            if (req.kind === 'initiative') return readBonus('initiative');
+            return 0;
+        }
+        function rqReceive(p) {
+            if (!p || typeof p.rid !== 'string' || RQ_KINDS.indexOf(p.kind) < 0 || typeof p.label !== 'string') return;
+            const name = rqCharName().toLowerCase();
+            if (!name || rqAnswered.has(p.rid)) return;
+            if (Array.isArray(p.who) && !p.who.some(n => String(n).trim().toLowerCase() === name)) return;
+            const dc = (p.showDc && p.dc !== null && isFinite(parseInt(p.dc, 10))) ? parseInt(p.dc, 10) : null;
+            rqActive = { rid: p.rid, kind: p.kind, key: String(p.key || ''), label: p.label.slice(0, 80), dc, mode: (p.mode === 'advantage' || p.mode === 'disadvantage') ? p.mode : 'normal' };
+            rqRolled = false;
+            document.getElementById('rqKicker').textContent = 'Your DM asks for';
+            document.getElementById('rqTitle').textContent = rqActive.label;
+            document.getElementById('rqDcLine').textContent = dc !== null ? 'DC ' + dc : '';
+            const bonus = rqBonus(rqActive);
+            document.getElementById('rqModLine').textContent = rqActive.kind === 'flat' ? 'No bonus on this one.' : 'Your modifier: ' + fmtMod(bonus);
+            document.querySelectorAll('input[name="rqMode"]').forEach(r => { r.checked = r.value === rqActive.mode; });
+            document.getElementById('rqResult').textContent = '';
+            document.getElementById('rqResultNote').textContent = '';
+            const btn = document.getElementById('rqRollBtn'); btn.disabled = false; btn.textContent = 'Roll';
+            document.getElementById('rqRollArea').style.display = '';
+            document.getElementById('rqListArea').style.display = 'none';
+            document.getElementById('rollRequestModal').style.display = 'flex';
+        }
+        function rqDoRoll() {
+            const req = rqActive;
+            if (!req || rqRolled) return;
+            rqRolled = true;
+            const btn = document.getElementById('rqRollBtn'); btn.disabled = true; btn.textContent = 'Rolled';
+            const checked = document.querySelector('input[name="rqMode"]:checked'), mode = checked ? checked.value : 'normal';
+            const { rolls, chosen } = rollD20WithMode(mode), mod = rqBonus(req), total = chosen + mod;
+            animateRollResult(document.getElementById('rqResult'), total, 20, 600);
+            setTimeout(() => {
+                const detail = rolls.length === 2 ? 'rolled ' + rolls[0] + ' & ' + rolls[1] + ', took ' + chosen : 'rolled ' + chosen;
+                logRoll({ label: 'DM request: ' + req.label, formula: '1d20' + fmtMod(mod) + (mode !== 'normal' ? ' (' + mode + ')' : ''), detail, total });
+                let note = detail + ' ' + fmtMod(mod);
+                if (req.dc !== null) note += ' = ' + total + (total >= req.dc ? '. Success.' : '. Not enough.');
+                else note += '. Sent to your DM.';
+                if (chosen === 20) note = 'Natural 20! ' + note; else if (chosen === 1) note = 'Natural 1. ' + note;
+                document.getElementById('rqResultNote').textContent = note;
+            }, 650);
+            rqAnswered.add(req.rid);
+            if (rqChannel) { try { rqChannel.send({ type: 'broadcast', event: 'rollres', payload: { rid: req.rid, char: rqCharName(), d: rolls, chosen, mod, total, mode } }); } catch (e) { /* the DM can ask again */ } }
+            if (req.kind === 'initiative') shareInitiativeRoll(total);
+        }
+        function rqCancelled(p) {
+            if (!p || !rqActive || p.rid !== rqActive.rid || rqRolled) return;
+            document.getElementById('rqKicker').textContent = 'Request ended';
+            document.getElementById('rqRollArea').style.display = 'none';
+            setTimeout(() => { if (rqActive && rqActive.rid === p.rid) closeRollRequestModal(); }, 1500);
+        }
+        // The DM chose to show everyone how the roll went.
+        function rqShowList(p) {
+            if (!p || !Array.isArray(p.results)) return;
+            document.getElementById('rqKicker').textContent = 'Results';
+            document.getElementById('rqTitle').textContent = String(p.label || 'Roll').slice(0, 80);
+            const dc = (p.dc !== null && p.dc !== undefined && isFinite(parseInt(p.dc, 10))) ? parseInt(p.dc, 10) : null;
+            document.getElementById('rqDcLine').textContent = dc !== null ? 'DC ' + dc : '';
+            document.getElementById('rqListArea').innerHTML = p.results.slice(0, 20).map(r => {
+                const total = parseInt(r.total, 10);
+                const tag = dc === null || !isFinite(total) ? '' : (total >= dc ? ' <span style="color:#2e7d32; font-size:12px;">Pass</span>' : ' <span style="color:#c0392b; font-size:12px;">Fail</span>');
+                return '<div style="display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid rgba(128,128,128,0.25); font-size:14px;"><span>' + escapeHtmlDice(String(r.char || '').slice(0, 60)) + '</span><span><b>' + (isFinite(total) ? total : '') + '</b>' + tag + '</span></div>';
+            }).join('') || '<p style="font-size:13px; color:#888;">No results.</p>';
+            document.getElementById('rqRollArea').style.display = 'none';
+            document.getElementById('rqListArea').style.display = 'block';
+            rqActive = null;
+            document.getElementById('rollRequestModal').style.display = 'flex';
+        }
+        function closeRollRequestModal() {
+            const m = document.getElementById('rollRequestModal');
+            if (m) m.style.display = 'none';
+        }
+
         // ---------- World/Wilderness Map (read-only) ----------
         // Deliberately a much smaller sibling of the tactical Battle Map
         // above — no wall edges (Wilderness layouts don't have any), no
@@ -12883,6 +13567,26 @@
             }
         }
 
+        // Pings, drawings and notes the players and DM share (map-marks.js)
+        let mapViewMarksReady = false;
+        function mapViewMarksSync() {
+            if (!window.MapMarks || !mapViewMap) return;
+            if (!mapViewMarksReady) {
+                mapViewMarksReady = true;
+                MapMarks.attach({
+                    sb: _supabase,
+                    grid: () => document.getElementById('mapViewGrid'),
+                    step: () => MAP_VIEW_CELL_STEP,
+                    offset: () => ({ c: mapViewColOffset, r: mapViewRowOffset - 1 }),
+                    identity: () => ({ player: localStorage.getItem('playerRealName') || 'Player', character: (document.getElementById('charName').value || '').trim(), color: MapMarks.roleColor(mapViewMyToken ? mapViewMyToken.color : ''), dm: false }),
+                    getPerms: () => mapViewInkWalls.find(q => q && !Array.isArray(q) && q.t === 'pextras') || null,
+                    status: msg => { document.getElementById('mapViewHint').textContent = msg; },
+                    btnClass: 'map-style-toggle'
+                });
+                MapMarks.buildBar(document.getElementById('mapViewMarksBar'));
+            }
+            MapMarks.setMap(mapViewMap.id);
+        }
         async function refreshMapView() {
             if (!mapViewMap) return;
             const { data: mapRow } = await _supabase.from('campaign_maps').select('*').eq('id', mapViewMap.id).maybeSingle();
@@ -12897,8 +13601,9 @@
                 return;
             }
             document.getElementById('mapViewStatus').textContent = '';
-            mapViewMap = mapRow; mapViewCellData = mapRow.grid_data || {}; mapViewEdgeData = mapRow.wall_edges || {}; mapViewAoeMarkers = mapRow.aoe_markers || []; mapViewConeMarkers = mapRow.cone_markers || [];
+            mapViewMap = mapRow; mapViewCellData = mapRow.grid_data || {}; mapViewEdgeData = mapRow.wall_edges || {}; mapViewInkWalls = Array.isArray(mapRow.ink_walls) ? mapRow.ink_walls.filter(w => (Array.isArray(w) && w.length > 1) || (w && w.t === 'room' && (Array.isArray(w.p) || Array.isArray(w.c))) || (w && w.t === 'wall' && Array.isArray(w.p) && w.p.length > 1) || (w && w.t === 'compass') || (w && w.t === 'fog') || (w && w.t === 'tlight' && w.tok) || (w && w.t === 'tod') || (w && w.t === 'weather') || (w && w.t === 'rules') || (w && w.t === 'pextras') || (w && w.t === 'fogmode') || (w && w.t === 'imgs') || (w && w.t === 'tokx' && w.tok) || (w && w.t === 'obj' && w.kind)) : []; mapViewAoeMarkers = mapRow.aoe_markers || []; mapViewConeMarkers = mapRow.cone_markers || [];
             mapViewTotalCols = mapRow.cols || 20; mapViewTotalRows = mapRow.rows || 20;
+            mapViewKeepApply();
 
             const { data: tokens } = await _supabase.from('map_tokens').select('*').eq('map_id', mapViewMap.id);
             mapViewTokens = tokens || [];
@@ -12906,6 +13611,7 @@
             const playerName = localStorage.getItem('playerRealName');
             const charName = document.getElementById('charName').value.trim();
             mapViewMyToken = mapViewTokens.find(t => t.kind === 'player' && t.owner_player_name === playerName && t.owner_character_name === charName) || null;
+            await mapViewFogSync();
 
             // Bigger-than-20x20 maps: keep the visible window centered on
             // the party, then rebuild the DOM grid if that moved it (see
@@ -12913,6 +13619,7 @@
             // every map that already fits inside 20x20.
             mapViewRecomputeOffset();
             ensureMapViewGridBuilt();
+            mapViewSyncPanBar();
 
             // Reveal normally only fires on placement/movement (see dm.html
             // and the move handler below) — but the very first time this
@@ -12925,18 +13632,19 @@
             // revealed, so this doesn't re-save on every 5s poll once it
             // has been.
             if (mapViewMyToken && !mapViewEnsureCell(mapViewMyToken.cell).fogRevealed) {
-                mapViewRevealFromCell(mapViewMyToken.cell, mapViewEffectiveVisionRadius(mapViewMyToken, mapViewMap));
-                await _supabase.from('campaign_maps').update({ grid_data: mapViewCellData }).eq('id', mapViewMap.id);
+                mapViewRevealForToken(mapViewMyToken, mapViewMyToken.cell);
+                await _supabase.from('campaign_maps').update({ grid_data: mapViewGridForSave() }).eq('id', mapViewMap.id);
             }
 
             renderMapViewGrid();
             renderMapViewWallOverlay();
             renderMapViewAoeOverlay();
             renderMapViewConeOverlay();
+            mapViewMarksSync();
             renderMapViewPlacementUI();
             if (!mapViewPickedUp) {
                 document.getElementById('mapViewHint').textContent = mapViewMyToken
-                    ? 'Click your token, then a destination.'
+                    ? 'Click your token, then a destination. Click a closed door or window beside you to open it.'
                     : (mapViewMap && mapViewMap.is_wilderness_active
                         ? "This is the world map — your DM controls the party's position here."
                         : 'Pick a color above, then click a cell you can see to place yourself.');
@@ -13027,6 +13735,7 @@
             const { error } = await _supabase.from('map_tokens').update({ facing }).eq('id', mapViewMyToken.id);
             if (error) { alert('Could not change facing: ' + error.message); return; }
             mapViewMyToken.facing = facing;
+            renderMapViewLight(); // a cone lantern carried by this character turns with them
             document.getElementById('mapViewFacingPicker').innerHTML = mapViewFacingPickerHTML(facing);
             renderMapViewGrid();
         }
@@ -13037,8 +13746,9 @@
         // offset has actually moved since the last build; a same-offset
         // call is still a cheap no-op, same as before this feature.
         function ensureMapViewGridBuilt() {
-            if (mapViewGridBuilt && mapViewGridBuiltColOffset === mapViewColOffset && mapViewGridBuiltRowOffset === mapViewRowOffset) return;
+            if (mapViewGridBuilt && mapViewGridBuiltColOffset === mapViewColOffset && mapViewGridBuiltRowOffset === mapViewRowOffset && mapViewGridBuiltCols === MAP_VIEW_COLS && mapViewGridBuiltRows === MAP_VIEW_ROWS) return;
             mapViewGridBuilt = true;
+            mapViewGridBuiltCols = MAP_VIEW_COLS; mapViewGridBuiltRows = MAP_VIEW_ROWS;
             mapViewGridBuiltColOffset = mapViewColOffset;
             mapViewGridBuiltRowOffset = mapViewRowOffset;
             const gridEl = document.getElementById('mapViewGrid');
@@ -13064,7 +13774,7 @@
                     cell.className = 'map-cell';
                     cell.dataset.key = key;
                     cell.onmouseenter = () => { document.getElementById('mapViewCoord').textContent = key; };
-                    cell.onclick = () => handleMapViewCellClick(key);
+                    cell.onclick = ev => handleMapViewCellClick(key, ev);
                     gridEl.appendChild(cell);
                 }
             }
@@ -13089,6 +13799,7 @@
             return token.real_name;
         }
 
+        function mapViewTokenExtra(id) { return mapViewInkWalls.find(w => w && !Array.isArray(w) && w.t === 'tokx' && w.tok === id) || null; }
         function mapViewTokenBadgeHTML(token) {
             const label = token.kind === 'player'
                 ? escapeHtml((token.owner_player_name || '?').charAt(0).toUpperCase())
@@ -13100,7 +13811,8 @@
             const deg = MAP_VIEW_FACING_DEGREES[token.facing] || 0;
             return '<div class="map-token-wrap" title="' + escapeHtml(title) + '">' +
                 '<div class="map-token-facing-cone map-color-' + token.color + '" style="transform: translate(-50%, -50%) rotate(' + deg + 'deg) translateY(-13px);"></div>' +
-                '<div class="map-token map-color-' + token.color + '">' + label + '</div>' +
+                '<div class="map-token map-color-' + token.color + '" style="position:relative;">' + label + (window.MapStyle ? MapStyle.tokenImgHtml(mapViewTokenExtra(token.id)) : '') + '</div>' +
+                (window.MapStyle ? MapStyle.tokenBarsHtml(mapViewTokenExtra(token.id), token.kind === 'player' || !!(mapViewTokenExtra(token.id) || {}).share) : '') +
                 '</div>';
         }
 
@@ -13125,6 +13837,17 @@
             stove: { label: 'St', bg: '#3a3a3a', color: '#e06a2c' },
             shelf: { label: 'Sh', bg: '#5c4028', color: '#fff' },
             bed: { label: 'Bd', bg: '#7a5a8a', color: '#fff' },
+            'desk': { label: 'De', bg: '#8a6a45', color: '#fff' },
+            'chair': { label: 'Ch', bg: '#8a6a45', color: '#fff' },
+            'couch': { label: 'Co', bg: '#8a6a45', color: '#fff' },
+            'end-table': { label: 'En', bg: '#8a6a45', color: '#fff' },
+            'flower-pot': { label: 'Fl', bg: '#8a6a45', color: '#fff' },
+            'barrel': { label: 'Ba', bg: '#8a6a45', color: '#fff' },
+            'crate': { label: 'Cr', bg: '#8a6a45', color: '#fff' },
+            'chest': { label: 'Ch', bg: '#8a6a45', color: '#fff' },
+            'fireplace': { label: 'Fi', bg: '#8a6a45', color: '#fff' },
+            'spiral-up': { label: 'Sp', bg: '#9a9384', color: '#fff' },
+            'spiral-down': { label: 'Sp', bg: '#9a9384', color: '#fff' },
             // Mirrors dm.html's MAP_FURNITURE_STYLE — real pictograms
             // instead of 2-letter text badges (2026-08-31).
             building: {
@@ -13147,7 +13870,8 @@
             'road-stone': { label: '', bg: '#9b9689', color: '#2b2b2b' },
             'road-dirt': { label: '', bg: '#8a6a45', color: '#2b2b2b' }
         };
-        function mapViewFurnitureBadgeHTML(furniture) {
+        function mapViewFurnitureBadgeHTML(furniture, rot) {
+            const turn = rot ? ' transform:rotate(' + (rot * 90) + 'deg);' : '';
             // Mirrors dm.html's furnitureBadgeHTML — Stairs render as a
             // full-cell stepped texture instead of the small badge below,
             // keeping the ▲/▼ arrow on top.
@@ -13155,7 +13879,7 @@
                 const arrow = furniture === 'stairs-up' ? '▲' : '▼';
                 const name = furniture === 'stairs-up' ? 'Stairs Up' : 'Stairs Down';
                 return '<div style="position:absolute; inset:0; background:repeating-linear-gradient(0deg, #4a4a4a, #4a4a4a 3px, #656565 3px, #656565 6px); ' +
-                    'display:flex; align-items:center; justify-content:center;" title="' + name + '">' +
+                    'display:flex; align-items:center; justify-content:center;' + turn + '" title="' + name + '">' +
                     '<span style="color:#fff; font-size:13px; font-weight:bold; text-shadow:0 0 2px #000, 0 0 2px #000;">' + arrow + '</span></div>';
             }
             const style = MAP_VIEW_FURNITURE_STYLE[furniture];
@@ -13167,8 +13891,11 @@
             if (furniture === 'building' || furniture === 'castle' || furniture === 'cave' || furniture === 'road-stone' || furniture === 'road-dirt') {
                 return '<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:' + style.bg + ';" title="' + name + '">' + style.label + '</div>';
             }
+            // same little pictures as the DM's map (map-style.js)
+            const art = window.MapStyle && MapStyle.furnitureArt ? MapStyle.furnitureArt(furniture) : '';
+            if (art) return '<div style="position:absolute; inset:0;' + turn + '" title="' + name + '">' + art + '</div>';
             return '<div style="width:18px; height:18px; border-radius:3px; display:flex; align-items:center; justify-content:center;' +
-                ' font-size:9px; font-weight:bold; background:' + style.bg + '; color:' + style.color + ';" title="' + name + '">' + style.label + '</div>';
+                ' font-size:9px; font-weight:bold; background:' + style.bg + '; color:' + style.color + ';' + turn + '" title="' + name + '">' + style.label + '</div>';
         }
         function isMapViewFloorTextureVisible(terrain) { return !terrain || terrain === 'trap' || terrain === 'treasure'; }
         // Mirrors dm.html's isFurnitureVisible — furniture is its own
@@ -13177,12 +13904,16 @@
         // (Wilderness imports), just not over Wall/Door/Thick Wall's own
         // whole-cell rendering.
         function isMapViewFurnitureVisible(terrain) { return terrain !== 'wall' && terrain !== 'door' && terrain !== 'thickwall'; }
-        const MAP_VIEW_FLOOR_TEXTURE_CLASSES = ['floor-wood', 'floor-tile-a', 'floor-tile-b', 'floor-stone-0', 'floor-stone-1', 'floor-stone-2', 'floor-stone-3'];
+        const MAP_VIEW_FLOOR_TEXTURE_CLASSES = ['floor-dirt', 'floor-pebble', 'floor-wood', 'floor-tile-a', 'floor-tile-b', 'floor-stone-0', 'floor-stone-1', 'floor-stone-2', 'floor-stone-3'];
         function applyMapViewFloorTextureClass(cellEl, state, key) {
             cellEl.classList.remove(...MAP_VIEW_FLOOR_TEXTURE_CLASSES);
             if (!state.floorTexture || !isMapViewFloorTextureVisible(state.terrain)) return;
-            const col = key.charCodeAt(0) - 65, row = parseInt(key.slice(1), 10);
+            // Parchment style (map-style.js): floors are painted on the shared canvas instead
+            if (window.MapStyle && MapStyle.isOn()) { cellEl.classList.add('canvas-terrain'); return; }
+            const col = mapKeyCol(key), row = mapKeyRow(key);
             if (state.floorTexture === 'wood') cellEl.classList.add('floor-wood');
+            else if (state.floorTexture === 'dirt') cellEl.classList.add('floor-dirt');
+            else if (state.floorTexture === 'pebble') cellEl.classList.add('floor-pebble');
             else if (state.floorTexture === 'tile') cellEl.classList.add((col + row) % 2 === 0 ? 'floor-tile-a' : 'floor-tile-b');
             else if (state.floorTexture === 'stone') cellEl.classList.add('floor-stone-' + ((col * 7 + row * 13) % 4));
         }
@@ -13243,7 +13974,7 @@
                     // Fill comes from the .thick-wall-cell class toggled
                     // above; the boundary line follows the same rule as
                     // the legacy Wall (see dm.html's matching comment).
-                    const col = key.charCodeAt(0) - 65, row = parseInt(key.slice(1), 10);
+                    const col = mapKeyCol(key), row = mapKeyRow(key);
                     cellEl.style.cssText += mapViewWallBorderCss(col, row);
                 } else if (!isCanvasTerrain) {
                     const style = MAP_VIEW_TERRAIN_STYLE[state.terrain];
@@ -13258,18 +13989,75 @@
             // badge for those specifically, mirrors dm.html.
             const MAP_VIEW_CANVAS_FURNITURE = ['building', 'castle', 'cave', 'road-stone', 'road-dirt'];
             if (state.furniture && isMapViewFurnitureVisible(state.terrain) && !MAP_VIEW_CANVAS_FURNITURE.includes(state.furniture)) {
-                cellEl.insertAdjacentHTML('beforeend', mapViewFurnitureBadgeHTML(state.furniture));
+                cellEl.insertAdjacentHTML('beforeend', mapViewFurnitureBadgeHTML(state.furniture, state.frot));
             }
             if (state.elevation) cellEl.insertAdjacentHTML('beforeend', mapViewElevationBadgeHTML(state.elevation));
             if (state.diagonal) {
-                const dCol = key.charCodeAt(0) - 65, dRow = parseInt(key.slice(1), 10);
+                const dCol = mapKeyCol(key), dRow = mapKeyRow(key);
                 cellEl.insertAdjacentHTML('beforeend', mapViewDiagonalWallHTML(state.diagonal, dCol, dRow));
             }
         }
         function renderMapViewGrid() {
             for (let r = 0; r < MAP_VIEW_ROWS; r++) for (let c = 0; c < MAP_VIEW_COLS; c++) renderMapViewCell(mapViewCellKey(mapViewColOffset + c, mapViewRowOffset + r));
             renderMapViewTerrainCanvas();
+            renderMapViewFog();
+            renderMapViewRange();
+            mapViewLockViewer();
         }
+        // The viewer frame keeps the size the map has at 100%; zooming out only shrinks the map drawn inside it
+        // (2026-10-31), instead of the whole frame shrinking around it.
+        function mapViewLockViewer() {
+            const v = document.getElementById('mapViewViewer');
+            const paper = v && v.querySelector('.map-paper');
+            if (!paper) return;
+            const z = (window.MapStyle && MapStyle.zoom && MapStyle.zoom()) || 1;
+            const r = paper.getBoundingClientRect();
+            if (!r.width || !r.height) return;
+            const avail = v.parentElement ? v.parentElement.clientWidth : r.width;
+            // With the whole map showing, the frame is still the size of the 20 x 20 window (or the map itself if that is bigger)
+            const wf = (MAP_VIEW_BASE + 1) / (MAP_VIEW_COLS + 1), hf = (MAP_VIEW_BASE + 1) / (MAP_VIEW_ROWS + 1);
+            const winW = Math.round(r.width / z * wf), winH = Math.round(r.height / z * hf);
+            const whole = MAP_VIEW_COLS > MAP_VIEW_BASE || MAP_VIEW_ROWS > MAP_VIEW_BASE;
+            v.style.minWidth = Math.min(whole ? Math.max(winW, Math.round(r.width)) : winW, avail || 1e6) + 'px';
+            v.style.minHeight = ((whole ? Math.max(winH, Math.round(r.height)) : winH) + 4) + 'px'; // + the scroller's 4px bottom padding // + the scroller's 4px bottom padding
+        }
+        document.addEventListener('mapzoomchange', () => { if (mapViewMap && mapViewPollTimer) mapViewRerenderAfterPan(); else mapViewLockViewer(); });
+        // Parchment style (map-style.js): single-cell updates also need the canvas repainted
+        let mapViewStyleRepaintQueued = false;
+        const _renderMapViewCellBase = renderMapViewCell;
+        renderMapViewCell = function (key) {
+            _renderMapViewCellBase(key);
+            if (!(window.MapStyle && MapStyle.isOn()) || mapViewStyleRepaintQueued) return;
+            mapViewStyleRepaintQueued = true;
+            requestAnimationFrame(() => { mapViewStyleRepaintQueued = false; renderMapViewTerrainCanvas(); renderMapViewFog(); });
+        };
+        function syncMapViewStyleButton() {
+            const btn = document.getElementById('mapViewStyleBtn');
+            if (!btn) return;
+            // map-style.js missing (e.g. an older cached copy): no toggle, classic look
+            if (!window.MapStyle) { btn.style.display = 'none'; return; }
+            btn.textContent = MapStyle.isOn() ? 'Style: Parchment' : 'Style: Classic';
+        }
+        function syncMapViewLabelsButton() {
+            const btn = document.getElementById('mapViewLabelsBtn');
+            if (!btn) return;
+            if (!window.MapStyle) { btn.style.display = 'none'; return; }
+            btn.textContent = MapStyle.labelsOn() ? 'Labels: On' : 'Labels: Off';
+        }
+        function toggleMapViewLabels() {
+            if (!window.MapStyle) return;
+            MapStyle.setLabels(!MapStyle.labelsOn());
+            syncMapViewLabelsButton();
+        }
+        syncMapViewLabelsButton();
+        function toggleMapViewStyle() {
+            if (!window.MapStyle) return;
+            MapStyle.setOn(!MapStyle.isOn());
+            syncMapViewStyleButton();
+            renderMapViewGrid();
+            renderMapViewWallOverlay();
+        }
+        syncMapViewStyleButton();
 
         // ---------- Seamless terrain canvas (tactical view) ----------
         // Mirrors dm.html's #mapTerrainCanvas/renderMapTerrainCanvas —
@@ -13362,10 +14150,38 @@
             canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, w, h);
+            // Parchment style: hatching, seamless floors and inked outlines (map-style.js).
+            // Only cells the players have actually revealed contribute, so the
+            // hatching can never hint at rooms they haven't found.
+            const parchment = !!(window.MapStyle && MapStyle.isOn());
+            if (parchment) {
+                MapStyle.paintUnder(ctx, {
+                    cols: MAP_VIEW_COLS, rows: MAP_VIEW_ROWS, step: MAP_VIEW_CELL_STEP,
+                    ox: mapViewColOffset, oy: mapViewRowOffset,
+                    rcOffset: [-mapViewColOffset, -(mapViewRowOffset - 1)], shapes: mapViewRoomShapeMap(), shapeOrder: mapViewRoomShapeOrder(),
+                    noHatch: !!(mapViewMap && mapViewMap.generator_settings && mapViewMap.generator_settings.mode === 'city'),
+                    cell: (dc, dr) => {
+                        const st = mapViewCellData[mapViewCellKey(mapViewColOffset + dc, mapViewRowOffset + dr)];
+                        if (!st || !st.fogRevealed) return null;
+                        return {
+                            floor: (st.floorTexture && (isMapViewFloorTextureVisible(st.terrain) || st.terrain === 'water' || st.terrain === 'lava')) ? st.floorTexture : null,
+                            round: st.round ? 2 : (st.diag ? 1 : 0),
+                            rc: st.rc || null,
+                            rs: st.rs || null,
+                            fh: st.fh || null,
+                            water: st.terrain === 'water' || st.terrain === 'lava',
+                            liquid: st.terrain === 'lava' ? 'lava' : 'water',
+                            solid: st.terrain === 'thickwall' || st.terrain === 'wall' || st.terrain === 'deadfloor' || st.terrain === 'water' || st.terrain === 'lava'
+                        };
+                    }
+                });
+                ctx.globalAlpha = 0.78;
+            }
             for (let dr = 0; dr < MAP_VIEW_ROWS; dr++) {
                 for (let dc = 0; dc < MAP_VIEW_COLS; dc++) {
                     const state = mapViewCellData[mapViewCellKey(mapViewColOffset + dc, mapViewRowOffset + dr)];
                     if (!state || !state.fogRevealed || !MAP_VIEW_TERRAIN_FULL_FILL.includes(state.terrain)) continue;
+                    if (parchment && (state.terrain === 'water' || state.terrain === 'lava')) continue; // water and lava are drawn as one smoothed pool by map-style.js
                     const style = MAP_VIEW_TERRAIN_STYLE[state.terrain];
                     const x = (dc + 1) * MAP_VIEW_CELL_STEP, y = (dr + 1) * MAP_VIEW_CELL_STEP;
                     ctx.fillStyle = style.bg;
@@ -13374,6 +14190,7 @@
                     if (pattern) { ctx.fillStyle = pattern; ctx.fillRect(x, y, MAP_VIEW_CELL_STEP, MAP_VIEW_CELL_STEP); }
                 }
             }
+            ctx.globalAlpha = 1;
             drawMapViewRoadLines(ctx);
             for (let dr = 0; dr < MAP_VIEW_ROWS; dr++) {
                 for (let dc = 0; dc < MAP_VIEW_COLS; dc++) {
@@ -13386,8 +14203,8 @@
         }
 
         function mapViewAoeCircleStyle(marker) {
-            const col = marker.cell.charCodeAt(0) - 65 - mapViewColOffset;
-            const row = parseInt(marker.cell.slice(1), 10) - mapViewRowOffset + 1;
+            const col = mapKeyCol(marker.cell) - mapViewColOffset;
+            const row = mapKeyRow(marker.cell) - mapViewRowOffset + 1;
             const centerX = (col + 1.5) * MAP_VIEW_CELL_STEP;
             const centerY = (row + 0.5) * MAP_VIEW_CELL_STEP;
             const radiusPx = (marker.radiusFeet / 5) * MAP_VIEW_CELL_STEP;
@@ -13419,8 +14236,8 @@
         const MAP_VIEW_CONE_HALF_ANGLE = Math.atan(0.5) * 180 / Math.PI;
         const MAP_VIEW_GRID_PIXEL_SIZE = (MAP_VIEW_COLS + 1) * MAP_VIEW_CELL_STEP;
         function mapViewConeGeometry(marker) {
-            const col = marker.cell.charCodeAt(0) - 65 - mapViewColOffset;
-            const row = parseInt(marker.cell.slice(1), 10) - mapViewRowOffset + 1;
+            const col = mapKeyCol(marker.cell) - mapViewColOffset;
+            const row = mapKeyRow(marker.cell) - mapViewRowOffset + 1;
             const originX = (col + 1.5) * MAP_VIEW_CELL_STEP;
             const originY = (row + 0.5) * MAP_VIEW_CELL_STEP;
             const lengthPx = (marker.lengthFeet / 5) * MAP_VIEW_CELL_STEP;
@@ -13452,7 +14269,7 @@
                     ' background:rgba(155,89,182,0.85); color:#fff; font-size:9px; font-weight:bold; padding:1px 5px; border-radius:100px; white-space:nowrap;">' +
                     escapeHtml(m.label) + ' (' + m.lengthFeet + ' ft)</span>';
             }).join('');
-            overlay.innerHTML = '<svg width="' + MAP_VIEW_GRID_PIXEL_SIZE + '" height="' + MAP_VIEW_GRID_PIXEL_SIZE + '" style="position:absolute; top:0; left:0; overflow:visible;">' + polys + '</svg>' + labels;
+            overlay.innerHTML = '<svg width="' + ((MAP_VIEW_COLS + 1) * MAP_VIEW_CELL_STEP) + '" height="' + ((MAP_VIEW_ROWS + 1) * MAP_VIEW_CELL_STEP) + '" style="position:absolute; top:0; left:0; overflow:visible;">' + polys + '</svg>' + labels;
         }
 
         function mapViewBresenhamLine(x0, y0, x1, y1) {
@@ -13474,10 +14291,121 @@
         function mapViewIsBlocking(key) {
             const c = mapViewCellData[key];
             if (c && (c.terrain === 'wall' || c.terrain === 'door' || c.terrain === 'thickwall' || c.terrain === 'deadfloor' || c.diagonal)) return true;
-            const col = key.charCodeAt(0) - 65, row = parseInt(key.slice(1), 10);
-            const edgeKeys = ['H:' + col + ',' + row, 'H:' + col + ',' + (row + 1), 'V:' + col + ',' + row, 'V:' + (col + 1) + ',' + row];
-            return edgeKeys.some(k => mapViewEdgeData[k]);
+            // Edges are checked where a sightline actually crosses them (mapViewEdgeBlocksStep), not by counting a wall on a square's side as
+            // the whole square blocking sight: that made a corridor or small room show only the next 5 feet. See dm.html's isVisionBlocking.
+            return false;
         }
+        // a hidden trap goes off when this player's token lands on its square or within its trigger area; returns that trap's key
+        function mapViewDiscoverKey(key) {
+            const own = mapViewCellData[key];
+            if (own && own.hidden && MAP_VIEW_DISCOVERABLE_TERRAIN.includes(own.terrain)) return key;
+            const c = mapKeyCol(key), r = mapKeyRow(key);
+            return Object.keys(mapViewCellData).find(k => { const st = mapViewCellData[k]; return st && st.terrain === 'trap' && st.hidden && st.trapArea > 0 && Math.max(Math.abs(mapKeyCol(k) - c), Math.abs(mapKeyRow(k) - r)) <= st.trapArea; }) || null;
+        }
+        // The first shut door (any state but open) on the straight line a token would take from one square to another, or null.
+        function mapViewDoorOnPath(fromKey, toKey) {
+            const line = mapViewBresenhamLine(mapKeyCol(fromKey), mapKeyRow(fromKey), mapKeyCol(toKey), mapKeyRow(toKey));
+            const shut = k => { const e = mapViewEdgeData[k]; return e && e.type === 'door' && e.state !== 'open' ? e : null; };
+            for (let i = 1; i < line.length; i++) {
+                const pc = line[i - 1][0], pr = line[i - 1][1], cc = line[i][0], cr = line[i][1], dx = cc - pc, dy = cr - pr;
+                let e = (dy && shut('H:' + pc + ',' + Math.max(pr, cr))) || (dx && shut('V:' + Math.max(pc, cc) + ',' + pr));
+                if (!e && dx && dy) e = shut('H:' + cc + ',' + Math.max(pr, cr)) || shut('V:' + Math.max(pc, cc) + ',' + cr);
+                if (e) return e;
+            }
+            return null;
+        }
+        // Linked levels: where a token landing on this square ends up, as { map, name, cell }, or null
+        function mapViewLinkAt(key) { const i = mapViewLinkInfo(key); return i ? i.to : null; }
+        // the same, with the piece's kind and every square it covers: { to, kind, cells: [[col, row], ...] }
+        function mapViewLinkInfo(key) {
+            const st = mapViewCellData[key];
+            if (st && st.to && ['stairs-up', 'stairs-down', 'spiral-up', 'spiral-down'].includes(st.furniture)) return { to: st.to, kind: st.furniture, cells: [[mapKeyCol(key), mapKeyRow(key)]] };
+            const c = mapKeyCol(key), r = mapKeyRow(key) - 1;
+            const o = mapViewInkWalls.find(w => w && !Array.isArray(w) && w.t === 'obj' && w.to && !w.land && c >= Math.floor(w.x) && c < Math.ceil(w.x + w.w) && r >= Math.floor(w.y) && r < Math.ceil(w.y + w.h));
+            if (!o) return null;
+            const cells = [];
+            for (let cc = Math.floor(o.x); cc < Math.ceil(o.x + o.w); cc++) for (let rr = Math.floor(o.y); rr < Math.ceil(o.y + o.h); rr++) cells.push([cc, rr + 1]);
+            return { to: o.to, kind: o.kind || '', cells };
+        }
+        // Clicking stairs, a spiral staircase or a hatch (a trap door just drops you, see the move code): ask whether to take it
+        function mapViewStairsDir(kind) { return /up/.test(kind) ? 'up' : /down|hatch/.test(kind) ? 'down' : ''; }
+        function closeMapStairs() { document.getElementById('mapStairsModal').style.display = 'none'; }
+        function mapViewOfferStairs(key, info) {
+            const hint = document.getElementById('mapViewHint'), mine = mapViewMyToken, to = info.to;
+            const what = /spiral/.test(info.kind) ? 'spiral stairs' : /hatch/.test(info.kind) ? 'hatch' : 'stairs';
+            const near = info.cells.some(([c, r]) => Math.max(Math.abs(c - mapKeyCol(mine.cell)), Math.abs(r - mapKeyRow(mine.cell))) <= 1);
+            if (!near) { hint.textContent = 'Walk up next to the ' + what + ' first, then click them.'; return; }
+            const dir = mapViewStairsDir(info.kind), onIt = info.cells.some(([c, r]) => c === mapKeyCol(mine.cell) && r === mapKeyRow(mine.cell));
+            document.getElementById('mapStairsTitle').textContent = dir ? 'Go ' + dir + ' the ' + what + '?' : 'Take the ' + what + '?';
+            document.getElementById('mapStairsBody').textContent = (to.label || 'This way') + ' leads to ' + (to.name || 'another level') + '.';
+            const go = document.getElementById('mapStairsGoBtn'), mv = document.getElementById('mapStairsMoveBtn');
+            go.textContent = 'Go to ' + (to.name || 'the next level');
+            go.onclick = async () => {
+                closeMapStairs();
+                hint.textContent = 'Going…';
+                if (!(await mapViewTakeLink(mine, mine.cell, to))) hint.textContent = (mapViewLinkNote ? mapViewLinkNote.charAt(0).toUpperCase() + mapViewLinkNote.slice(1) : 'You cannot go that way') + '.';
+            };
+            // standing on the stairs, the player may instead want to walk off again
+            mv.style.display = onIt ? '' : 'none';
+            mv.onclick = () => { closeMapStairs(); mapViewPickedUp = true; hint.textContent = 'Click a destination for your token.'; };
+            document.getElementById('mapStairsModal').style.display = 'flex';
+        }
+        // the square the other end of this pair is on, in that map's data (found by the pair, so a moved stair is still found)
+        function mapViewFindPartner(row, to) {
+            if (!to.pair) return null;
+            const cd = row.grid_data || {};
+            const k = Object.keys(cd).find(q => cd[q] && cd[q].furniture && cd[q].to && cd[q].to.pair === to.pair);
+            if (k) return k;
+            const o = (Array.isArray(row.ink_walls) ? row.ink_walls : []).find(w => w && !Array.isArray(w) && w.t === 'obj' && w.to && w.to.pair === to.pair);
+            return o ? mapViewCellKey(Math.floor(o.x + o.w / 2), Math.floor(o.y + o.h / 2) + 1) : null;
+        }
+        // take the stairs: the token moves to the other map (if the DM has opened it) and this view follows it
+        let mapViewLinkNote = '';
+        async function mapViewTakeLink(token, fromKey, link) {
+            const hint = document.getElementById('mapViewHint');
+            mapViewLinkNote = '';
+            const { data: row } = await _supabase.from('campaign_maps').select('*').eq('id', link.map).maybeSingle();
+            if (!row || !row.is_active) { mapViewLinkNote = "the way leads somewhere your DM hasn't opened up yet"; return false; }
+            const arrive = mapViewFindPartner(row, link) || (/^[A-Za-z]{1,2}\d{1,3}$/.test(link.cell || '') ? link.cell.toUpperCase() : fromKey);
+            const { error } = await _supabase.from('map_tokens').update({ map_id: row.id, cell: arrive, updated_at: new Date() }).eq('id', token.id);
+            if (error) { mapViewLinkNote = 'could not go that way: ' + error.message; return false; }
+            mapViewPickedUp = false;
+            mapViewMap = row;
+            await refreshMapView();
+            document.getElementById('mapViewHint').textContent = (link.fall ? 'You fall through the trap door and land on ' : 'You arrive on ') + (row.name || 'the next level') + '.';
+            return true;
+        }
+        // How far the picked-up token can go this turn (green: its speed, amber: dashing), over the squares this player has uncovered.
+        function mapViewMoveBlocked(pc, pr, cc, cr) {
+            const dx = cc - pc, dy = cr - pr;
+            if (mapViewInkWalls.length && window.MapStyle && MapStyle.inkBlocks(mapViewInkWalls, pc + 0.5, pr - 0.5, cc + 0.5, cr - 0.5)) return true;
+            const shut = k => { const e = mapViewEdgeData[k]; return !!e && !((e.type === 'door' || e.type === 'window') && e.state === 'open'); };
+            const hh = dy && shut('H:' + pc + ',' + Math.max(pr, cr)), vv = dx && shut('V:' + Math.max(pc, cc) + ',' + pr);
+            if (dx && dy) return !!(hh || vv || shut('H:' + cc + ',' + Math.max(pr, cr)) || shut('V:' + Math.max(pc, cc) + ',' + cr));
+            return !!(hh || vv);
+        }
+        function renderMapViewRange() {
+            const host = document.getElementById('mapViewNoteLayer');
+            if (!host) return;
+            let el = document.getElementById('mapViewRangeLayer');
+            if (!el) { el = document.createElement('div'); el.id = 'mapViewRangeLayer'; el.style.cssText = 'position:absolute; top:0; left:0; z-index:6; pointer-events:none;'; host.parentNode.appendChild(el); }
+            const t = mapViewMyToken;
+            if (!mapViewPickedUp || !t || !window.MapStyle || !MapStyle.moveRange) { el.innerHTML = ''; return; }
+            const S = MAP_VIEW_CELL_STEP, spd = Math.max(0, Math.round((+t.speed || 30) / 5));
+            const rule = mapViewInkWalls.find(w => w && !Array.isArray(w) && w.t === 'rules');
+            let svg = '';
+            MapStyle.moveRange({ cols: mapViewTotalCols, rows: mapViewTotalRows, start: [mapKeyCol(t.cell), mapKeyRow(t.cell)], max: spd * 2, diag: rule && rule.diag === 'alt' ? 'alt' : 'simple', blocked: mapViewMoveBlocked,
+                passable: (c, r) => { const st = mapViewCellData[mapViewCellKey(c, r)]; return !!(st && st.fogRevealed) && st.terrain !== 'wall' && st.terrain !== 'thickwall' && st.terrain !== 'deadfloor' && !st.diagonal; } }).forEach((cost, k) => {
+                if (!cost) return;
+                const p = k.split(',').map(Number), vc = p[0] - mapViewColOffset, vr = p[1] - mapViewRowOffset;
+                if (vc < 0 || vc >= MAP_VIEW_COLS || vr < 0 || vr >= MAP_VIEW_ROWS) return;
+                svg += '<rect x="' + ((vc + 1) * S + 1) + '" y="' + ((vr + 1) * S + 1) + '" width="' + (S - 2) + '" height="' + (S - 2) + '" rx="3" fill="' + (cost <= spd ? 'rgba(60,180,100,.30)' : 'rgba(230,170,40,.24)') + '" stroke="' + (cost <= spd ? 'rgba(40,140,80,.7)' : 'rgba(200,140,20,.6)') + '" stroke-width="1"/>';
+            });
+            el.innerHTML = '<svg width="' + ((MAP_VIEW_COLS + 1) * S) + '" height="' + ((MAP_VIEW_ROWS + 1) * S) + '" style="position:absolute; left:0; top:0; overflow:visible;" xmlns="http://www.w3.org/2000/svg">' + svg + '</svg>';
+        }
+        // whatever the click did (picked the token up, moved it, was refused), the reach follows
+        const _handleMapViewCellClickBase = handleMapViewCellClick;
+        handleMapViewCellClick = async function (key, ev) { await _handleMapViewCellClickBase(key, ev); renderMapViewRange(); };
         function mapViewEnsureCell(key) {
             if (!mapViewCellData[key]) mapViewCellData[key] = { terrain: null, hidden: false, fogRevealed: false };
             return mapViewCellData[key];
@@ -13493,18 +14421,69 @@
         function mapViewEdgeBlocksStep(prevCol, prevRow, curCol, curRow) {
             const dx = curCol - prevCol, dy = curRow - prevRow;
             if (!dx && !dy) return false;
-            const hEdge = dy && mapViewEdgeData['H:' + prevCol + ',' + Math.max(prevRow, curRow)];
-            const vEdge = dx && mapViewEdgeData['V:' + Math.max(prevCol, curCol) + ',' + prevRow];
+            // a freehand wall crossing the line between the two cell centers blocks the step
+            if (mapViewInkWalls.length && window.MapStyle && MapStyle.inkBlocks(mapViewInkWalls, prevCol + 0.5, prevRow - 0.5, curCol + 0.5, curRow - 0.5)) return true;
+            const blocking = k => { const e = mapViewEdgeData[k]; return e && e.type !== 'window' && !(e.type === 'door' && e.state === 'open') ? e : null; }; // you can see through a window
+            const hEdge = dy && blocking('H:' + prevCol + ',' + Math.max(prevRow, curRow));
+            const vEdge = dx && blocking('V:' + Math.max(prevCol, curCol) + ',' + prevRow);
             if (dx && dy) {
-                const hEdge2 = mapViewEdgeData['H:' + curCol + ',' + Math.max(prevRow, curRow)];
-                const vEdge2 = mapViewEdgeData['V:' + Math.max(prevCol, curCol) + ',' + curRow];
+                const hEdge2 = blocking('H:' + curCol + ',' + Math.max(prevRow, curRow));
+                const vEdge2 = blocking('V:' + Math.max(prevCol, curCol) + ',' + curRow);
                 return !!(hEdge || vEdge || hEdge2 || vEdge2);
             }
             return !!(hEdge || vEdge);
         }
+        // ---- Separate fog for each player (the DM's option; see map-fog.js) ----
+        // Shared fog (the default) writes what a token sees onto the map. Separate fog collects it in a Set instead (the sink), which
+        // goes to this player's own row, and what the player sees is laid over the map data here: revealed for everyone + their own
+        // squares + what any party member can see now. The overlay is taken off again before the map is saved.
+        let mapViewFogSink = null, mapViewFogReady = false, mapViewFogOv = new Map();
+        function mapViewFogMark(key) { if (mapViewFogSink) mapViewFogSink.add(key); else mapViewEnsureCell(key).fogRevealed = true; }
+        function mapViewFogPlayerMode() { return !!window.MapFog && mapViewInkWalls.some(w => w && !Array.isArray(w) && w.t === 'fogmode' && w.player); }
+        function mapViewFogMe() { return (localStorage.getItem('playerRealName') || '') + '|' + (document.getElementById('charName').value || '').trim(); }
+        function mapViewFogRestore() {
+            mapViewFogOv.forEach((rec, k) => { if (!rec.existed) delete mapViewCellData[k]; else if (mapViewCellData[k]) mapViewCellData[k].fogRevealed = rec.base; });
+            mapViewFogOv = new Map();
+        }
+        function mapViewFogApply() {
+            mapViewFogRestore();
+            if (!mapViewFogPlayerMode()) return;
+            const set = new Set(MapFog.get(mapViewFogMe()));
+            const sig = JSON.stringify([mapViewEdgeData, mapViewInkWalls]).length + '|' + ((mapViewMap && mapViewMap.light_level) || '');
+            MapFog.live(mapViewTokens.filter(t => t.kind === 'player'), sig).forEach(k => set.add(k));
+            set.forEach(k => {
+                const st = mapViewCellData[k];
+                if (!st) { mapViewCellData[k] = { terrain: null, hidden: false, fogRevealed: true }; mapViewFogOv.set(k, { existed: false }); }
+                else if (!st.fogRevealed) { mapViewFogOv.set(k, { existed: true, base: false }); st.fogRevealed = true; }
+            });
+        }
+        // the map as it should be saved: without what the overlay added
+        function mapViewGridForSave() {
+            if (!mapViewFogOv.size) return mapViewCellData;
+            const out = Object.assign({}, mapViewCellData);
+            mapViewFogOv.forEach((rec, k) => { if (!rec.existed) delete out[k]; else if (out[k]) out[k] = Object.assign({}, out[k], { fogRevealed: rec.base }); });
+            return out;
+        }
+        async function mapViewFogSync() {
+            mapViewFogOv = new Map(); // the map data was just loaded fresh
+            if (!window.MapFog || !mapViewFogPlayerMode()) return;
+            if (!mapViewFogReady) {
+                mapViewFogReady = true;
+                MapFog.attach({
+                    sb: _supabase,
+                    me: () => { const p = mapViewFogMe().split('|'); return { player: p[0], character: p.slice(1).join('|') }; },
+                    sightOf: t => { const s = new Set(); mapViewFogSink = s; try { mapViewRevealFromCell(t.cell, mapViewEffectiveVisionRadius(t, mapViewMap)); } finally { mapViewFogSink = null; } return s; },
+                    status: msg => { document.getElementById('mapViewHint').textContent = msg; }
+                });
+            }
+            await MapFog.setMap(mapViewMap.id);
+            await MapFog.refresh();
+            mapViewFogApply();
+        }
         function mapViewRevealFromCell(originKey, radius) {
-            const originCol = originKey.charCodeAt(0) - 65, originRow = parseInt(originKey.slice(1), 10);
-            mapViewEnsureCell(originKey).fogRevealed = true;
+            const dz = mapViewDarkZones();
+            const originCol = mapKeyCol(originKey), originRow = mapKeyRow(originKey);
+            mapViewFogMark(originKey);
             for (let dc = -radius; dc <= radius; dc++) {
                 for (let dr = -radius; dr <= radius; dr++) {
                     if (Math.max(Math.abs(dc), Math.abs(dr)) > radius) continue;
@@ -13520,12 +14499,103 @@
                         // to reach it crosses a wall/door — mirrors
                         // dm.html's revealFromCell, see its own comment.
                         if (i > 0 && mapViewEdgeBlocksStep(line[i - 1][0], line[i - 1][1], line[i][0], line[i][1])) break;
+                        if (i > 0 && dz.length && mapViewInDarkness(line[i][0], line[i][1], dz)) break; // magical darkness: cannot be seen into
                         const lkey = mapViewCellKey(line[i][0], line[i][1]);
-                        mapViewEnsureCell(lkey).fogRevealed = true;
+                        mapViewFogMark(lkey);
                         if (i > 0 && mapViewIsBlocking(lkey)) break;
                     }
                 }
             }
+            mapViewRevealLitCellsFrom(originKey); // and whatever a torch, campfire or fireplace lights that this spot can see
+        }
+        // Live fog (the DM's tick): only what the party can see right now is uncovered. Remembered fog (off) just keeps adding.
+        // Squares the DM uncovered with the Spawn tool stay uncovered for everyone, whatever the fog mode (see dm.html, mapFogKeepAdd): they are
+        // listed on the map's fog entry, so live fog puts them back after it forgets, and a player's older copy of the map cannot lose them.
+        function mapViewKeepApply() {
+            const f = mapViewInkWalls.find(w => w && !Array.isArray(w) && w.t === 'fog');
+            if (!f || !Array.isArray(f.keep)) return;
+            f.keep.forEach(k => { if (/^[A-Za-z]{1,3}\d{1,3}$/.test(k)) mapViewEnsureCell(k).fogRevealed = true; });
+        }
+        function mapViewRevealForToken(token, key) {
+            const live = mapViewInkWalls.some(w => w && !Array.isArray(w) && w.t === 'fog' && w.live);
+            if (mapViewFogPlayerMode()) {
+                const s = new Set(); mapViewFogSink = s;
+                try { mapViewRevealFromCell(key, mapViewEffectiveVisionRadius(token, mapViewMap)); } finally { mapViewFogSink = null; }
+                MapFog.add(MapFog.ownerKey(token), s, { replace: live }, token); // live fog: only what is in view now is kept
+                mapViewFogApply();
+                return;
+            }
+            if (!live) { mapViewRevealFromCell(key, mapViewEffectiveVisionRadius(token, mapViewMap)); return; }
+            Object.keys(mapViewCellData).forEach(k => { const st = mapViewCellData[k]; if (st && st.fogRevealed) st.fogRevealed = false; });
+            mapViewKeepApply();
+            mapViewTokens.filter(t => t.kind === 'player' && t !== token).forEach(t => mapViewRevealFromCell(t.cell, mapViewEffectiveVisionRadius(t, mapViewMap)));
+            mapViewRevealFromCell(key, mapViewEffectiveVisionRadius(token, mapViewMap));
+        }
+        // Light sources, mirroring dm.html (see mapLightSources there): bright light 20 ft and dim light another 20 ft (4 + 4 squares),
+        // stopped by walls and doors, seen from anywhere with a clear line to it.
+        const MAP_VIEW_LIGHT_PIECES = ['torch', 'campfire', 'fireplace'];
+        // each source is [column, row, bright squares, dim squares]: a torch, campfire and fireplace are 4 and 4, a placed light and a
+        // light a creature carries have their own size (feet, 5 ft a square)
+        const mapViewLightSq = ft => Math.max(0, Math.min(60, Math.round((ft == null ? 20 : +ft || 0) / 5)));
+        // a cone lantern's beam (60 degrees wide, dir is degrees clockwise from north), and Darkness spells: see dm.html
+        function mapViewLightInCone(dc, dr, dir) {
+            if (!dc && !dr) return true;
+            const a = Math.atan2(dc, -dr) * 180 / Math.PI;
+            return Math.abs(((a - dir + 540) % 360) - 180) <= 31;
+        }
+        function mapViewDarkZones() {
+            const z = [];
+            mapViewInkWalls.forEach(o => { if (o && !Array.isArray(o) && o.t === 'obj' && o.kind === 'darkness') z.push([Math.floor(o.x + o.w / 2), Math.floor(o.y + o.h / 2) + 1, (o.rad == null ? 15 : +o.rad || 0) / 5]); });
+            return z;
+        }
+        function mapViewInDarkness(c, r, zones) { return zones.some(([zc, zr, rad]) => Math.hypot(c - zc, r - zr) <= rad + 0.01); }
+        // time of day: a tint over the map
+        const MAP_VIEW_TOD_TINT = { dawn: '#f6dcc4', dusk: '#eab594', night: '#6a76b0' };
+        function renderMapViewTod() {
+            const el = document.getElementById('mapViewTodTint');
+            if (!el) return;
+            const w = mapViewInkWalls.find(q => q && !Array.isArray(q) && q.t === 'tod');
+            el.style.background = (w && MAP_VIEW_TOD_TINT[w.v]) || 'transparent';
+            const wx = mapViewInkWalls.find(q => q && !Array.isArray(q) && q.t === 'weather');
+            if (window.MapWeather) MapWeather.set(document.getElementById('mapViewWeatherLayer'), wx && typeof wx.v === 'string' ? wx.v : '');
+        }
+        function mapViewLightSources() {
+            const out = [];
+            Object.keys(mapViewCellData).forEach(k => { const st = mapViewCellData[k]; if (st && MAP_VIEW_LIGHT_PIECES.includes(st.furniture)) out.push([mapKeyCol(k), mapKeyRow(k), 4, 4]); });
+            mapViewInkWalls.forEach(o => {
+                if (!o || Array.isArray(o)) return;
+                if (o.t === 'obj' && o.kind && o.kind.indexOf('furn:') === 0 && MAP_VIEW_LIGHT_PIECES.includes(o.kind.slice(5))) out.push([Math.floor(o.x + o.w / 2), Math.floor(o.y + o.h / 2) + 1, 4, 4]);
+                else if (o.t === 'obj' && o.kind === 'light') out.push([Math.floor(o.x + o.w / 2), Math.floor(o.y + o.h / 2) + 1, mapViewLightSq(o.bright), mapViewLightSq(o.dim), o.cone ? (+o.dir || 0) : null]);
+                else if (o.t === 'tlight') { const t = mapViewTokens.find(q => q.id === o.tok); if (t && t.cell) out.push([mapKeyCol(t.cell), mapKeyRow(t.cell), mapViewLightSq(o.bright), mapViewLightSq(o.dim), o.cone ? (MAP_VIEW_FACING_DEGREES[t.facing] || 0) : null]); }
+            });
+            return out;
+        }
+        function mapViewLosClear(c0, r0, c1, r1) {
+            const line = mapViewBresenhamLine(c0, r0, c1, r1);
+            for (let i = 1; i < line.length; i++) {
+                if (mapViewEdgeBlocksStep(line[i - 1][0], line[i - 1][1], line[i][0], line[i][1])) return false;
+                if (i < line.length - 1 && mapViewIsBlocking(mapViewCellKey(line[i][0], line[i][1]))) return false;
+            }
+            return true;
+        }
+        function mapViewRevealLitCellsFrom(originKey) {
+            const sources = mapViewLightSources(), dz = mapViewDarkZones();
+            if (!sources.length) return;
+            const oc = mapKeyCol(originKey), orow = mapKeyRow(originKey), lit = new Set();
+            sources.forEach(([sc, sr, lb, ld, dir]) => {
+                const reach = lb + ld;
+                for (let dc = -reach; dc <= reach; dc++) for (let dr = -reach; dr <= reach; dr++) {
+                    const c = sc + dc, r = sr + dr;
+                    if (c < 0 || c >= mapViewTotalCols || r < 1 || r > mapViewTotalRows || (dir != null && !mapViewLightInCone(dc, dr, dir)) || (dz.length && mapViewInDarkness(c, r, dz)) || !mapViewLosClear(sc, sr, c, r)) continue;
+                    lit.add(mapViewCellKey(c, r));
+                }
+            });
+            lit.forEach(key => {
+                const st = mapViewCellData[key];
+                if (mapViewFogSink ? mapViewFogSink.has(key) : (st && st.fogRevealed)) return;
+                const c = mapKeyCol(key), r = mapKeyRow(key);
+                if (Math.max(Math.abs(c - oc), Math.abs(r - orow)) <= 80 && mapViewLosClear(oc, orow, c, r) && !(dz.length && mapViewBresenhamLine(oc, orow, c, r).some((p, i) => i > 0 && mapViewInDarkness(p[0], p[1], dz)))) mapViewFogMark(key);
+            });
         }
 
         // Mirrors dm.html's effectiveVisionRadius() — which of a token's
@@ -13550,43 +14620,130 @@
             return Math.max(1, Math.round(feet / 5));
         }
 
+        // ---------- Opening doors and windows (2026-10-31) ----------
+        // A player walks up to a door or window and clicks it. Closed and unlocked: it opens, and what is beyond comes into view. Locked (or
+        // stuck): it says so, and only the DM can change that from the DM's map. A click counts as a click on the door when it lands in the
+        // outer part of a square, on the side that door is on. Needs the token to be beside it. Only the door's own state is written back
+        // (read fresh first), not the player's whole copy of the map's walls.
+        function mapViewEdgeKeyForSide(col, row, side) {
+            if (side === 'N') return 'H:' + col + ',' + row;
+            if (side === 'S') return 'H:' + col + ',' + (row + 1);
+            if (side === 'W') return 'V:' + col + ',' + row;
+            return 'V:' + (col + 1) + ',' + row;
+        }
+        // the two squares a door or window sits between, as [col, row] pairs
+        function mapViewEdgeCells(edgeKey) {
+            const p = edgeKey.slice(2).split(',').map(Number), c = p[0], r = p[1];
+            return edgeKey.charAt(0) === 'H' ? [[c, r - 1], [c, r]] : [[c - 1, r], [c, r]];
+        }
+        function mapViewEdgeAtClick(key, ev) {
+            const el = ev && ev.currentTarget; if (!el || !el.getBoundingClientRect) return null;
+            const rect = el.getBoundingClientRect(); if (!rect.width || !rect.height) return null;
+            const fx = (ev.clientX - rect.left) / rect.width, fy = (ev.clientY - rect.top) / rect.height;
+            const dists = { N: fy, S: 1 - fy, W: fx, E: 1 - fx };
+            const col = mapKeyCol(key), row = mapKeyRow(key);
+            let best = null;
+            Object.keys(dists).forEach(side => {
+                if (dists[side] > 0.3) return;
+                const edgeKey = mapViewEdgeKeyForSide(col, row, side), e = mapViewEdgeData[edgeKey];
+                if (!e || (e.type !== 'door' && e.type !== 'window') || e.hidden) return;
+                if (!best || dists[side] < best.d) best = { d: dists[side], edgeKey, edge: e };
+            });
+            return best;
+        }
+        async function mapViewTryDoor(key, ev) {
+            const st = mapViewCellData[key];
+            if (!st || !st.fogRevealed) return false;
+            const hit = mapViewEdgeAtClick(key, ev); if (!hit) return false;
+            const hint = document.getElementById('mapViewHint'), e = hit.edge, what = e.type === 'window' ? 'window' : 'door', state = e.state || 'closed';
+            if (state === 'open') return false;                       // an open door is just something to walk through
+            const mine = mapViewMyToken, moving = mapViewPickedUp;
+            const near = !!mine && mapViewEdgeCells(hit.edgeKey).some(([c, r]) => Math.max(Math.abs(c - mapKeyCol(mine.cell)), Math.abs(r - mapKeyRow(mine.cell))) <= 1);
+            if (!near) {
+                if (moving) return false;                             // clicking a square beside a far-off door still means "go there"
+                hint.textContent = mine ? 'Walk up next to the ' + what + ' first, then click it.' : 'Place your token on the map first, then walk up to the ' + what + '.';
+                return true;
+            }
+            if (state === 'locked') { hint.textContent = 'The ' + what + ' is locked.'; mapViewPickedUp = false; return true; }
+            if (state === 'stuck') { hint.textContent = 'The ' + what + ' is stuck.'; mapViewPickedUp = false; return true; }
+            hint.textContent = 'Opening the ' + what + '…';
+            try {
+                const { data, error } = await _supabase.from('campaign_maps').select('wall_edges').eq('id', mapViewMap.id).maybeSingle();
+                if (error || !data) throw new Error(error ? error.message : 'the map could not be read');
+                const edges = data.wall_edges || {}, cur = edges[hit.edgeKey];
+                if (!cur || (cur.type !== 'door' && cur.type !== 'window')) { hint.textContent = 'Something has changed there. Try again.'; await refreshMapView(); return true; }
+                if (cur.state === 'locked' || cur.state === 'stuck') { mapViewEdgeData = edges; hint.textContent = 'The ' + what + ' is ' + cur.state + '.'; return true; }
+                if (cur.state !== 'open') {
+                    cur.state = 'open';
+                    const up = await _supabase.from('campaign_maps').update({ wall_edges: edges }).eq('id', mapViewMap.id);
+                    if (up.error) throw new Error(up.error.message);
+                }
+                mapViewEdgeData = edges;
+                mapViewPickedUp = false;
+                // the way is open, so what can be seen from where the token stands has grown
+                mapViewRevealForToken(mine, mine.cell);
+                await _supabase.from('campaign_maps').update({ grid_data: mapViewGridForSave() }).eq('id', mapViewMap.id);
+                renderMapViewGrid(); renderMapViewWallOverlay();
+                hint.textContent = 'You open the ' + what + '. Click your token, then where you want to go.';
+            } catch (err) { hint.textContent = 'Could not open the ' + what + ': ' + err.message; }
+            return true;
+        }
+
         // Only this character's own token can ever be picked up here —
         // mapViewMyToken is the sole candidate, resolved in refreshMapView()
         // by identity, not by which token happens to get clicked. Before
         // this character has a token at all, a click here places one
         // instead (see placeMyMapToken) — the DM never places players.
-        async function handleMapViewCellClick(key) {
+        async function handleMapViewCellClick(key, ev) {
             document.getElementById('mapViewCoord').textContent = key;
+            if (ev && await mapViewTryDoor(key, ev)) return;
             if (!mapViewMyToken) { await placeMyMapToken(key); return; }
+
+            if (!mapViewPickedUp) {
+                const stairs = mapViewLinkInfo(key);
+                if (stairs && !stairs.to.fall && (mapViewCellData[key] || {}).fogRevealed) { mapViewOfferStairs(key, stairs); return; }
+            }
 
             if (mapViewPickedUp) {
                 if (mapViewTokens.find(t => t.cell === key)) { document.getElementById('mapViewHint').textContent = key + ' already has something there.'; return; }
                 const moving = mapViewMyToken;
                 const fromKey = moving.cell;
-                const fromCol = fromKey.charCodeAt(0) - 65, fromRow = parseInt(fromKey.slice(1), 10);
-                const toCol = key.charCodeAt(0) - 65, toRow = parseInt(key.slice(1), 10);
+                const fromCol = mapKeyCol(fromKey), fromRow = mapKeyRow(fromKey);
+                const toCol = mapKeyCol(key), toRow = mapKeyRow(key);
                 const feet = Math.max(Math.abs(toCol - fromCol), Math.abs(toRow - fromRow)) * 5;
+                const shutDoor = mapViewDoorOnPath(fromKey, key); // a closed door stops a token
+                if (shutDoor) {
+                    mapViewPickedUp = false;
+                    document.getElementById('mapViewHint').textContent = shutDoor.hidden ? 'Something blocks the way there.' : shutDoor.state === 'locked' ? 'A locked door blocks the way. Your DM has to unlock it.' : shutDoor.state === 'stuck' ? 'A stuck door blocks the way.' : 'A closed door blocks the way. Walk up to it and click the door to open it.';
+                    return;
+                }
                 mapViewPickedUp = false;
 
                 const destState = mapViewEnsureCell(key);
-                const discovered = destState.hidden && MAP_VIEW_DISCOVERABLE_TERRAIN.includes(destState.terrain);
-                const discoverMsg = discovered ? MAP_VIEW_DISCOVER_MESSAGE[destState.terrain] : '';
-                if (discovered) destState.hidden = false;
-                mapViewRevealFromCell(key, mapViewEffectiveVisionRadius(moving, mapViewMap));
+                const trigKey = mapViewDiscoverKey(key), trigState = trigKey ? mapViewCellData[trigKey] : null;
+                const discovered = !!trigState;
+                const discoverMsg = discovered ? MAP_VIEW_DISCOVER_MESSAGE[trigState.terrain] : '';
+                if (discovered) trigState.hidden = false;
+                mapViewRevealForToken(moving, key);
 
                 const { error: moveErr } = await _supabase.from('map_tokens').update({ cell: key, updated_at: new Date() }).eq('id', moving.id);
                 if (moveErr) { document.getElementById('mapViewHint').textContent = 'Could not move: ' + moveErr.message; return; }
+                const toLink = mapViewLinkAt(key);
+                let linkNote = '';
+                if (toLink && toLink.fall) { if (await mapViewTakeLink(moving, key, toLink)) return; linkNote = mapViewLinkNote; }
+                else if (toLink) linkNote = 'click the ' + (/spiral/.test((mapViewLinkInfo(key) || {}).kind || '') ? 'spiral stairs' : 'stairs') + ' to go ' + (mapViewStairsDir((mapViewLinkInfo(key) || {}).kind || '') || 'on');
                 // Stamps discoveredBy / sends loot BEFORE the grid_data save
                 // right below, so both land in the same write.
-                if (discovered) await handleMapViewDiscovery(destState, key);
-                await _supabase.from('campaign_maps').update({ grid_data: mapViewCellData }).eq('id', mapViewMap.id);
+                if (discovered) await handleMapViewDiscovery(trigState, trigKey);
+                await _supabase.from('campaign_maps').update({ grid_data: mapViewGridForSave() }).eq('id', mapViewMap.id);
 
                 moving.cell = key;
                 renderMapViewGrid();
                 const overSpeed = feet > (moving.speed || 30);
                 document.getElementById('mapViewHint').textContent = 'Moved ' + fromKey + ' → ' + key + ' (' + feet + ' ft)' +
                     (overSpeed ? ' — over your ' + moving.speed + ' ft speed' : '') +
-                    (discovered ? ' — ' + discoverMsg : '');
+                    (discovered ? ' — ' + discoverMsg : '') +
+                    (linkNote ? ' — ' + linkNote : '');
                 return;
             }
 
@@ -13678,8 +14835,8 @@
 
             mapViewTokens.push(data);
             mapViewMyToken = data;
-            mapViewRevealFromCell(key, mapViewEffectiveVisionRadius(data, mapViewMap));
-            await _supabase.from('campaign_maps').update({ grid_data: mapViewCellData }).eq('id', mapViewMap.id);
+            mapViewRevealForToken(data, key);
+            await _supabase.from('campaign_maps').update({ grid_data: mapViewGridForSave() }).eq('id', mapViewMap.id);
 
             renderMapViewGrid();
             renderMapViewPlacementUI();
