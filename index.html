@@ -10505,12 +10505,15 @@
 
             const current = parseInt(row.querySelector('.tracker-current').value) || 0;
             const max = parseInt(row.querySelector('.tracker-max').value) || 1;
-            const fill = row.querySelector('.tracker-bar-fill');
+            // The plain trackers made by addNewTracker() draw their bar as .tracker-fill; the status-effect trackers as .tracker-bar-fill.
+            // This only looked for the second, so any saved character holding a plain tracker threw "Cannot read properties of null
+            // (reading 'style')" while loading, was never opened, and left saving locked (found 2026-11-21 from an Android report).
+            const fill = row.querySelector('.tracker-bar-fill') || row.querySelector('.tracker-fill');
             const infoText = row.querySelector('.status-info-text');
             const effectName = row.getAttribute('data-linked-effect');
 
             // Update the progress bar
-            fill.style.width = Math.min((current / max) * 100, 100) + '%';
+            if (fill) fill.style.width = Math.min((current / max) * 100, 100) + '%';
 
             if (infoText && STATUS_DESCRIPTIONS[effectName]) {
                 const desc = STATUS_DESCRIPTIONS[effectName];

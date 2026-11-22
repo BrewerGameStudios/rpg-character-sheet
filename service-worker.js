@@ -1,5 +1,5 @@
 // service-worker.js - RPG Character Sheet PWA
-const CACHE_NAME = 'rpg-character-sheet-v3.0.2';  // **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************
+const CACHE_NAME = 'rpg-character-sheet-v3.0.3';  // **************************UPDATE VERSION NUMBER WHEN UPDATING ***************************************
 const urlsToCache = [
     './',
     './index.html',
