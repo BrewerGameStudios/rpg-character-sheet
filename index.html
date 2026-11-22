@@ -4866,8 +4866,10 @@
         }
         // Stops ALL persistence (local + cloud) and keeps what was on
         // screen, rather than overwriting a save with a different character.
+        // window.__influxWhy records what blocked saving, so the "paused" alerts can say why (added 2026-11-21 after an Android report).
         function haltPersistence(name, data) {
             window.__screenInFlux = true;
+            window.__influxWhy = 'autosave stopped: the sheet on screen did not look like the saved "' + name + '"';
             clearTimeout(window.saveTimeout);
             clearTimeout(window.cloudSaveTimeout);
             try { snapshotCharacterBackup(`${name} (what was on screen)`, JSON.stringify(data), 'autosave stopped'); } catch (e) { /* best effort */ }
@@ -4888,6 +4890,14 @@
             clearTimeout(window.saveTimeout);
             clearTimeout(window.cloudSaveTimeout);
             const key = currentCharacterKey;
+            // 2026-11-21: already locked ("uncertain state") when a whole-sheet replace (New Character, Import, cloud download or
+            // pull) begins. The sheet on screen is about to be discarded anyway and cannot be trusted, so it is not written anywhere;
+            // it and the saved copy are kept as backups and the replace goes ahead. Used to refuse, which left no way out but a reload.
+            if (window.__screenInFlux) {
+                try { snapshotCharacterBackup(`${key || 'unsaved sheet'} (what was on screen)`, JSON.stringify(getCharacterData()), 'kept when saving was locked'); } catch (e) { /* best effort */ }
+                if (key) { const s0 = localStorage.getItem(`character_${key}`); if (s0) snapshotCharacterBackup(key, s0, reason); }
+                return true;
+            }
             const hadEdits = !!key && (hasUnsavedChanges ||
                 (parseInt(localStorage.getItem('localEditedAt_' + key) || '0', 10) > parseInt(localStorage.getItem('cloudSyncedAt_' + key) || '0', 10)));
             if (!window.__screenInFlux && typeof window.autoSave === 'function') {
@@ -4902,14 +4912,20 @@
         }
 
         // The one atomic character switch. Returns {ok:true} or {ok:false, reason, ...}.
-        function loadCharacterIntoSheet(charName) {
+        // opts.force (2026-11-21): used when saving is locked ("uncertain state"). The sheet on screen is not trusted, so it is NOT
+        // written anywhere; it is kept as a recoverable backup instead, and the chosen saved character replaces it, which clears the lock.
+        function loadCharacterIntoSheet(charName, opts) {
             const dataString = localStorage.getItem(`character_${charName}`);
             if (!dataString) return { ok: false, reason: 'missing' };
             let incoming;
             try { incoming = JSON.parse(dataString); } catch (e) { return { ok: false, reason: 'corrupt' }; }
 
             const outgoingKey = currentCharacterKey;
-            if (!persistOutgoingBeforeReplace('before switching')) return { ok: false, reason: 'halted' };
+            if (opts && opts.force) {
+                clearTimeout(window.saveTimeout);
+                clearTimeout(window.cloudSaveTimeout);
+                try { snapshotCharacterBackup(`${outgoingKey || 'unsaved sheet'} (what was on screen)`, JSON.stringify(getCharacterData()), 'kept when saving was locked'); } catch (e) { /* best effort */ }
+            } else if (!persistOutgoingBeforeReplace('before switching')) return { ok: false, reason: 'halted' };
             snapshotCharacterBackup(charName, dataString, 'before opening');
 
             screenGeneration++;
@@ -4931,6 +4947,7 @@
                 return { ok: true };
             } catch (err) {
                 console.error('Character switch failed:', err);
+                window.__influxWhy = 'a character switch failed: ' + (err && err.message ? err.message : err);
                 return { ok: false, reason: 'swap-failed', error: err, outgoingKey };
             }
         }
@@ -8932,8 +8949,13 @@
             }
 
             if (window.__screenInFlux) {
-                alert('Saving is paused because the sheet is in an uncertain state (a character switch was interrupted, or autosave stopped to protect a save). Nothing was written. Reload this page, then save.');
-                return;
+                // 2026-11-21: a way out of the lock without a reload (reloading did not help on one Android phone). The saved copy is
+                // snapshotted below before it is replaced, and what is on screen is kept as a backup too.
+                const go = confirm(`Saving is paused because the sheet is in an uncertain state (${window.__influxWhy || 'reason not recorded'}).\n\nSave what is on screen as "${saveName}" anyway?\n\nIf the sheet looks right, choose OK. The earlier saved copy of "${saveName}" is kept under File > Recover Earlier Version. If the sheet looks wrong or mixed up, choose Cancel and open a saved character from the list instead.`);
+                if (!go) return;
+                try { snapshotCharacterBackup(`${saveName} (what was on screen)`, JSON.stringify(getCharacterData()), 'kept when saving was locked'); } catch (e) { /* best effort */ }
+                window.__screenInFlux = false;
+                window.__persistenceHaltAlerted = false;
             }
             // A manual Save can legitimately replace a slot's contents —
             // keep the previous version recoverable (2026-10-11).
@@ -9018,21 +9040,25 @@
             if (!charName) return;
             const revert = () => { dropdown.value = currentCharacterKey || ''; };
 
+            // Locked ("uncertain state"): reloading the page used to be the only way out, and on one Android phone the lock came
+            // straight back. Opening a SAVED character is safe while locked (it replaces the untrusted sheet and clears the lock),
+            // so offer that. What was on screen is kept under File > Recover Earlier Version.
+            let force = false;
             if (window.__screenInFlux) {
-                alert('Switching is paused because the sheet is in an uncertain state (an earlier switch was interrupted, or autosave stopped to protect a save). Nothing was changed. Reload this page first.');
-                revert();
-                return;
+                const go = confirm(`Saving is paused because the sheet is in an uncertain state (${window.__influxWhy || 'reason not recorded'}).\n\nOpen "${charName}" anyway? What is on screen now is NOT saved over anything; it is kept under File > Recover Earlier Version. Opening a saved character also clears the pause.`);
+                if (!go) { revert(); return; }
+                force = true;
             }
 
             // A sheet bound to a saved character is already autosaved (and is
             // flushed to its own slot below), so there's nothing to lose. Only
             // an unbound sheet with edits has no save slot to fall back on.
-            if (hasUnsavedChanges && !currentCharacterKey) {
+            if (!force && hasUnsavedChanges && !currentCharacterKey) {
                 const proceed = confirm(`This sheet hasn't been saved under a name yet. Opening "${charName}" will replace it. Continue?`);
                 if (!proceed) { revert(); return; }
             }
 
-            const res = loadCharacterIntoSheet(charName);
+            const res = loadCharacterIntoSheet(charName, { force });
             if (res.ok) return;
             revert();
             if (res.reason === 'missing') {
@@ -11443,6 +11469,7 @@
                     window.__screenInFlux = false;
                     } catch (err) {
                         console.error('Auto-load failed:', err);
+                        window.__influxWhy = 'opening the last character at start-up failed: ' + (err && err.message ? err.message : err);
                         setTimeout(() => alert('Your last character could not be fully opened, so saving is paused to protect it — nothing was overwritten. Reload the page; if this keeps happening, File ▾ Recover Earlier Version has earlier copies.'), 0);
                     }
                     return;
@@ -15116,8 +15143,20 @@
             // SWITCH SAFETY). Callers must have checked this pull still
             // targets the character on screen.
             if (!persistOutgoingBeforeReplace('before cloud pull', { cloud: false })) return;
+            const prevKey = currentCharacterKey;
             screenGeneration++;
             window.__screenInFlux = true;
+            // 2026-11-21: a throw here used to leave saving blocked with no message (a silent start-up pull could do it).
+            // Now the character that was open is put back from its own save, as a failed switch does.
+            try {
+                applyCloudPullInner(name, cloudCharData, cloudTime);
+            } catch (err) {
+                console.error('Cloud pull failed:', err);
+                window.__influxWhy = 'a cloud pull failed: ' + (err && err.message ? err.message : err);
+                recoverAfterFailedSwitch(prevKey, name, err);
+            }
+        }
+        function applyCloudPullInner(name, cloudCharData, cloudTime) {
             resetSheetToBaseline();
             setCharacterData(cloudCharData);
             currentCharacterKey = name;
